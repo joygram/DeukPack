@@ -136,7 +136,8 @@ npm test
 
 DeukPack is **free and Apache-2.0**. If it helps your team, consider supporting continued development:
 
-- **[Donate via PayPal](https://www.paypal.com/donate/?business=joygram%40gmail.com&currency_code=USD&item_name=DeukPack%20development)**
+- **PayPal**: **Send** → **`joygram@gmail.com`**
+- **Ko-fi**: [Support via Ko-fi](https://ko-fi.com/joygram)
 
 Not in a position to donate? **Star the repo**, **open issues**, **send PRs**, or **spread the word**.
 

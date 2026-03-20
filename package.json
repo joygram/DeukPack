@@ -8,6 +8,7 @@
     "deukpack": "bin/deukpack.js"
   },
   "scripts": {
+    "setup": "node scripts/setup.js",
     "prepublishOnly": "npm run build",
     "build": "tsc && npm run build:cs && node scripts/dist_csharp.js",
     "build:native": "node-gyp rebuild",
