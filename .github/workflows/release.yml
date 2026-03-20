@@ -23,6 +23,11 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: npm
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: Verify package.json version matches tag
         run: |
           REF="${GITHUB_REF#refs/tags/}"
