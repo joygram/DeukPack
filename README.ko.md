@@ -15,6 +15,7 @@
 - **단일 소스:** **`.deuk` 우선**; `.proto`, `.thrift`, OpenAPI 등과 한 빌드에 섞을 수 있음. → [코어·엔진](https://deukpack.app/products/core-engine/)
 - **와이어:** **Protobuf 호환(Binary/Compact)** 을 표준으로; 필요 시 레거시 스택과 공존. → [프로토콜](https://deukpack.app/products/protocol/)
 - **AI·에이전트:** `.deuk`, `.proto`, `.thrift`, OpenAPI 입력 → 결정론적 코드·직렬화. → [AI 파이프라인](https://deukpack.app/ai-pipeline-integration/)
+- **확장 데이터 타입 (Protobuf/Thrift 대비) 한 줄:** `int8`–`int64`, `uint8`–`uint64`, `float`/`double`, `bool`, `string`/`binary`, `list`/`set`/`map`, **tablelink**, `datetime`/`decimal`, **struct extends** — 세부 목록·의미는 [레퍼런스](https://deukpack.app/reference/api/) 참고.
 
 ---
 

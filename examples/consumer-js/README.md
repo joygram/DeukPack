@@ -6,6 +6,8 @@ Runs the same CLI as CI: `node scripts/build_deukpack.js … --js`.
 cd examples/consumer-js
 npm install
 npm run codegen
+npm run demo
 ```
 
-Generated JS: `examples/out/javascript/generated.js` (meta/editor-oriented bundle).
+- **codegen**: generates `examples/out/javascript/generated.js` (meta/editor-oriented bundle).
+- **demo**: runs WriteWithOverrides, toJsonWithFields, projectFields against generated code (requires codegen first).

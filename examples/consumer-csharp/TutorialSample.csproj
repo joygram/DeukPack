@@ -9,5 +9,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\DeukPack.Protocol\DeukPack.Protocol.csproj" />
     <Compile Include="..\out\csharp\**\*.cs" />
+    <Compile Remove="..\out\csharp\*.proto.cs" />
   </ItemGroup>
 </Project>
