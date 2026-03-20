@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
