@@ -20,6 +20,7 @@
 | **Integration** | One AST → **multi-language outputs**, **SQLite DDL**, **schema JSON**, **IDL-driven registries**. |
 | **Agents** | **Deterministic** codegen — specs in, typed code out. [AI pipeline →](https://deukpack.app/ai-pipeline-integration/) |
 | **Extensibility** | **CLI + pluggable generators** (C#, C++, TS, JS). |
+| **Extended types (vs Protobuf/Thrift)** | **One line:** `int8`–`int64`, `uint8`–`uint64`, `float`/`double`, `bool`, `string`/`binary`, `list`/`set`/`map`, **tablelink**, `datetime`/`decimal`, **struct extends** — [Reference](https://deukpack.app/reference/api/) for full list and semantics. |
 
 ---
 

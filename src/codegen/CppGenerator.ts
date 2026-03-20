@@ -12,6 +12,7 @@ import {
   DeukPackType,
 } from '../types/DeukPackTypes';
 import { CodeGenerator } from './CodeGenerator';
+import { DeukPackEngine } from '../core/DeukPackEngine';
 
 type TypeGroup = {
   enums: DeukPackEnum[];
@@ -21,6 +22,7 @@ type TypeGroup = {
 
 export class CppGenerator extends CodeGenerator {
   async generate(ast: DeukPackAST, _options: GenerationOptions): Promise<{ [filename: string]: string }> {
+    DeukPackEngine.resolveExtends(ast);
     const fileGroups = this.groupBySourceFile(ast);
     const out: { [filename: string]: string } = {};
 
@@ -135,7 +137,9 @@ export class CppGenerator extends CodeGenerator {
     const map: { [k: string]: string } = {
       bool: 'bool', byte: 'int8_t', i8: 'int8_t', int8: 'int8_t',
       i16: 'int16_t', int16: 'int16_t', i32: 'int32_t', int32: 'int32_t',
-      i64: 'int64_t', int64: 'int64_t', float: 'float', double: 'double',
+      i64: 'int64_t', int64: 'int64_t',
+      uint8: 'uint8_t', uint16: 'uint16_t', uint32: 'uint32_t', uint64: 'uint64_t',
+      float: 'float', double: 'double',
       string: 'std::string', binary: 'std::string',
     };
     return map[typeStr] ?? null;
@@ -149,10 +153,13 @@ export class CppGenerator extends CodeGenerator {
     lines.push(' * @generated');
     lines.push(' */');
     lines.push('#pragma once');
+    lines.push('#include <cstdint>');
     lines.push('#include <string>');
     lines.push('#include <vector>');
     lines.push('#include <map>');
     lines.push('#include <set>');
+    lines.push('#include <any>');
+    lines.push('#include <unordered_map>');
     lines.push('');
     lines.push(`namespace ${ns} {`);
     lines.push('');
@@ -203,6 +210,23 @@ export class CppGenerator extends CodeGenerator {
       const name = f.name || 'field';
       lines.push(`    ${cppType} ${name}{};`);
     }
+    lines.push('');
+    for (const f of s.fields || []) {
+      const name = f.name || 'field';
+      const constName = 'kFieldId_' + name.charAt(0).toUpperCase() + name.slice(1);
+      lines.push(`    static constexpr int ${constName} = ${f.id};`);
+    }
+    lines.push('');
+    lines.push(`    /** Apply per-field overrides (field id -> std::any). */`);
+    lines.push(`    void apply_overrides(const std::unordered_map<int, std::any>& overrides) {`);
+    for (const f of s.fields || []) {
+      const cppType = typeof f.type === 'string'
+        ? this.resolveTypeName(f.type, currentNs, ast)
+        : this.getCppType(f.type, ast, currentNs);
+      const name = f.name || 'field';
+      lines.push(`      { auto it = overrides.find(${f.id}); if (it != overrides.end()) ${name} = std::any_cast<${cppType}>(it->second); }`);
+    }
+    lines.push(`    }`);
     lines.push('  };');
     return lines;
   }
