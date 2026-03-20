@@ -1,0 +1,89 @@
+# Multi-platform build — manual trigger. Actions → Build release package → Run workflow
+name: Build release package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: windows-latest
+            platform: win-x64
+          - os: macos-latest
+            platform: macos-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install & build & test
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Build native addon
+        run: npm run build:native
+        continue-on-error: true
+
+      - name: Create npm tarball
+        run: npm pack
+
+      - name: Package platform artifacts (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          DIR="deukpack-${VER}-${{ matrix.platform }}"
+          mkdir -p "$DIR/native" "$DIR/csharp"
+          if [ -d "build/Release" ]; then cp build/Release/*.node "$DIR/native/" 2>/dev/null || true; fi
+          if [ -d "DeukPack.Protocol/bin/Release" ]; then cp -r DeukPack.Protocol/bin/Release/* "$DIR/csharp/"; fi
+          if [ -d "dist/csharp" ]; then cp dist/csharp/*.cs "$DIR/csharp/" 2>/dev/null || true; fi
+          cp LICENSE NOTICE "$DIR/"
+          tar czf "${DIR}.tar.gz" "$DIR"
+
+      - name: Package platform artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $VER = node -p "require('./package.json').version"
+          $DIR = "deukpack-${VER}-${{ matrix.platform }}"
+          New-Item -ItemType Directory -Force -Path "$DIR/native", "$DIR/csharp"
+          if (Test-Path "build/Release") { Copy-Item "build/Release/*.node" "$DIR/native/" -ErrorAction SilentlyContinue }
+          if (Test-Path "DeukPack.Protocol/bin/Release") { Copy-Item -Recurse "DeukPack.Protocol/bin/Release/*" "$DIR/csharp/" }
+          if (Test-Path "dist/csharp") { Copy-Item "dist/csharp/*.cs" "$DIR/csharp/" -ErrorAction SilentlyContinue }
+          Copy-Item "LICENSE", "NOTICE" "$DIR/"
+          Compress-Archive -Path "$DIR" -DestinationPath "${DIR}.zip"
+
+      - name: Upload npm tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarball-${{ matrix.platform }}
+          path: deukpack-*.tgz
+
+      - name: Upload platform package
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-${{ matrix.platform }}-${{ github.sha }}
+          path: |
+            *.tar.gz
+            *.zip
+          if-no-files-found: ignore
+          retention-days: 90

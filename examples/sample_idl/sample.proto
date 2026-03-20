@@ -1,0 +1,18 @@
+// Minimal IDL for examples — C# / C++ / JS codegen smoke test (Protobuf)
+syntax = "proto3";
+
+package tutorial;
+
+option csharp_namespace = "tutorial";
+option cc_generic_services = false;
+
+message DemoPoint {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message DemoUser {
+  int32 id = 1;
+  string name = 2;
+  DemoPoint home = 3;
+}

@@ -1,0 +1,15 @@
+{
+  "name": "deukpack-consumer-ts-example",
+  "private": true,
+  "scripts": {
+    "parse": "npx ts-node --transpile-only src/parse-demo.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "deukpack": "file:../.."
+  }
+}

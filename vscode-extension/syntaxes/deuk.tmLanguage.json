@@ -1,0 +1,245 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Deuk IDL",
+  "scopeName": "source.deuk",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#horizontal-rule" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#field-id" },
+    { "include": "#namespace-block" },
+    { "include": "#deuk-special-keywords" },
+    { "include": "#keywords-and-type-names" },
+    { "include": "#deuk-special-blocks" },
+    { "include": "#primitive-types" },
+    { "include": "#constant-language" },
+    { "include": "#punctuation" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.documentation.deuk",
+          "begin": "/\\*\\*",
+          "end": "\\*/",
+          "comment": "문서화 주석 /** */ — 테마에서 별도 색"
+        },
+        {
+          "name": "comment.block.deuk",
+          "begin": "/\\*",
+          "end": "\\*/",
+          "comment": "블록 주석 /* */"
+        },
+        {
+          "name": "comment.line.double-slash.deuk",
+          "match": "//.*$",
+          "comment": "한 줄 주석 //"
+        },
+        {
+          "name": "comment.line.double-slash.deuk",
+          "match": "--.*$",
+          "comment": "한 줄 주석 --"
+        }
+      ]
+    },
+    "horizontal-rule": {
+      "comment": "구분선 --- (마크다운 스타일 섹션 구분)",
+      "name": "comment.line.horizontal-rule.deuk",
+      "match": "^-{3,}\\s*$"
+    },
+    "namespace-block": {
+      "patterns": [
+        {
+          "name": "meta.namespace.deuk",
+          "begin": "\\b(namespace)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.deuk" },
+            "2": { "name": "entity.name.namespace.deuk" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.section.brace.curly.deuk" }
+          },
+          "patterns": [
+            { "include": "#comments" },
+            { "include": "#strings" },
+            { "include": "#keywords-and-type-names" },
+            { "include": "#deuk-special-blocks" },
+            { "include": "#primitive-types" },
+            { "include": "#field-id" },
+            { "include": "#numbers" },
+            { "include": "#punctuation" },
+            { "include": "#identifiers" }
+          ]
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        { "name": "punctuation.section.brace.curly.deuk", "match": "\\{|\\}" },
+        { "name": "punctuation.definition.generic.deuk", "match": "<|>" },
+        { "name": "punctuation.separator.colon.deuk", "match": ":" },
+        { "name": "punctuation.terminator.deuk", "match": ";" },
+        { "name": "punctuation.separator.comma.deuk", "match": "," }
+      ]
+    },
+    "deuk-special-keywords": {
+      "comment": "테이블·모디파이어·링크 등 특수 키워드 — 스코프 구분으로 색상 다르게",
+      "patterns": [
+        {
+          "captures": {
+            "1": { "name": "keyword.control.modifier.deuk" },
+            "2": { "name": "entity.name.type.deuk" }
+          },
+          "match": "\\b(modifier)\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
+        {
+          "captures": {
+            "1": { "name": "keyword.control.link.deuk" },
+            "2": { "name": "entity.name.type.deuk" }
+          },
+          "match": "\\b(linkgroup|linklist)\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
+        {
+          "name": "storage.type.table.deuk",
+          "match": "\\b(table|tablelink|container)\\b"
+        },
+        {
+          "name": "keyword.control.modifier.deuk",
+          "match": "\\bmodifier\\b"
+        },
+        {
+          "name": "keyword.control.link.deuk",
+          "match": "\\b(linkgroup|linklist)\\b"
+        },
+        {
+          "name": "keyword.other.meta.deuk",
+          "match": "\\b(excel|meta|primitives|slots|syntax|keys|key|storage|element|version)\\b"
+        }
+      ]
+    },
+    "keywords-and-type-names": {
+      "patterns": [
+        {
+          "comment": "키워드 + 타입명 (struct/enum/namespace만; modifier/linkgroup/linklist는 deuk-special-keywords에서)",
+          "captures": {
+            "1": { "name": "keyword.control.deuk" },
+            "2": { "name": "entity.name.type.deuk" }
+          },
+          "match": "\\b(struct|enum|record|namespace)\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
+        {
+          "name": "keyword.control.deuk",
+          "match": "\\b(namespace|import|const|typedef|enum|struct|record)\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [ { "include": "#keywords-and-type-names" } ]
+    },
+    "deuk-special-blocks": {
+      "patterns": [
+        {
+          "name": "meta.block.excel.deuk",
+          "begin": "\\bexcel\\s*\\{",
+          "end": "\\}",
+          "patterns": [
+            { "include": "#keywords" },
+            { "include": "#strings" },
+            { "include": "#identifiers" }
+          ]
+        },
+        {
+          "name": "meta.block.meta-primitives.deuk",
+          "begin": "\\bmeta\\s+primitives\\s*\\{",
+          "end": "\\}",
+          "patterns": [
+            { "include": "#primitive-types" },
+            { "include": "#identifiers" },
+            { "include": "#comments" }
+          ]
+        },
+        {
+          "name": "meta.block.linkgroup.deuk",
+          "begin": "\\blinkgroup\\s+\\w+\\s*\\{",
+          "end": "\\}",
+          "patterns": [
+            { "include": "#keywords" },
+            { "include": "#field-id" },
+            { "include": "#primitive-types" },
+            { "include": "#strings" },
+            { "include": "#numbers" },
+            { "include": "#identifiers" },
+            { "include": "#comments" }
+          ]
+        },
+        {
+          "name": "meta.block.linklist.deuk",
+          "begin": "\\blinklist\\s+\\w+\\s*\\{",
+          "end": "\\}",
+          "patterns": [
+            { "include": "#keywords" },
+            { "include": "#identifiers" },
+            { "include": "#numbers" },
+            { "include": "#comments" }
+          ]
+        },
+        {
+          "name": "meta.block.modifier.deuk",
+          "begin": "\\bmodifier\\s+\\w+\\s*\\{",
+          "end": "\\}",
+          "patterns": [
+            { "include": "#keywords" },
+            { "include": "#strings" },
+            { "include": "#identifiers" },
+            { "include": "#primitive-types" },
+            { "include": "#comments" }
+          ]
+        }
+      ]
+    },
+    "field-id": {
+      "name": "constant.numeric.field-id.deuk",
+      "match": "\\[\\s*\\d+\\s*\\]"
+    },
+    "primitive-types": {
+      "name": "storage.type.deuk",
+      "match": "\\b(bool|byte|i8|i16|i32|i64|int8|int16|int32|int64|float|double|string|binary|list|set|map)\\b"
+    },
+    "constant-language": {
+      "name": "constant.language.deuk",
+      "match": "\\b(true|false)\\b"
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.deuk",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.deuk", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "string.quoted.single.deuk",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "name": "constant.character.escape.deuk", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.deuk",
+      "match": "\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?\\b"
+    },
+    "identifiers": {
+      "comment": "식별자(변수/필드명)",
+      "name": "variable.other.deuk",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    }
+  }
+}

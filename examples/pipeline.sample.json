@@ -1,0 +1,13 @@
+{
+  "jobs": [
+    {
+      "name": "sample_tutorial",
+      "thriftFile": "sample_idl/sample.thrift",
+      "outputDir": "out",
+      "csharp": true,
+      "cpp": true,
+      "js": true,
+      "json": false
+    }
+  ]
+}

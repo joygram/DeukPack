@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(deukpack_tutorial_cpp LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(GEN_DIR "${CMAKE_SOURCE_DIR}/../out/cpp")
+include_directories(${GEN_DIR})
+add_executable(demo main.cpp "${GEN_DIR}/sample_types.cpp")
