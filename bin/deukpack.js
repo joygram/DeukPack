@@ -4,6 +4,5 @@
  * Forwards to scripts/build_deukpack.js after ensuring cwd-independent resolution.
  */
 const path = require('path');
-const root = path.join(__dirname, '..');
-process.chdir(root);
-require(path.join(root, 'scripts', 'build_deukpack.js'));
+const { main } = require(path.join(__dirname, '..', 'scripts', 'build_deukpack.js'));
+main().catch(console.error);

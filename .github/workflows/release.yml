@@ -1,4 +1,4 @@
-# OSS: GitHub Release — multi-platform build + npm tarball + native prebuilds
+# OSS: GitHub Release + npm tarball asset; optional npm publish (set NPM_TOKEN secret)
 name: Release
 
 on:
@@ -11,39 +11,8 @@ permissions:
   contents: write
 
 jobs:
-  # ── 1. Verify tag matches package.json ──────────────────────────
-  verify:
+  release:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.ver.outputs.version }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: ver
-        run: |
-          REF="${GITHUB_REF#refs/tags/}"
-          TAG_VER="${REF#v}"
-          PKG_VER=$(node -p "require('./package.json').version")
-          if [ "$TAG_VER" != "$PKG_VER" ]; then
-            echo "Version mismatch: tag=$TAG_VER, package.json=$PKG_VER"
-            exit 1
-          fi
-          echo "version=$PKG_VER" >> "$GITHUB_OUTPUT"
-          echo "OK: $REF == $PKG_VER"
-
-  # ── 2. Platform builds (npm tarball + native addon + C# DLL) ───
-  build:
-    needs: verify
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux-x64
-          - os: windows-latest
-            platform: win-x64
-          - os: macos-latest
-            platform: macos-x64
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -51,119 +20,40 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
           cache: npm
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
+      - name: Verify package.json version matches tag
+        run: |
+          REF="${GITHUB_REF#refs/tags/}"
+          TAG_VER="${REF#v}"
+          PKG_VER=$(node -p "require('./package.json').version")
+          if [ "$TAG_VER" != "$PKG_VER" ]; then
+            echo "Version mismatch: tag=$TAG_VER, package.json=$PKG_VER"
+            echo "Before tagging, run: npm version <patch|minor|major> (or set version and commit), then tag with v$PKG_VER"
+            exit 1
+          fi
+          echo "OK: tag $REF matches package.json $PKG_VER"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build (TypeScript + C# runtime)
-        run: npm run build
-
-      - name: Test
-        run: npm test
-
-      - name: Build native addon
-        run: npm run build:native
-        continue-on-error: true
+      - name: Install & build & test
+        run: |
+          npm ci
+          npm run build
+          npm test
 
       - name: Create npm tarball
         run: npm pack
 
-      # Platform package: native addon + C# DLLs
-      - name: Package platform artifacts (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          VER="${{ needs.verify.outputs.version }}"
-          DIR="deukpack-${VER}-${{ matrix.platform }}"
-          mkdir -p "$DIR/native" "$DIR/csharp"
-          # Native addon
-          if [ -d "build/Release" ]; then
-            cp build/Release/*.node "$DIR/native/" 2>/dev/null || true
-          fi
-          # C# multi-targeted DLLs
-          if [ -d "DeukPack.Protocol/bin/Release" ]; then
-            cp -r DeukPack.Protocol/bin/Release/* "$DIR/csharp/"
-          fi
-          # C# runtime sources
-          if [ -d "dist/csharp" ]; then
-            cp dist/csharp/*.cs "$DIR/csharp/" 2>/dev/null || true
-          fi
-          cp LICENSE NOTICE "$DIR/"
-          tar czf "${DIR}.tar.gz" "$DIR"
-          echo "PLATFORM_PKG=${DIR}.tar.gz" >> "$GITHUB_ENV"
-
-      - name: Package platform artifacts (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $VER = "${{ needs.verify.outputs.version }}"
-          $DIR = "deukpack-${VER}-${{ matrix.platform }}"
-          New-Item -ItemType Directory -Force -Path "$DIR/native", "$DIR/csharp"
-          # Native addon
-          if (Test-Path "build/Release") {
-            Copy-Item "build/Release/*.node" "$DIR/native/" -ErrorAction SilentlyContinue
-          }
-          # C# multi-targeted DLLs
-          if (Test-Path "DeukPack.Protocol/bin/Release") {
-            Copy-Item -Recurse "DeukPack.Protocol/bin/Release/*" "$DIR/csharp/"
-          }
-          # C# runtime sources
-          if (Test-Path "dist/csharp") {
-            Copy-Item "dist/csharp/*.cs" "$DIR/csharp/" -ErrorAction SilentlyContinue
-          }
-          Copy-Item "LICENSE", "NOTICE" "$DIR/"
-          Compress-Archive -Path "$DIR" -DestinationPath "${DIR}.zip"
-          echo "PLATFORM_PKG=${DIR}.zip" >> $env:GITHUB_ENV
-
-      - name: Upload npm tarball
-        uses: actions/upload-artifact@v4
+      - name: GitHub Release (asset: npm tarball)
+        uses: "softprops/action-gh-release@v2"
         with:
-          name: npm-tarball-${{ matrix.platform }}
-          path: deukpack-*.tgz
-
-      - name: Upload platform package
-        uses: actions/upload-artifact@v4
-        with:
-          name: platform-${{ matrix.platform }}
-          path: |
-            *.tar.gz
-            *.zip
-          if-no-files-found: ignore
-
-  # ── 3. Publish GitHub Release ──────────────────────────────────
-  release:
-    needs: [verify, build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Collect release assets
-        run: |
-          mkdir -p release-assets
-          # npm tarball (take one — they're identical across platforms)
-          find artifacts/npm-tarball-* -name '*.tgz' | head -1 | xargs -I{} cp {} release-assets/
-          # Platform packages
-          find artifacts/platform-* -name '*.tar.gz' -o -name '*.zip' | xargs -I{} cp {} release-assets/ 2>/dev/null || true
-          ls -la release-assets/
-
-      - name: GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release-assets/*
+          files: "deukpack-*.tgz"
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Optional: add repo secret NPM_TOKEN, then uncomment to auto-publish
+      # Optional: add repo secret NPM_TOKEN, then uncomment to auto-publish registry
       # - name: Publish to npm
-      #   run: npm publish release-assets/deukpack-*.tgz --access public
+      #   run: npm publish --access public
       #   env:
       #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

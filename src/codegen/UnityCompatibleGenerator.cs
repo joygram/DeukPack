@@ -25,6 +25,7 @@ namespace DeukPack.Unity
         I32 = 8,
         I64 = 10,
         String = 11,
+        Binary = 11,
         Struct = 12,
         Map = 13,
         Set = 14,
@@ -514,9 +515,6 @@ namespace DeukPack.Unity
                     prot.ReadDouble();
                     break;
                 case TType.String:
-                    prot.ReadString();
-                    break;
-                case TType.Binary:
                     prot.ReadBinary();
                     break;
                 case TType.List:
