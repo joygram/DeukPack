@@ -1,0 +1,20 @@
+{
+  "defineRoot": "_thrift",
+  "includePaths": [
+    { "path": "_thrift", "recursive": true }
+  ],
+  "jobs": [
+    {
+      "name": "main",
+      "thriftFile": "_thrift/_thrift.thrift",
+      "outputDir": "_thrift/libThriftDefine/.thrift",
+      "csharp": true,
+      "cpp": true,
+      "json": false,
+      "copy": [
+        { "from": "_thrift/libThriftDefine/.thrift/csharp", "to": "_thrift/libThriftDefine/csharp/_thrift_code" },
+        { "from": "_thrift/libThriftDefine/.thrift/cpp", "to": "_thrift/libThriftDefine/cpp/_thrift_code" }
+      ]
+    }
+  ]
+}

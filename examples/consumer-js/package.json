@@ -1,0 +1,10 @@
+{
+  "name": "deukpack-consumer-js-example",
+  "private": true,
+  "scripts": {
+    "codegen": "node scripts/run-codegen.js"
+  },
+  "dependencies": {
+    "deukpack": "file:../.."
+  }
+}
