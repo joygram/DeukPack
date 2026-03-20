@@ -1,0 +1,100 @@
+{
+  "name": "Deuk Pack Dark",
+  "type": "dark",
+  "tokenColors": [
+    {
+      "scope": ["comment.block.documentation.deuk", "comment.block.documentation.thrift"],
+      "settings": { "foreground": "#6A9955", "fontStyle": "italic" }
+    },
+    {
+      "scope": ["comment.block.deuk", "comment.block.thrift"],
+      "settings": { "foreground": "#6A9955" }
+    },
+    {
+      "scope": ["comment.line.double-slash.deuk", "comment.line.double-slash.thrift", "comment.line.hash.thrift"],
+      "settings": { "foreground": "#6A9955" }
+    },
+    {
+      "scope": ["comment.line.horizontal-rule.deuk", "comment.line.horizontal-rule.thrift"],
+      "settings": { "foreground": "#6A9955", "fontStyle": "" }
+    },
+    {
+      "scope": ["keyword.control.deuk", "keyword.control.thrift"],
+      "settings": { "foreground": "#C586C0", "fontStyle": "bold" }
+    },
+    {
+      "scope": ["storage.type.table.deuk", "storage.type.table.thrift"],
+      "settings": { "foreground": "#4EC9B0", "fontStyle": "bold" }
+    },
+    {
+      "scope": ["keyword.control.modifier.deuk", "keyword.control.modifier.thrift"],
+      "settings": { "foreground": "#C586C0", "fontStyle": "bold" }
+    },
+    {
+      "scope": ["keyword.control.link.deuk"],
+      "settings": { "foreground": "#DCDCAA" }
+    },
+    {
+      "scope": ["keyword.other.meta.deuk", "keyword.other.meta.thrift"],
+      "settings": { "foreground": "#9CDCFE" }
+    },
+    {
+      "scope": ["storage.modifier.thrift"],
+      "settings": { "foreground": "#569CD6" }
+    },
+    {
+      "scope": ["entity.name.namespace.deuk", "entity.name.namespace.thrift"],
+      "settings": { "foreground": "#D7BA7D" }
+    },
+    {
+      "scope": ["entity.name.type.deuk", "entity.name.type.thrift"],
+      "settings": { "foreground": "#4EC9B0" }
+    },
+    {
+      "scope": ["storage.type.deuk", "storage.type.thrift"],
+      "settings": { "foreground": "#569CD6" }
+    },
+    {
+      "scope": ["constant.numeric.deuk", "constant.numeric.thrift"],
+      "settings": { "foreground": "#B5CEA8" }
+    },
+    {
+      "scope": ["constant.numeric.field-id.deuk", "constant.numeric.field-id.thrift"],
+      "settings": { "foreground": "#B5CEA8", "fontStyle": "bold" }
+    },
+    {
+      "scope": ["constant.language.deuk", "constant.language.thrift"],
+      "settings": { "foreground": "#569CD6" }
+    },
+    {
+      "scope": ["string.quoted.double.deuk", "string.quoted.double.thrift"],
+      "settings": { "foreground": "#CE9178" }
+    },
+    {
+      "scope": ["string.quoted.single.deuk", "string.quoted.single.thrift"],
+      "settings": { "foreground": "#CE9178" }
+    },
+    {
+      "scope": ["constant.character.escape.deuk", "constant.character.escape.thrift"],
+      "settings": { "foreground": "#D7BA7D" }
+    },
+    {
+      "scope": [
+        "punctuation.section.brace.curly.deuk", "punctuation.section.brace.curly.thrift",
+        "punctuation.definition.generic.deuk", "punctuation.definition.generic.thrift",
+        "punctuation.separator.colon.deuk", "punctuation.separator.colon.thrift",
+        "punctuation.terminator.deuk", "punctuation.terminator.thrift",
+        "punctuation.separator.comma.deuk", "punctuation.separator.comma.thrift"
+      ],
+      "settings": { "foreground": "#808080" }
+    },
+    {
+      "scope": ["keyword.operator.assignment.thrift", "keyword.operator.assignment.deuk"],
+      "settings": { "foreground": "#D4D4D4" }
+    },
+    {
+      "scope": ["variable.other.deuk", "variable.other.thrift"],
+      "settings": { "foreground": "#9CDCFE" }
+    }
+  ]
+}

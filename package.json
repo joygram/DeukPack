@@ -1,0 +1,76 @@
+{
+  "name": "deukpack",
+  "version": "1.0.5",
+  "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "deukpack": "bin/deukpack.js"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "tsc && npm run build:cs && node scripts/dist_csharp.js",
+    "build:native": "node-gyp rebuild",
+    "build:all": "npm run build && npm run build:cpp && npm run build:cs",
+    "build:cpp": "cd native/cpp && mkdir -p build && cd build && cmake .. && make",
+    "build:cs": "cd DeukPack.Protocol && dotnet build -c Release",
+    "test": "jest",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",
+    "release:check": "node scripts/release-check.js && npm run build && npm test && npm pack --dry-run"
+  },
+  "keywords": [
+    "deukpack",
+    "deuk",
+    "protocol-buffers",
+    "protobuf",
+    "thrift",
+    "typescript",
+    "performance",
+    "serialization",
+    "binary",
+    "cross-platform"
+  ],
+  "author": "deukpack-dev-team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "node-addon-api": "^7.0.0",
+    "nan": "^2.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/jest": "^29.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "rimraf": "^5.0.0",
+    "node-gyp": "^10.0.0",
+    "cmake-js": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joygram/DeukPack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joygram/DeukPack/issues"
+  },
+  "homepage": "https://deukpack.app/",
+  "files": [
+    "bin",
+    "scripts/build_deukpack.js",
+    "dist",
+    "native/cpp",
+    "binding.gyp",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "README.ko.md",
+    "RELEASING.md"
+  ],
+  "deukpack": {
+    "csharpRuntime": "dist/csharp"
+  }
+}

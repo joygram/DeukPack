@@ -1,0 +1,74 @@
+# OSS: test + build on push/PR (no secrets)
+# Push to main/master 시 빌드 산출물(npm tarball)을 Artifact로 업로드 → GitHub Actions에서 다운로드 가능
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (TypeScript + C# runtime copy)
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Pack (dry run for publish layout)
+        run: npm pack --dry-run
+
+      - name: Example IDL codegen (C#/C++/JS smoke)
+        run: node scripts/build_deukpack.js examples/sample_idl/sample.thrift examples/out --csharp --cpp --js --protocol binary
+
+  # main/master 푸시 시에만: npm pack 실제 생성 후 Artifact 업로드 → Releases 외에 "최신 빌드" 다운로드용
+  build-artifact:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Create npm tarball
+        run: npm pack
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deukpack-npm-tarball-${{ github.sha }}
+          path: deukpack-*.tgz
+          retention-days: 90

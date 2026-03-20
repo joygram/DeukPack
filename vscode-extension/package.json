@@ -1,0 +1,86 @@
+{
+  "name": "deuk-idl",
+  "displayName": "Deuk IDL",
+  "description": "득팩(DeukPack) IDL용 문법 하이라이트, 린트, 포매터. .deuk 기본 지원, .thrift 호환.",
+  "version": "0.1.0",
+  "publisher": "deukpack",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/DeukPack"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Themes"
+  ],
+  "activationEvents": [
+    "onLanguage:deuk",
+    "onLanguage:thrift"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "deuk",
+        "aliases": ["Deuk IDL", "deuk"],
+        "extensions": [".deuk"],
+        "configuration": "./language-configuration/deuk.language-configuration.json"
+      },
+      {
+        "id": "thrift",
+        "aliases": ["Deuk IDL (Thrift 호환)", "thrift"],
+        "extensions": [".thrift"],
+        "configuration": "./language-configuration/thrift.language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "deuk",
+        "scopeName": "source.deuk",
+        "path": "./syntaxes/deuk.tmLanguage.json"
+      },
+      {
+        "language": "thrift",
+        "scopeName": "source.thrift",
+        "path": "./syntaxes/thrift.tmLanguage.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[deuk]": {
+        "editor.defaultFormatter": "deukpack.deuk-idl",
+        "editor.formatOnSave": false
+      },
+      "[thrift]": {
+        "editor.defaultFormatter": "deukpack.deuk-idl",
+        "editor.formatOnSave": false
+      }
+    },
+    "themes": [
+      {
+        "label": "Deuk Pack Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/deuk-pack-dark.json"
+      },
+      {
+        "label": "Deuk Pack Light",
+        "uiTheme": "vs",
+        "path": "./themes/deuk-pack-light.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "~5.3.0"
+  },
+  "dependencies": {}
+}
