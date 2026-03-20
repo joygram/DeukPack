@@ -331,6 +331,50 @@ export class DeukPackEngine {
   }
 
   /**
+   * Resolve struct extends: prepend parent fields into child (flat merge).
+   * Supports multi-level inheritance. Throws on field ID collision.
+   */
+  static resolveExtends(ast: DeukPackAST): void {
+    if ((ast as any)._extendsResolved) return;
+
+    const byName = new Map<string, DeukPackStruct>();
+    for (const s of ast.structs) {
+      byName.set(s.name, s);
+      const dotIdx = s.name.lastIndexOf('.');
+      if (dotIdx >= 0) byName.set(s.name.slice(dotIdx + 1), s);
+    }
+
+    const resolved = new Set<string>();
+    const resolving = new Set<string>();
+
+    const resolve = (s: DeukPackStruct) => {
+      if (resolved.has(s.name)) return;
+      if (resolving.has(s.name)) throw new Error(`Circular extends: ${s.name}`);
+      if (!s.extends) { resolved.add(s.name); return; }
+
+      resolving.add(s.name);
+
+      const parent = byName.get(s.extends);
+      if (!parent) throw new Error(`struct ${s.name} extends unknown type '${s.extends}'`);
+      resolve(parent);
+
+      const childIds = new Set(s.fields.map(f => f.id));
+      for (const pf of parent.fields) {
+        if (childIds.has(pf.id)) {
+          throw new Error(`Field ID ${pf.id} in parent '${parent.name}' collides with field in '${s.name}'`);
+        }
+      }
+
+      s.fields = [...parent.fields, ...s.fields];
+      resolving.delete(s.name);
+      resolved.add(s.name);
+    };
+
+    for (const s of ast.structs) resolve(s);
+    (ast as any)._extendsResolved = true;
+  }
+
+  /**
    * Validate schema
    */
   validateSchema(ast: DeukPackAST): DeukPackError[] {

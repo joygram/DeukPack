@@ -84,6 +84,8 @@ export interface DeukPackStruct {
   /** 테이블 키 필드명(단일 또는 복합). container/table struct의 (key = "level") 또는 (key = "cid,level"). 미선언 시 ["tuid"]. */
   keyFieldNames?: string[];
   sourceFile?: string;
+  /** struct 상속: 부모 struct 이름. 파싱 후 resolveExtends에서 부모 필드를 자식에 병합한다. */
+  extends?: string;
 }
 
 export interface DeukPackEnum {
@@ -296,6 +298,12 @@ export interface GenerationOptions {
   useTabs: boolean;
   /** Entity Framework Core 지원: 메타 테이블 row 타입에 [Table]/[Key]/[Column], DeukPackDbContext.g.cs 생성 */
   efSupport?: boolean;
+  /**
+   * 와이어 프로파일(서브셋): 필드 annotation `wireProfiles = "a,b"` 에 포함된 프로파일에만 노출되는 필드로
+   * 파생 C# 타입(`{Struct}_{Profile}`) 및 동일 와이어 이름(DpRecord)의 부분 스키마를 추가 생성한다.
+   * annotation 없는 필드는 모든 프로파일에 포함된다.
+   */
+  wireProfilesEmit?: string[];
 }
 
 export interface PerformanceMetrics {

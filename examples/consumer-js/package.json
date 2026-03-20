@@ -2,7 +2,8 @@
   "name": "deukpack-consumer-js-example",
   "private": true,
   "scripts": {
-    "codegen": "node scripts/run-codegen.js"
+    "codegen": "node scripts/run-codegen.js",
+    "demo": "node scripts/run-demo.js"
   },
   "dependencies": {
     "deukpack": "file:../.."

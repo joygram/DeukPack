@@ -219,6 +219,14 @@ export class DeukPackASTBuilder {
     this.advance(); // consume 'struct' or 'record'
 
     const name = this.expect(TokenType.IDENTIFIER).value;
+
+    // extends BaseStruct
+    let extendsName: string | undefined;
+    if (this.check(TokenType.IDENTIFIER) && this.peek().value === 'extends') {
+      this.advance(); // consume 'extends'
+      extendsName = this.expect(TokenType.IDENTIFIER).value;
+    }
+
     const annotations = this.tryParseAnnotations();
 
     while (this.check(TokenType.LINE_COMMENT) || this.check(TokenType.BLOCK_COMMENT)) {
@@ -243,6 +251,7 @@ export class DeukPackASTBuilder {
     this.expect(TokenType.RIGHT_BRACE);
 
     const result: DeukPackStruct = { name, fields };
+    if (extendsName) result.extends = extendsName;
     if (docComment) {
       const parsed = this.parseDocCommentAndCSharpAttributes(docComment);
       if (parsed.docComment) result.docComment = parsed.docComment;
