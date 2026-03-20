@@ -40,7 +40,7 @@ jobs:
           fi
           echo "OK: tag $REF matches package.json $PKG_VER"
 
-      - name: Install & build & test
+      - name: "Install & build & test"
         run: |
           npm ci
           npm run build
@@ -49,7 +49,7 @@ jobs:
       - name: Create npm tarball
         run: npm pack
 
-      - name: GitHub Release (asset: npm tarball)
+      - name: "GitHub Release (asset: npm tarball)"
         uses: "softprops/action-gh-release@v2"
         with:
           files: "deukpack-*.tgz"
