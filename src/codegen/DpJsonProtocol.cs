@@ -13,7 +13,7 @@ namespace DeukPack.Protocol
     /// JSON protocol (TJSONProtocol-compatible).
     /// Stream-based; constructor(stream, includeSchema, isReadMode).
     /// </summary>
-    public class DpJsonProtocol : DpProtocol
+    public class DpJsonProtocol : DpProtocol, IDisposable
     {
         private readonly Stream _stream;
         private readonly bool _isReadMode;
@@ -52,6 +52,11 @@ namespace DeukPack.Protocol
                     _rootRead = JsonProtocolParse(json);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _stream?.Flush();
         }
 
         private struct JsonStructState

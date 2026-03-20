@@ -80,7 +80,8 @@ npm test
 
 득팩은 **Apache-2.0 무료**입니다. 도움이 되셨다면 후원으로 응원해 주세요:
 
-- **[PayPal로 후원하기](https://www.paypal.com/donate/?business=joygram%40gmail.com&currency_code=USD&item_name=DeukPack%20development)**
+- **PayPal**: **송금(Send)** → 수신 **`joygram@gmail.com`**
+- **Ko-fi**: [Ko-fi로 후원하기](https://ko-fi.com/joygram)
 
 **Star**, **이슈**, **PR**, **소개**만으로도 큰 힘이 됩니다.
 
