@@ -52,7 +52,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log('📌 sync-version-artifacts —', ver);
+  console.log('📌 version:sync —', ver);
   syncReleaseChangelogs();
   syncPackageLock();
   syncReleaseNoticeVersion(ver);
@@ -64,7 +64,7 @@ function main() {
   if (rc.status !== 0) process.exit(rc.status || 1);
 
   console.log('');
-  console.log('✅ Version artifacts synced.');
+  console.log('✅ Version artifacts updated.');
   if (process.env.npm_lifecycle_event === 'postversion') {
     console.log('');
     console.log('   Stage and amend the version commit:');
