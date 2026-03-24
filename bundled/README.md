@@ -8,7 +8,11 @@ Files in this folder ship inside the **`deukpack`** npm tarball (see root `packa
 
 ## Install the VSIX
 
+The same **`.vsix`** installs into **VS Code**, **Cursor**, or **Antigravity** via each product’s CLI when it is on your `PATH`.
+
 After `npm install deukpack`, from your project root:
+
+**VS Code** (if `code` is on your `PATH`):
 
 ```bash
 code --install-extension "$(npm root)/deukpack/bundled/deuk-idl.vsix"

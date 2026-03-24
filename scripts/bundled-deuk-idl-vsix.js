@@ -77,9 +77,6 @@ function printManualVsixHelp(vsixPath) {
             '  code --install-extension "' +
             vsixPath +
             '"\n' +
-            '  cursor --install-extension "' +
-            vsixPath +
-            '"\n' +
             '  antigravity --install-extension "' +
             vsixPath +
             '"\n' +
@@ -146,7 +143,7 @@ async function applyBundledVsixInstall(manifestBaseOut, options = {}) {
         );
     }
 
-    console.log('[deukpack] Installing bundled Deuk IDL VSIX (code / cursor / antigravity)…');
+    console.log('[deukpack] Installing bundled Deuk IDL VSIX (VS Code / Cursor / Antigravity CLIs)…');
     const deukpackDir = path.join(manifestBaseOut, '.deukpack');
     const r = tryCliInstallVsix(vsixPath);
     writeVsixState(deukpackDir, {

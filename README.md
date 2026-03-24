@@ -63,7 +63,7 @@ npx deukpack run         # default: ./deukpack.pipeline.json
 
 If you want an explicit `package.json` before any dependency (optional): `npm init -y` then `npm install deukpack`. Otherwise `npm install deukpack` alone is enough — current npm creates or updates `package.json` when needed.
 
-**`npx deukpack init`** writes **`deukpack.pipeline.json`**, runs **bootstrap** so **`.deukpack/workspace.json`** is created or refreshed (Unity/project discovery; default **`installKind`** is **`package`** unless you pass **`--kind src`** with **`--engine-root`**), then **attempts** to install the bundled editor VSIX last (**`bundled/deuk-idl.vsix`** via **`code`**, **`cursor`**, **`antigravity`** on `PATH`; no prompt—use **`--skip-vsix`** to skip). VSIX path and manual install: [`bundled/README.md`](bundled/README.md).
+**`npx deukpack init`** writes **`deukpack.pipeline.json`**, runs **bootstrap** so **`.deukpack/workspace.json`** is created or refreshed (Unity/project discovery; default **`installKind`** is **`package`** unless you pass **`--kind src`** with **`--engine-root`**), then **attempts** to install the bundled editor VSIX last (**`bundled/deuk-idl.vsix`** for **VS Code** (`code`), **Cursor** (`cursor`), or **Antigravity** (`antigravity`) on `PATH`; no prompt—use **`--skip-vsix`** to skip). VSIX path and manual install: [`bundled/README.md`](bundled/README.md).
 
 From a GitHub Release tarball:
 
