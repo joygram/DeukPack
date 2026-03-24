@@ -22,6 +22,8 @@ describe('parseFileWithIncludes — forward-ref placeholder enums', () => {
     const ast = await engine.parseFileWithIncludes(stub, { includePaths: [dir] });
     const ph = ast.enums.filter((e) => e.forwardRefPlaceholder === true && e.name === 'placeholder_e');
     expect(ph.length).toBe(1);
-    expect(norm(ph[0]!.sourceFile!)).toBe(norm(real));
+    const expectedAbs = await fs.realpath(real);
+    const actualAbs = await fs.realpath(ph[0]!.sourceFile!);
+    expect(norm(expectedAbs)).toBe(norm(actualAbs));
   });
 });
