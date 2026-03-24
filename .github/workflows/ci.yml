@@ -50,7 +50,7 @@ jobs:
           ctest --test-dir native/cpp/build --output-on-failure -C Release
 
       - name: Example IDL codegen (C#/C++/JS smoke)
-        run: node scripts/build_deukpack.js examples/sample_idl/sample.thrift examples/out --csharp --cpp --js --protocol tbinary
+        run: node scripts/build_deukpack.js examples/sample_idl/sample.thrift examples/out --csharp --cpp --js --protocol tbinary --allow-multi-namespace
 
   # main/master 푸시 시에만: npm pack 실제 생성 후 Artifact 업로드 → Releases 외에 "최신 빌드" 다운로드용
   build-artifact:
