@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,7 @@
     "build:cs": "cd DeukPack.Protocol && dotnet build DeukPack.Protocol.csproj -c Release",
     "test": "jest",
     "test:cpp": "cmake -S native/cpp -B native/cpp/build && cmake --build native/cpp/build && ctest --test-dir native/cpp/build --output-on-failure",
-    "dev": "tsc --watch",
+    "dev": "node ./node_modules/typescript/lib/tsc.js --watch",
     "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",
     "release-notice:apply": "node scripts/apply-release-notice.js",
     "release:check": "node scripts/release-check.js && npm run build && npm run bundle:vscode && npm test && npm pack --dry-run"
@@ -39,24 +39,24 @@
   "author": "deukpack-dev-team",
   "license": "Apache-2.0",
   "dependencies": {
-    "nan": "^2.17.0",
-    "node-addon-api": "^7.0.0",
-    "yaml": "^2.8.2"
+    "nan": "^2.26.2",
+    "node-addon-api": "^8.6.0",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@types/jest": "^29.0.0",
-    "@types/node": "^20.0.0",
-    "@vscode/vsce": "^3.2.2",
-    "cmake-js": "^7.0.0",
-    "jest": "^29.0.0",
-    "node-gyp": "^10.0.0",
-    "protobufjs": "^7.5.4",
-    "rimraf": "^5.0.0",
-    "ts-jest": "^29.0.0",
-    "typescript": "^5.0.0"
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.0",
+    "@vscode/vsce": "^3.7.1",
+    "cmake-js": "^8.0.0",
+    "jest": "^30.3.0",
+    "node-gyp": "^12.2.0",
+    "protobufjs": "^8.0.0",
+    "rimraf": "^6.0.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "repository": {
     "type": "git",
