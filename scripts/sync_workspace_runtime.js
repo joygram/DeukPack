@@ -83,7 +83,7 @@ Reads ${MANIFEST_REL} upward from cwd. Runs only when installKind is "src" (not 
     const ik = manifest.installKind;
     if (ik !== 'src') {
         console.log(
-            '[INFO] installKind is not "src" (package or unset legacy) — skip sync from engine checkout.'
+            '[INFO] installKind is not "src" — runtime copy skipped (package install).'
         );
         return;
     }
