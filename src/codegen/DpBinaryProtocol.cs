@@ -1,6 +1,4 @@
 // DpBinaryProtocol.cs - Extracted from DpProtocolLibrary.cs (DpBinaryProtocol class)
-#nullable enable
-
 using System;
 using System.IO;
 using System.Text;
@@ -36,7 +34,9 @@ namespace DeukPack.Protocol {
         private readonly byte[] _smallBuffer = new byte[SMALL_BUFFER_SIZE];
 
         private readonly bool _directWrite;
+#pragma warning disable CS0414 // assigned but never used (reserved for potential stream disposal)
         private readonly bool _ownsStream;
+#pragma warning restore CS0414
 
         /// <summary>
         /// 기본 생성자: 내부 MemoryStream 자동 생성 (Write 후 ToBytes()로 결과 획득)
@@ -171,7 +171,7 @@ namespace DeukPack.Protocol {
         {
             if (_directWrite) { _stream.WriteByte(b); return; }
             EnsureWriteBuffer(1);
-            _writeBuffer[_writePosition++] = b;
+            _writeBuffer![_writePosition++] = b;
         }
 
         public void WriteI16(short i16)
@@ -285,7 +285,7 @@ namespace DeukPack.Protocol {
                 else
                 {
                     EnsureWriteBuffer(byteCount);
-                    Encoding.UTF8.GetBytes(s, 0, s.Length, _writeBuffer, _writePosition);
+                    Encoding.UTF8.GetBytes(s, 0, s.Length, _writeBuffer!, _writePosition);
                     _writePosition += byteCount;
                 }
             }
@@ -309,7 +309,7 @@ namespace DeukPack.Protocol {
                 else
                 {
                     EnsureWriteBuffer(b.Length);
-                    Array.Copy(b, 0, _writeBuffer, _writePosition, b.Length);
+                    Array.Copy(b, 0, _writeBuffer!, _writePosition, b.Length);
                     _writePosition += b.Length;
                 }
             }
@@ -317,61 +317,64 @@ namespace DeukPack.Protocol {
 
         private void WriteI16Optimized(short value)
         {
+            var wb = _writeBuffer!;
             if (_bigEndian)
             {
-                _writeBuffer[_writePosition] = (byte)((value >> 8) & 0xFF);
-                _writeBuffer[_writePosition + 1] = (byte)(value & 0xFF);
+                wb[_writePosition] = (byte)((value >> 8) & 0xFF);
+                wb[_writePosition + 1] = (byte)(value & 0xFF);
             }
             else
             {
-                _writeBuffer[_writePosition] = (byte)(value & 0xFF);
-                _writeBuffer[_writePosition + 1] = (byte)((value >> 8) & 0xFF);
+                wb[_writePosition] = (byte)(value & 0xFF);
+                wb[_writePosition + 1] = (byte)((value >> 8) & 0xFF);
             }
             _writePosition += 2;
         }
 
         private void WriteI32Optimized(int value)
         {
+            var wb = _writeBuffer!;
             if (_bigEndian)
             {
-                _writeBuffer[_writePosition] = (byte)((value >> 24) & 0xFF);
-                _writeBuffer[_writePosition + 1] = (byte)((value >> 16) & 0xFF);
-                _writeBuffer[_writePosition + 2] = (byte)((value >> 8) & 0xFF);
-                _writeBuffer[_writePosition + 3] = (byte)(value & 0xFF);
+                wb[_writePosition] = (byte)((value >> 24) & 0xFF);
+                wb[_writePosition + 1] = (byte)((value >> 16) & 0xFF);
+                wb[_writePosition + 2] = (byte)((value >> 8) & 0xFF);
+                wb[_writePosition + 3] = (byte)(value & 0xFF);
             }
             else
             {
-                _writeBuffer[_writePosition] = (byte)(value & 0xFF);
-                _writeBuffer[_writePosition + 1] = (byte)((value >> 8) & 0xFF);
-                _writeBuffer[_writePosition + 2] = (byte)((value >> 16) & 0xFF);
-                _writeBuffer[_writePosition + 3] = (byte)((value >> 24) & 0xFF);
+                wb[_writePosition] = (byte)(value & 0xFF);
+                wb[_writePosition + 1] = (byte)((value >> 8) & 0xFF);
+                wb[_writePosition + 2] = (byte)((value >> 16) & 0xFF);
+                wb[_writePosition + 3] = (byte)((value >> 24) & 0xFF);
             }
             _writePosition += 4;
         }
 
         private void WriteI64Optimized(long value)
         {
+            var wb = _writeBuffer!;
             if (_bigEndian)
             {
-                _writeBuffer[_writePosition] = (byte)((value >> 56) & 0xFF);
-                _writeBuffer[_writePosition + 1] = (byte)((value >> 48) & 0xFF);
-                _writeBuffer[_writePosition + 2] = (byte)((value >> 40) & 0xFF);
-                _writeBuffer[_writePosition + 3] = (byte)((value >> 32) & 0xFF);
-                _writeBuffer[_writePosition + 4] = (byte)((value >> 24) & 0xFF);
-                _writeBuffer[_writePosition + 5] = (byte)((value >> 16) & 0xFF);
-                _writeBuffer[_writePosition + 6] = (byte)((value >> 8) & 0xFF);
-                _writeBuffer[_writePosition + 7] = (byte)(value & 0xFF);
+                wb[_writePosition] = (byte)((value >> 56) & 0xFF);
+                wb[_writePosition + 1] = (byte)((value >> 48) & 0xFF);
+                wb[_writePosition + 2] = (byte)((value >> 40) & 0xFF);
+                wb[_writePosition + 3] = (byte)((value >> 32) & 0xFF);
+                wb[_writePosition + 4] = (byte)((value >> 24) & 0xFF);
+                wb[_writePosition + 5] = (byte)((value >> 16) & 0xFF);
+                wb[_writePosition + 6] = (byte)((value >> 8) & 0xFF);
+                wb[_writePosition + 7] = (byte)(value & 0xFF);
             }
             else
             {
-                _writeBuffer[_writePosition] = (byte)(value & 0xFF);
-                _writeBuffer[_writePosition + 1] = (byte)((value >> 8) & 0xFF);
-                _writeBuffer[_writePosition + 2] = (byte)((value >> 16) & 0xFF);
-                _writeBuffer[_writePosition + 3] = (byte)((value >> 24) & 0xFF);
-                _writeBuffer[_writePosition + 4] = (byte)((value >> 32) & 0xFF);
-                _writeBuffer[_writePosition + 5] = (byte)((value >> 40) & 0xFF);
-                _writeBuffer[_writePosition + 6] = (byte)((value >> 48) & 0xFF);
-                _writeBuffer[_writePosition + 7] = (byte)((value >> 56) & 0xFF);
+                wb[_writePosition] = (byte)(value & 0xFF);
+                wb[_writePosition + 1] = (byte)((value >> 8) & 0xFF);
+                wb[_writePosition + 2] = (byte)((value >> 16) & 0xFF);
+                wb[_writePosition + 3] = (byte)((value >> 24) & 0xFF);
+                wb[_writePosition + 4] = (byte)((value >> 32) & 0xFF);
+                wb[_writePosition + 5] = (byte)((value >> 40) & 0xFF);
+                wb[_writePosition + 6] = (byte)((value >> 48) & 0xFF);
+                wb[_writePosition + 7] = (byte)((value >> 56) & 0xFF);
             }
             _writePosition += 8;
         }
@@ -454,25 +457,27 @@ namespace DeukPack.Protocol {
                 return;
 
             int remaining = _readLength - _readPosition;
+            var readBuf = _readBuffer ?? throw new ObjectDisposedException(nameof(DpBinaryProtocol));
 
-            if (bytesNeeded > _readBuffer.Length)
+            if (bytesNeeded > readBuf.Length)
             {
                 var newBuf = _bufferPool.Rent(bytesNeeded + READ_BUFFER_SIZE);
                 if (remaining > 0)
-                    Array.Copy(_readBuffer, _readPosition, newBuf, 0, remaining);
-                _bufferPool.Return(_readBuffer);
+                    Array.Copy(readBuf, _readPosition, newBuf, 0, remaining);
+                _bufferPool.Return(readBuf);
                 _readBuffer = newBuf;
+                readBuf = newBuf;
             }
             else if (remaining > 0)
             {
-                Array.Copy(_readBuffer, _readPosition, _readBuffer, 0, remaining);
+                Array.Copy(readBuf, _readPosition, readBuf, 0, remaining);
             }
             _readPosition = 0;
             _readLength = remaining;
 
             while (_readLength < bytesNeeded)
             {
-                int bytesRead = _stream.Read(_readBuffer, _readLength, _readBuffer.Length - _readLength);
+                int bytesRead = _stream.Read(readBuf, _readLength, readBuf.Length - _readLength);
                 if (bytesRead == 0)
                     throw new EndOfStreamException();
                 _readLength += bytesRead;
@@ -482,7 +487,7 @@ namespace DeukPack.Protocol {
         public byte ReadByte()
         {
             EnsureReadBuffer(1);
-            return _readBuffer[_readPosition++];
+            return _readBuffer![_readPosition++];
         }
 
         public short ReadI16()
@@ -519,7 +524,7 @@ namespace DeukPack.Protocol {
                 throw new InvalidOperationException($"Invalid string length: {length}");
 
             EnsureReadBuffer(length);
-            string result = Encoding.UTF8.GetString(_readBuffer, _readPosition, length);
+            string result = Encoding.UTF8.GetString(_readBuffer!, _readPosition, length);
             _readPosition += length;
             return result;
         }
@@ -534,7 +539,7 @@ namespace DeukPack.Protocol {
 
             EnsureReadBuffer(length);
             byte[] result = new byte[length];
-            Array.Copy(_readBuffer, _readPosition, result, 0, length);
+            Array.Copy(_readBuffer!, _readPosition, result, 0, length);
             _readPosition += length;
             return result;
         }
@@ -542,16 +547,18 @@ namespace DeukPack.Protocol {
         // 엔디언: _bigEndian에 따라 BE / LE(네트워크 바이트 순서) 고정
         private short ReadI16Optimized()
         {
+            var rb = _readBuffer!;
             short value = _bigEndian
-                ? (short)((_readBuffer[_readPosition] << 8) | _readBuffer[_readPosition + 1])
-                : (short)(_readBuffer[_readPosition] | (_readBuffer[_readPosition + 1] << 8));
+                ? (short)((rb[_readPosition] << 8) | rb[_readPosition + 1])
+                : (short)(rb[_readPosition] | (rb[_readPosition + 1] << 8));
             _readPosition += 2;
             return value;
         }
 
         private int ReadI32Optimized()
         {
-            int b0 = _readBuffer[_readPosition], b1 = _readBuffer[_readPosition + 1], b2 = _readBuffer[_readPosition + 2], b3 = _readBuffer[_readPosition + 3];
+            var rb = _readBuffer!;
+            int b0 = rb[_readPosition], b1 = rb[_readPosition + 1], b2 = rb[_readPosition + 2], b3 = rb[_readPosition + 3];
             _readPosition += 4;
             return _bigEndian
                 ? (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
@@ -560,8 +567,9 @@ namespace DeukPack.Protocol {
 
         private long ReadI64Optimized()
         {
-            long b0 = _readBuffer[_readPosition], b1 = _readBuffer[_readPosition + 1], b2 = _readBuffer[_readPosition + 2], b3 = _readBuffer[_readPosition + 3],
-                 b4 = _readBuffer[_readPosition + 4], b5 = _readBuffer[_readPosition + 5], b6 = _readBuffer[_readPosition + 6], b7 = _readBuffer[_readPosition + 7];
+            var rb = _readBuffer!;
+            long b0 = rb[_readPosition], b1 = rb[_readPosition + 1], b2 = rb[_readPosition + 2], b3 = rb[_readPosition + 3],
+                 b4 = rb[_readPosition + 4], b5 = rb[_readPosition + 5], b6 = rb[_readPosition + 6], b7 = rb[_readPosition + 7];
             _readPosition += 8;
             return _bigEndian
                 ? ((long)b0 << 56) | ((long)b1 << 48) | ((long)b2 << 40) | ((long)b3 << 32) | ((long)b4 << 24) | ((long)b5 << 16) | ((long)b6 << 8) | b7

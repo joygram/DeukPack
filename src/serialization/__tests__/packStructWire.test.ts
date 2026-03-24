@@ -5,7 +5,7 @@ import { deserialize, serialize } from '../../index';
 describe('packStructWire vs WireSerializer pack', () => {
   const inner: EmbeddedPackStructSchema = {
     name: 'Inner',
-    type: 'Struct',
+    type: 'struct',
     fields: {
       1: { id: 1, name: 'x', type: 'int32', typeName: 'int32', required: true },
       2: { id: 2, name: 'y', type: 'int32', typeName: 'int32', required: true },
@@ -13,7 +13,7 @@ describe('packStructWire vs WireSerializer pack', () => {
   };
   const root: EmbeddedPackStructSchema = {
     name: 'Root',
-    type: 'Struct',
+    type: 'struct',
     fields: {
       1: { id: 1, name: 'id', type: 'int32', typeName: 'int32', required: true },
       2: { id: 2, name: 'name', type: 'string', typeName: 'string', required: false },

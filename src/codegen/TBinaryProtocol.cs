@@ -2,7 +2,6 @@
  * Thrift 호환 전용 별도 구현. Apache Thrift TBinaryProtocol과 동일한 API·와이어 포맷.
  * DpProtocolLibrary 모듈화.
  */
-
 using System;
 using System.IO;
 using System.Text;
@@ -98,7 +97,7 @@ namespace DeukPack.Protocol
 
         public void WriteDouble(double d) { WriteI64(BitConverter.DoubleToInt64Bits(d)); }
 
-        public void WriteString(string s)
+        public void WriteString(string? s)
         {
             if (s == null) { WriteI32(0); return; }
             byte[] bytes = Encoding.UTF8.GetBytes(s);
@@ -106,7 +105,7 @@ namespace DeukPack.Protocol
             if (bytes.Length > 0) _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public void WriteBinary(byte[] b)
+        public void WriteBinary(byte[]? b)
         {
             if (b == null) { WriteI32(0); return; }
             WriteI32(b.Length);

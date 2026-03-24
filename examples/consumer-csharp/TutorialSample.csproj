@@ -1,14 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>10.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>TutorialSample</RootNamespace>
+    <NoWarn>$(NoWarn);NETSDK1138</NoWarn>
   </PropertyGroup>
+
+  <!-- Modern TFMs: Exe + full nullable -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- netstandard2.0: Library + annotations only -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <OutputType>Library</OutputType>
+    <Nullable>annotations</Nullable>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\DeukPack.Protocol\DeukPack.Protocol.csproj" />
     <Compile Include="..\out\csharp\**\*.cs" />
     <Compile Remove="..\out\csharp\*.proto.cs" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+  </ItemGroup>
+
 </Project>

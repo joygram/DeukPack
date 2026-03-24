@@ -3,7 +3,6 @@
  * New code should use Dp* types (DpProtocol, DpWireType, DpRecord, DpColumn, DpSchema, etc.).
  * See docs/DEUKPACK_CORE_VS_APACHE_AND_OTHERS.md §5.
  */
-
 using System;
 
 namespace DeukPack.Protocol
@@ -77,7 +76,7 @@ namespace DeukPack.Protocol
     [Obsolete("Use DpSchemaType")]
     public enum ThriftType
     {
-        Bool, Byte, I16, I32, I64, Double, String, Binary, Struct, Enum, List, Set, Map
+        Bool, Byte, Int16, Int32, Int64, Double, String, Binary, Struct, Enum, List, Set, Map
     }
 
     [Obsolete("Use DpDefinitionKind")]
@@ -91,16 +90,16 @@ namespace DeukPack.Protocol
     {
         public int Id { get; set; }
         public int Order { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public ThriftType Type { get; set; }
-        public string TypeName { get; set; }
+        public string? TypeName { get; set; }
         public bool Required { get; set; }
-        public object DefaultValue { get; set; }
-        public string DocComment { get; set; }
-        public System.Collections.Generic.Dictionary<string, string> Annotations { get; set; }
+        public object? DefaultValue { get; set; }
+        public string? DocComment { get; set; }
+        public System.Collections.Generic.Dictionary<string, string>? Annotations { get; set; }
         public DpFieldSchema ToDpFieldSchema() => new DpFieldSchema
         {
-            Id = Id, Order = Order, Name = Name, Type = (DpSchemaType)(int)Type, TypeName = TypeName,
+            Id = Id, Order = Order, Name = Name ?? "", Type = (DpSchemaType)(int)Type, TypeName = TypeName ?? "",
             Required = Required, DefaultValue = DefaultValue, DocComment = DocComment, Annotations = Annotations
         };
     }
@@ -108,11 +107,11 @@ namespace DeukPack.Protocol
     [Obsolete("Use DpSchema")]
     public class ThriftSchema
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public ThriftSchemaType Type { get; set; }
-        public System.Collections.Generic.Dictionary<int, ThriftFieldSchema> Fields { get; set; }
-        public string DocComment { get; set; }
-        public System.Collections.Generic.Dictionary<string, string> Annotations { get; set; }
+        public System.Collections.Generic.Dictionary<int, ThriftFieldSchema>? Fields { get; set; }
+        public string? DocComment { get; set; }
+        public System.Collections.Generic.Dictionary<string, string>? Annotations { get; set; }
         public DpSchema ToDpSchema()
         {
             var fs = new System.Collections.Generic.Dictionary<int, DpFieldSchema>();
@@ -121,7 +120,7 @@ namespace DeukPack.Protocol
                     fs[kv.Key] = kv.Value.ToDpFieldSchema();
             return new DpSchema
             {
-                Name = Name,
+                Name = Name ?? "",
                 Type = (DpDefinitionKind)(int)Type,
                 Fields = fs,
                 DocComment = DocComment,

@@ -254,7 +254,7 @@ export interface DeukPackFullFieldSchema {
 
 export interface DeukPackFullStructSchema {
   name: string;
-  type: 'Struct';
+  type: 'struct';
   fields: DeukPackFullFieldSchema[] | { [id: string]: DeukPackFullFieldSchema };
   docComment?: string;
   annotations?: { [key: string]: string };
@@ -265,7 +265,7 @@ export interface DeukPackFullStructSchema {
 
 export interface DeukPackFullEnumSchema {
   name: string;
-  type: 'Enum';
+  type: 'enum';
   values: { [key: string]: number };
   valueComments?: { [key: string]: string };
   docComment?: string;

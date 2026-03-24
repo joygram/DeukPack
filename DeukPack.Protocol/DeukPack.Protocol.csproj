@@ -1,48 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-
     <RootNamespace>DeukPack.Protocol</RootNamespace>
-
     <AssemblyName>DeukPack.Protocol</AssemblyName>
-
     <TargetFrameworks>netstandard2.0;net6.0;net8.0;net9.0</TargetFrameworks>
-
     <LangVersion>9.0</LangVersion>
-
-    <Nullable>enable</Nullable>
-
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-
     <Description>DeukPack protocol library (DpProtocol, IDeukPack). T*/Thrift* compat for legacy code. Excel protocol in separate DeukPack.ExcelProtocol DLL.</Description>
-
   </PropertyGroup>
 
+  <!-- Modern TFMs: full nullable support -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-
-  <!-- Unity / Excel add-in / netstandard2.0: shared sources use #nullable enable — suppress nullable noise for this TFM only (client pipeline). -->
-
+  <!-- netstandard2.0: Unity / Excel add-in 호환. nullable 주석만 허용 (런타임 체크 없음) -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-
-    <Nullable>disable</Nullable>
-
-    <NoWarn>$(NoWarn);CS0414;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8618;CS8619;CS8620;CS8621;CS8622;CS8625;CS8629;CS8764;CS8765;CS8766;CS8767</NoWarn>
-
+    <Nullable>annotations</Nullable>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_0</DefineConstants>
   </PropertyGroup>
 
-
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-
-    <PackageReference Include="System.Buffers" Version="4.5.1" />
-
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-
+  <!-- SDK 기본 Compile과 중복 방지: netstandard2.0에서만 polyfill 포함 -->
+  <ItemGroup>
+    <Compile Remove="NullableAnnotations.netstandard20.cs" />
   </ItemGroup>
 
-
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <Compile Include="NullableAnnotations.netstandard20.cs" />
+  </ItemGroup>
 
   <Import Project="DeukPack.Protocol.SharedCompile.props" />
 
 </Project>
-
