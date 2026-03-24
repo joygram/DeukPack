@@ -1,4 +1,5 @@
 // DpBinaryProtocol.cs - Extracted from DpProtocolLibrary.cs (DpBinaryProtocol class)
+#nullable enable
 
 using System;
 using System.IO;
@@ -19,12 +20,12 @@ namespace DeukPack.Protocol {
 
         // FastPacket-level optimizations
         private static readonly ArrayPool<byte> _bufferPool = ArrayPool<byte>.Shared;
-        private byte[] _writeBuffer;
+        private byte[]? _writeBuffer;
         private int _writePosition;
         private int _writeCapacity;
 
         // Read buffer pooling
-        private byte[] _readBuffer;
+        private byte[]? _readBuffer;
         private int _readPosition;
         private int _readLength;
         private const int READ_BUFFER_SIZE = 4096;
@@ -35,6 +36,23 @@ namespace DeukPack.Protocol {
         private readonly byte[] _smallBuffer = new byte[SMALL_BUFFER_SIZE];
 
         private readonly bool _directWrite;
+        private readonly bool _ownsStream;
+
+        /// <summary>
+        /// 기본 생성자: 내부 MemoryStream 자동 생성 (Write 후 ToBytes()로 결과 획득)
+        /// </summary>
+        public DpBinaryProtocol() : this(new MemoryStream())
+        {
+            _ownsStream = true;
+        }
+
+        /// <summary>
+        /// byte[] 로부터 Read용 프로토콜 생성
+        /// </summary>
+        public DpBinaryProtocol(byte[] data) : this(new MemoryStream(data))
+        {
+            _ownsStream = true;
+        }
 
         /// <param name="bigEndian">true = Binary(Apache 호환), false = LEBinary</param>
         public DpBinaryProtocol(Stream stream, bool bigEndian = true, bool strictRead = true, bool strictWrite = true, int initialBufferSize = 4096)
@@ -43,6 +61,7 @@ namespace DeukPack.Protocol {
             _bigEndian = bigEndian;
             _strictRead = strictRead;
             _strictWrite = strictWrite;
+            _ownsStream = false;
 
             _directWrite = (stream is System.IO.MemoryStream);
 
@@ -56,6 +75,16 @@ namespace DeukPack.Protocol {
             _readBuffer = _bufferPool.Rent(READ_BUFFER_SIZE);
             _readPosition = 0;
             _readLength = 0;
+        }
+
+        /// <summary>
+        /// Write한 결과를 byte[]로 반환 (내부 MemoryStream 사용 시)
+        /// </summary>
+        public byte[] ToBytes()
+        {
+            if (_stream is MemoryStream ms)
+                return ms.ToArray();
+            throw new InvalidOperationException("ToBytes() is only available when using internal MemoryStream.");
         }
 
         private void EnsureWriteBuffer(int additionalBytes)
@@ -235,7 +264,7 @@ namespace DeukPack.Protocol {
             WriteDoubleOptimized(d);
         }
 
-        public void WriteString(string s)
+        public void WriteString(string? s)
         {
             if (s == null)
             {
@@ -262,7 +291,7 @@ namespace DeukPack.Protocol {
             }
         }
 
-        public void WriteBinary(byte[] b)
+        public void WriteBinary(byte[]? b)
         {
             if (b == null)
             {

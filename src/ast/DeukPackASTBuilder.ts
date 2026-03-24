@@ -3,11 +3,14 @@
  * Builds Abstract Syntax Tree from tokens
  */
 
-import { DeukPackAST, DeukPackStruct, DeukPackEnum, DeukPackService, DeukPackMethod, DeukPackField, DeukPackNamespace, DeukPackToken, TokenType, DeukPackType, DeukPackMapType } from '../types/DeukPackTypes';
+import { parseDeukNumericLiteral } from '../core/parseDeukNumericLiteral';
+import { DeukPackAST, DeukPackStruct, DeukPackEnum, DeukPackService, DeukPackMethod, DeukPackField, DeukPackNamespace, DeukPackToken, TokenType, DeukPackType, DeukPackMapType, DeukPackException } from '../types/DeukPackTypes';
 
 export interface DeukPackASTBuilderOptions {
   /** When true, parse .deuk field syntax: id> [Attr]… type name [= default] and single-identifier namespace */
   deuk?: boolean;
+  /** When false (default), throw if more than one namespace is defined in a single file. */
+  allowMultiNamespace?: boolean;
 }
 
 export class DeukPackASTBuilder {
@@ -17,6 +20,27 @@ export class DeukPackASTBuilder {
   /** Collected doc comments for the next declaration (struct/enum/field etc.) */
   private leadingCommentBuffer: string = '';
   private deukMode: boolean = false;
+
+  /** Lowercase names after `[` that are neutral IDL tags (not C# passthrough). See DEUKPACK_IDL_DECLARATION_ATTRIBUTES_DESIGN.md */
+  private static readonly NEUTRAL_DEUK_BRACKET_NAMES = new Set([
+    'table',
+    'key',
+    'unique',
+    'index',
+    'fk',
+    'schema',
+    'deprecated',
+    'doc',
+    'sensitive',
+    'redact',
+    'storage'
+  ]);
+
+  /**
+   * 공식 IDL 스펙에 포함하지 않는 `[]` 이름: 토큰만 소비하고 AST(중립 태그·C# 어트리뷰트)에는 넣지 않음.
+   * 레거시/실수 흡수용. 선언 종류(record/entity/message)별 허용 태그 해석은 파서와 별도(코드젠·정책).
+   */
+  private static readonly NON_OFFICIAL_BRACKET_SKIP_FIRST = new Set(['column', 'maxlength']);
 
   /**
    * Collect consecutive LINE_COMMENT/BLOCK_COMMENT tokens and return combined text (trimmed). Consumes tokens.
@@ -63,7 +87,12 @@ export class DeukPackASTBuilder {
     this.advance();
     const ann: { [key: string]: string } = {};
     while (!this.check(TokenType.RIGHT_PAREN) && !this.isAtEnd()) {
-      const key = this.expect(TokenType.IDENTIFIER).value;
+      const keyTok = this.peek();
+      const key = (keyTok.type === TokenType.IDENTIFIER || keyTok.type === TokenType.TABLE ||
+        keyTok.type === TokenType.RECORD || keyTok.type === TokenType.ENTITY ||
+        keyTok.type === TokenType.REQUIRED || keyTok.type === TokenType.OPTIONAL)
+        ? this.advance().value
+        : this.expect(TokenType.IDENTIFIER).value;
       let val = 'true';
       if (this.check(TokenType.EQUALS)) {
         this.advance();
@@ -91,6 +120,7 @@ export class DeukPackASTBuilder {
     this.currentFile = fileName;
     this.leadingCommentBuffer = '';
     this.deukMode = options?.deuk ?? false;
+    (this as any).allowMultiNamespace = options?.allowMultiNamespace ?? false;
 
     const ast: DeukPackAST = {
       namespaces: [],
@@ -107,25 +137,41 @@ export class DeukPackASTBuilder {
       const token = this.peek();
 
       switch (token.type) {
-        case TokenType.NAMESPACE:
+        case TokenType.NAMESPACE: {
+          if (!(this as any).allowMultiNamespace && ast.namespaces.length > 0) {
+            throw new DeukPackException(`Multiple namespaces found in ${this.currentFile}. Use --allow-multi-namespace to permit this.`, this.peek()?.line, this.peek()?.column, this.currentFile);
+          }
           this.leadingCommentBuffer = '';
           const namespace = this.parseNamespace();
           namespace.sourceFile = this.currentFile;
           ast.namespaces.push(namespace);
           break;
+        }
         case TokenType.RECORD: {
           const doc = this.leadingCommentBuffer;
           this.leadingCommentBuffer = '';
-          const struct = this.parseStruct(doc);
+          const struct = this.parseStruct(doc, 'record');
+          struct.sourceFile = this.currentFile;
+          ast.structs.push(struct);
+          break;
+        }
+        case TokenType.ENTITY: {
+          const doc = this.leadingCommentBuffer;
+          this.leadingCommentBuffer = '';
+          const struct = this.parseStruct(doc, 'entity');
           struct.sourceFile = this.currentFile;
           ast.structs.push(struct);
           break;
         }
         case TokenType.IDENTIFIER:
-          if (token.value === 'message' && this.tokens[this.position + 1]?.type === TokenType.LEFT_BRACKET) {
+          if (token.value === 'message') {
             const doc = this.leadingCommentBuffer;
             this.leadingCommentBuffer = '';
-            const struct = this.parseMessage(doc);
+            const next = this.tokens[this.position + 1];
+            const struct =
+              next?.type === TokenType.LEFT_BRACKET
+                ? this.parseMessage(doc)
+                : this.parseMessageLegacy(doc);
             struct.sourceFile = this.currentFile;
             ast.structs.push(struct);
           } else {
@@ -197,7 +243,11 @@ export class DeukPackASTBuilder {
     this.advance(); // consume 'namespace'
 
     if (this.deukMode) {
-      const name = this.expect(TokenType.IDENTIFIER).value;
+      let name = this.expect(TokenType.IDENTIFIER).value;
+      while (this.check(TokenType.DOT)) {
+        this.advance();
+        name += '.' + this.expect(TokenType.IDENTIFIER).value;
+      }
       return { language: '*', name };
     }
 
@@ -215,8 +265,8 @@ export class DeukPackASTBuilder {
   /**
    * Parse struct declaration
    */
-  private parseStruct(docComment?: string): DeukPackStruct {
-    this.advance(); // consume 'struct' or 'record'
+  private parseStruct(docComment?: string, declarationKind: 'record' | 'entity' = 'record'): DeukPackStruct {
+    this.advance(); // consume 'struct' | 'record' | 'entity'
 
     const name = this.expect(TokenType.IDENTIFIER).value;
 
@@ -225,6 +275,14 @@ export class DeukPackASTBuilder {
     if (this.check(TokenType.IDENTIFIER) && this.peek().value === 'extends') {
       this.advance(); // consume 'extends'
       extendsName = this.expect(TokenType.IDENTIFIER).value;
+    }
+
+    const structBracketCsharp: string[] = [];
+    const structBracketNeutral: string[] = [];
+    while (this.deukMode && this.check(TokenType.LEFT_BRACKET) && this.peek().value === '[') {
+      const pair = this.parseOneDeukInlineBracketPair();
+      structBracketCsharp.push(...pair.csharp);
+      structBracketNeutral.push(...pair.neutral);
     }
 
     const annotations = this.tryParseAnnotations();
@@ -250,12 +308,17 @@ export class DeukPackASTBuilder {
 
     this.expect(TokenType.RIGHT_BRACE);
 
-    const result: DeukPackStruct = { name, fields };
+    const result: DeukPackStruct = { name, fields, declarationKind };
     if (extendsName) result.extends = extendsName;
+    if (structBracketNeutral.length) result.deukBracketAttributes = structBracketNeutral;
     if (docComment) {
       const parsed = this.parseDocCommentAndCSharpAttributes(docComment);
       if (parsed.docComment) result.docComment = parsed.docComment;
-      if (parsed.csharpAttributes?.length) result.csharpAttributes = parsed.csharpAttributes;
+      if (structBracketCsharp.length || parsed.csharpAttributes?.length) {
+        result.csharpAttributes = [...structBracketCsharp, ...(parsed.csharpAttributes ?? [])];
+      }
+    } else if (structBracketCsharp.length) {
+      result.csharpAttributes = [...structBracketCsharp];
     }
     if (annotations) result.annotations = annotations;
     if (annotations && annotations['key']) {
@@ -280,6 +343,13 @@ export class DeukPackASTBuilder {
     const msgIdStr = this.expect(TokenType.NUMBER).value;
     this.expect(TokenType.RIGHT_BRACKET);
     const name = this.expect(TokenType.IDENTIFIER).value;
+    const msgBracketCsharp: string[] = [];
+    const msgBracketNeutral: string[] = [];
+    while (this.deukMode && this.check(TokenType.LEFT_BRACKET) && this.peek().value === '[') {
+      const pair = this.parseOneDeukInlineBracketPair();
+      msgBracketCsharp.push(...pair.csharp);
+      msgBracketNeutral.push(...pair.neutral);
+    }
     const annotations = this.tryParseAnnotations();
 
     while (this.check(TokenType.LINE_COMMENT) || this.check(TokenType.BLOCK_COMMENT)) {
@@ -309,11 +379,77 @@ export class DeukPackASTBuilder {
     };
     const fields = [syntheticMsgInfo, ...userFields];
 
-    const result: DeukPackStruct = { name, fields };
+    const result: DeukPackStruct = { name, fields, declarationKind: 'message' };
+    if (msgBracketNeutral.length) result.deukBracketAttributes = msgBracketNeutral;
     if (docComment) {
       const parsed = this.parseDocCommentAndCSharpAttributes(docComment);
       if (parsed.docComment) result.docComment = parsed.docComment;
-      if (parsed.csharpAttributes?.length) result.csharpAttributes = parsed.csharpAttributes;
+      if (msgBracketCsharp.length || parsed.csharpAttributes?.length) {
+        result.csharpAttributes = [...msgBracketCsharp, ...(parsed.csharpAttributes ?? [])];
+      }
+    } else if (msgBracketCsharp.length) {
+      result.csharpAttributes = [...msgBracketCsharp];
+    }
+    if (annotations) result.annotations = annotations;
+    result.annotations = result.annotations ?? {};
+    result.annotations['msgId'] = msgIdStr;
+    return result;
+  }
+
+  /**
+   * Thrift→.deuk 마이그레이션 레거시: message name { ... } (괄호 numeric ID 없음).
+   * MsgInfo 기본값·DefaultMessageId는 코드젠이 query_msg_id 등에서 보완하거나 0으로 둔다.
+   */
+  private parseMessageLegacy(docComment?: string): DeukPackStruct {
+    this.advance(); // consume 'message'
+    const msgIdStr = '0';
+    const name = this.expect(TokenType.IDENTIFIER).value;
+    const legBracketCsharp: string[] = [];
+    const legBracketNeutral: string[] = [];
+    while (this.deukMode && this.check(TokenType.LEFT_BRACKET) && this.peek().value === '[') {
+      const pair = this.parseOneDeukInlineBracketPair();
+      legBracketCsharp.push(...pair.csharp);
+      legBracketNeutral.push(...pair.neutral);
+    }
+    const annotations = this.tryParseAnnotations();
+
+    while (this.check(TokenType.LINE_COMMENT) || this.check(TokenType.BLOCK_COMMENT)) {
+      this.advance();
+    }
+
+    this.expect(TokenType.LEFT_BRACE);
+
+    const userFields: DeukPackField[] = [];
+    while (!this.check(TokenType.RIGHT_BRACE)) {
+      if (this.check(TokenType.LINE_COMMENT) || this.check(TokenType.BLOCK_COMMENT)) {
+        this.advance();
+        continue;
+      }
+      const field = this.parseField();
+      if (field) userFields.push(field);
+    }
+
+    this.expect(TokenType.RIGHT_BRACE);
+
+    const syntheticMsgInfo: DeukPackField = {
+      id: DeukPackASTBuilder.MSGINFO_FIELD_ID as any,
+      name: 'msgInfo',
+      type: 'MsgInfo' as any,
+      required: false,
+      annotations: { msgId: msgIdStr }
+    };
+    const fields = [syntheticMsgInfo, ...userFields];
+
+    const result: DeukPackStruct = { name, fields, declarationKind: 'message' };
+    if (legBracketNeutral.length) result.deukBracketAttributes = legBracketNeutral;
+    if (docComment) {
+      const parsed = this.parseDocCommentAndCSharpAttributes(docComment);
+      if (parsed.docComment) result.docComment = parsed.docComment;
+      if (legBracketCsharp.length || parsed.csharpAttributes?.length) {
+        result.csharpAttributes = [...legBracketCsharp, ...(parsed.csharpAttributes ?? [])];
+      }
+    } else if (legBracketCsharp.length) {
+      result.csharpAttributes = [...legBracketCsharp];
     }
     if (annotations) result.annotations = annotations;
     result.annotations = result.annotations ?? {};
@@ -369,9 +505,10 @@ export class DeukPackASTBuilder {
 
     const tableStruct: DeukPackStruct = {
       name: 'container',
+      declarationKind: 'table',
       fields: [
-        { id: 1, name: 'header', type: headerType, required: false, defaultValue: {} },
-        { id: 2, name: 'infos', type: infosType as unknown as DeukPackType, required: false, defaultValue: {} }
+        { id: 1, name: 'header', type: headerType, required: false },
+        { id: 2, name: 'infos', type: infosType as unknown as DeukPackType, required: false }
       ]
     };
     if (Object.keys(annotations).length) tableStruct.annotations = annotations;
@@ -393,9 +530,19 @@ export class DeukPackASTBuilder {
 
     if (this.deukMode) {
       this.expect(TokenType.RIGHT_BRACKET); // '>'
-      const inlineAttrs: string[] = [];
-      while (this.check(TokenType.LEFT_BRACKET)) {
-        inlineAttrs.push(this.parseOneDeukInlineAttribute());
+      const inlineCsharp: string[] = [];
+      const inlineNeutral: string[] = [];
+      while (this.check(TokenType.LEFT_BRACKET) && this.peek().value === '[') {
+        const pair = this.parseOneDeukInlineBracketPair();
+        inlineCsharp.push(...pair.csharp);
+        inlineNeutral.push(...pair.neutral);
+      }
+      let required = false;
+      if (this.check(TokenType.REQUIRED)) {
+        required = true;
+        this.advance();
+      } else if (this.check(TokenType.OPTIONAL)) {
+        this.advance();
       }
       const type = this.parseType();
       const name = this.expect(TokenType.IDENTIFIER).value;
@@ -406,17 +553,18 @@ export class DeukPackASTBuilder {
       }
       if (this.check(TokenType.COMMA)) this.advance();
       if (this.check(TokenType.SEMICOLON)) this.advance();
-      const result: DeukPackField = { id, name, type, required: false };
+      const result: DeukPackField = { id, name, type, required };
       if (defaultValue !== undefined) result.defaultValue = defaultValue;
       if (rawComment) {
         const parsed = this.parseDocCommentAndCSharpAttributes(rawComment);
         if (parsed.docComment) result.docComment = parsed.docComment;
         if (parsed.csharpAttributes?.length) result.csharpAttributes = parsed.csharpAttributes;
       }
-      if (inlineAttrs.length) {
+      if (inlineCsharp.length) {
         result.csharpAttributes = result.csharpAttributes || [];
-        result.csharpAttributes.push(...inlineAttrs);
+        result.csharpAttributes.push(...inlineCsharp);
       }
+      if (inlineNeutral.length) result.deukBracketAttributes = inlineNeutral;
       return result;
     }
 
@@ -449,17 +597,110 @@ export class DeukPackASTBuilder {
     return result;
   }
 
-  /** Parse one [Attr] or [Attr("v")] or [Attr(K=V)] in .deuk; return string for csharpAttributes */
-  private parseOneDeukInlineAttribute(): string {
+  /** Rebuild source fragment for bracket bodies; string literals need quotes for `[c#: Obsolete("x")]`. */
+  private deukBracketTokenFragment(t: DeukPackToken): string {
+    if (t.type === TokenType.STRING_LITERAL) {
+      return JSON.stringify(t.value);
+    }
+    return t.value;
+  }
+
+  /** Collect inner text until `]` at parenthesis depth 0 (bracket body for `[c#: …]` and `:value`). */
+  private consumeDeukBracketInnerUntilRightBracket(): string {
+    let depth = 0;
+    let s = '';
+    while (!this.isAtEnd()) {
+      if (this.check(TokenType.RIGHT_BRACKET) && depth === 0) {
+        return s;
+      }
+      if (this.check(TokenType.LEFT_PAREN)) {
+        depth++;
+        s += '(';
+        this.advance();
+        continue;
+      }
+      if (this.check(TokenType.RIGHT_PAREN)) {
+        depth--;
+        s += ')';
+        this.advance();
+        continue;
+      }
+      const t = this.advance();
+      s += this.deukBracketTokenFragment(t);
+    }
+    const cur = this.peek();
+    throw new Error(`Unclosed '[' attribute at line ${cur.line}, column ${cur.column}`);
+  }
+
+  /** First token of `[name…]` — `table` etc. are keywords, not IDENTIFIER. */
+  private parseDeukBracketFirstName(): string {
+    const t = this.peek();
+    if (
+      t.type === TokenType.IDENTIFIER ||
+      t.type === TokenType.TABLE ||
+      t.type === TokenType.RECORD ||
+      t.type === TokenType.ENTITY ||
+      t.type === TokenType.REQUIRED ||
+      t.type === TokenType.OPTIONAL
+    ) {
+      return this.advance().value;
+    }
+    throw new Error(
+      `Expected name token in '[]' attribute, got ${t.type} (value: "${t.value}") at line ${t.line}, column ${t.column}`
+    );
+  }
+
+  private neutralDeukBracketBaseName(piece: string): string {
+    const head = piece.split(':')[0] ?? piece;
+    return (head.split('(')[0] ?? head).trim().toLowerCase();
+  }
+
+  /**
+   * Parse one `[…]` block in .deuk: `[c#: …]` / `[csharp: …]` → csharp; neutral tags → neutral; else → csharpAttributes shape.
+   */
+  private parseOneDeukInlineBracketPair(): { csharp: string[]; neutral: string[] } {
     this.expect(TokenType.LEFT_BRACKET);
-    let piece = '[';
-    piece += this.expect(TokenType.IDENTIFIER).value;
+    const csharp: string[] = [];
+    const neutral: string[] = [];
+    const first = this.parseDeukBracketFirstName();
+    const firstLower = first.toLowerCase();
+
+    if ((firstLower === 'csharp' || firstLower === 'c#') && this.check(TokenType.COLON)) {
+      this.advance();
+      const inner = this.consumeDeukBracketInnerUntilRightBracket().trim();
+      if (inner) csharp.push(`[${inner}]`);
+      this.expect(TokenType.RIGHT_BRACKET);
+      return { csharp, neutral };
+    }
+
+    if (DeukPackASTBuilder.NON_OFFICIAL_BRACKET_SKIP_FIRST.has(firstLower)) {
+      if (this.check(TokenType.COLON)) {
+        this.advance();
+        this.consumeDeukBracketInnerUntilRightBracket();
+      }
+      if (this.check(TokenType.LEFT_PAREN)) {
+        this.advance();
+        while (!this.check(TokenType.RIGHT_PAREN) && !this.isAtEnd()) {
+          this.advance();
+        }
+        if (this.check(TokenType.RIGHT_PAREN)) this.advance();
+      }
+      this.expect(TokenType.RIGHT_BRACKET);
+      return { csharp: [], neutral: [] };
+    }
+
+    let piece = first;
+    if (this.check(TokenType.COLON)) {
+      this.advance();
+      piece += ':';
+      piece += this.consumeDeukBracketInnerUntilRightBracket();
+    }
     if (this.check(TokenType.LEFT_PAREN)) {
       this.advance();
       piece += '(';
       while (!this.check(TokenType.RIGHT_PAREN) && !this.isAtEnd()) {
-        piece += this.peek().value;
-        this.advance();
+        const t = this.advance();
+        piece += this.deukBracketTokenFragment(t);
       }
       if (this.check(TokenType.RIGHT_PAREN)) {
         this.advance();
@@ -467,7 +708,14 @@ export class DeukPackASTBuilder {
       }
     }
     this.expect(TokenType.RIGHT_BRACKET);
-    return piece + ']';
+
+    const base = this.neutralDeukBracketBaseName(piece);
+    if (DeukPackASTBuilder.NEUTRAL_DEUK_BRACKET_NAMES.has(base)) {
+      neutral.push(piece);
+    } else {
+      csharp.push(`[${piece}]`);
+    }
+    return { csharp, neutral };
   }
 
   /**
@@ -627,7 +875,7 @@ export class DeukPackASTBuilder {
     switch (token.type) {
       case TokenType.NUMBER:
         this.advance();
-        return parseFloat(token.value);
+        return parseDeukNumericLiteral(token.value);
       case TokenType.STRING_LITERAL:
         this.advance();
         return token.value;
@@ -688,7 +936,7 @@ export class DeukPackASTBuilder {
       if (this.check(TokenType.STRING_LITERAL)) {
         element = this.expect(TokenType.STRING_LITERAL).value;
       } else if (this.check(TokenType.NUMBER)) {
-        element = parseFloat(this.expect(TokenType.NUMBER).value);
+        element = parseDeukNumericLiteral(this.expect(TokenType.NUMBER).value);
       } else if (this.check(TokenType.BOOLEAN)) {
         element = this.expect(TokenType.BOOLEAN).value === 'true';
       } else if (this.check(TokenType.LEFT_BRACE)) {
@@ -747,7 +995,7 @@ export class DeukPackASTBuilder {
         if (this.check(TokenType.STRING_LITERAL)) {
           value = this.expect(TokenType.STRING_LITERAL).value;
         } else if (this.check(TokenType.NUMBER)) {
-          value = parseFloat(this.expect(TokenType.NUMBER).value);
+          value = parseDeukNumericLiteral(this.expect(TokenType.NUMBER).value);
         } else if (this.check(TokenType.BOOLEAN)) {
           value = this.expect(TokenType.BOOLEAN).value === 'true';
         } else if (this.check(TokenType.LEFT_BRACE)) {
@@ -796,7 +1044,7 @@ export class DeukPackASTBuilder {
 
       if (this.check(TokenType.EQUALS)) {
         this.advance();
-        currentValue = parseInt(this.expect(TokenType.NUMBER).value);
+        currentValue = parseDeukNumericLiteral(this.expect(TokenType.NUMBER).value);
       }
 
       values[enumName] = currentValue;

@@ -29,9 +29,10 @@ async function basicUsageExample() {
     }
   };
   
-  // Serialize to binary
+  // Deuk native: tagged binary (pack). Thrift binary/compact → C#·생성 코드.
   const binaryData = engine.serialize(user, {
-    protocol: 'binary',
+    wireFamily: 'deuk',
+    protocol: 'pack',
     endianness: 'LE',
     optimizeForSize: true,
     includeDefaultValues: false,
@@ -46,12 +47,13 @@ async function basicUsageExample() {
   console.log('📦 Example 2: Protocol Comparison');
   console.log('==================================');
   
-  const protocols = ['binary', 'compact', 'pack', 'json'] as const;
+  const deukProtocols = ['pack', 'json', 'yaml'] as const;
   const protocolResults: { [key: string]: { size: number; time: number } } = {};
   
-  for (const protocol of protocols) {
+  for (const protocol of deukProtocols) {
     const start = performance.now();
     const data = engine.serialize(user, {
+      wireFamily: 'deuk',
       protocol,
       endianness: 'LE',
       optimizeForSize: true,
@@ -83,7 +85,8 @@ async function basicUsageExample() {
   
   for (let i = 0; i < iterations; i++) {
     engine.serialize(user, {
-      protocol: 'binary',
+      wireFamily: 'deuk',
+      protocol: 'pack',
       endianness: 'LE',
       optimizeForSize: true,
       includeDefaultValues: false,

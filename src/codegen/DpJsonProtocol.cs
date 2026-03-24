@@ -1,5 +1,6 @@
 /**
- * DpJsonProtocol — JSON 프로토콜. DpProtocolLibrary 모듈화.
+ * DpJsonProtocol — 레거시 호환 JSON 프로토콜. DpProtocolLibrary 모듈화.
+ * Thrift/내부 전송용; 타입 래퍼(i64/str/tf/lst 등) 포함. 설정/OpenAPI 라운드트립은 Deuk JSON/YAML 사용.
  */
 
 using System;
@@ -10,7 +11,8 @@ using System.Text;
 namespace DeukPack.Protocol
 {
     /// <summary>
-    /// JSON protocol (TJSONProtocol-compatible).
+    /// Legacy-compatible JSON protocol (TJSONProtocol-compatible).
+    /// Uses type wrappers for wire/Thrift compatibility. For config/OpenAPI round-trip use Deuk JSON/YAML.
     /// Stream-based; constructor(stream, includeSchema, isReadMode).
     /// </summary>
     public class DpJsonProtocol : DpProtocol, IDisposable
@@ -18,6 +20,7 @@ namespace DeukPack.Protocol
         private readonly Stream _stream;
         private readonly bool _isReadMode;
         private readonly bool _includeSchema;
+        private readonly bool _pretty;
         private readonly Stack<JsonStructState> _writeStack;
         private readonly Stack<List<object>> _listWriteStack;
         private readonly Stack<MapWriteState> _mapWriteStack;
@@ -35,9 +38,10 @@ namespace DeukPack.Protocol
         private string _readMapCurrentKey;
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
-        public DpJsonProtocol(Stream stream, bool includeSchema = false, bool isReadMode = true)
+        public DpJsonProtocol(Stream stream, bool pretty = false, bool includeSchema = false, bool isReadMode = true)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+            _pretty = pretty;
             _includeSchema = includeSchema;
             _isReadMode = isReadMode;
             _writeStack = new Stack<JsonStructState>();
@@ -134,10 +138,45 @@ namespace DeukPack.Protocol
             else
             {
                 var json = JsonProtocolSerialize(top.Obj);
+                if (_pretty) json = FormatJson(json);
                 var bytes = _utf8.GetBytes(json);
                 _stream.Write(bytes, 0, bytes.Length);
                 _stream.Flush();
             }
+        }
+
+        private static string FormatJson(string json)
+        {
+            var sb = new StringBuilder();
+            int indent = 0;
+            bool quoted = false;
+            for (int i = 0; i < json.Length; i++)
+            {
+                var ch = json[i];
+                if (ch == '"' && (i == 0 || json[i - 1] != '\\')) quoted = !quoted;
+                if (quoted) { sb.Append(ch); continue; }
+                if (ch == '{' || ch == '[')
+                {
+                    sb.Append(ch).AppendLine().Append(new string(' ', ++indent * 2));
+                }
+                else if (ch == '}' || ch == ']')
+                {
+                    sb.AppendLine().Append(new string(' ', --indent * 2)).Append(ch);
+                }
+                else if (ch == ',')
+                {
+                    sb.Append(ch).AppendLine().Append(new string(' ', indent * 2));
+                }
+                else if (ch == ':')
+                {
+                    sb.Append(ch).Append(" ");
+                }
+                else
+                {
+                    sb.Append(ch);
+                }
+            }
+            return sb.ToString();
         }
         public void WriteFieldBegin(DpColumn f) { _currentFieldKey = f.ID.ToString(); _currentFieldType = f.Type; }
         public void WriteFieldEnd() { }

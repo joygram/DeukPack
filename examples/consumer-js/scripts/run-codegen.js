@@ -10,7 +10,8 @@ const buildScript = path.join(root, 'scripts', 'build_deukpack.js');
 const idl = path.join(root, 'examples', 'sample_idl', 'sample.thrift');
 const out = path.join(root, 'examples', 'out');
 
-const r = spawnSync(process.execPath, [buildScript, idl, out, '--js', '--protocol', 'binary'], {
+// 기본은 득팩 전용 pack. 호환(Thrift) 코드젠 힌트가 필요하면 --protocol tbinary|tcompact|tjson.
+const r = spawnSync(process.execPath, [buildScript, idl, out, '--js', '--protocol', 'pack'], {
   cwd: root,
   stdio: 'inherit',
 });

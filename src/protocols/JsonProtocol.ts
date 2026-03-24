@@ -1,6 +1,7 @@
 /**
- * DeukPack JSON Protocol
- * DpProtocol-compatible JSON wire format
+ * Thrift JSON wire protocol (tjson).
+ * DpProtocol-compatible JSON format with type-tagged wrappers ({ "i32": 42 }, { "str": "..." }, ...).
+ * 'T' prefix = Thrift-compatible family.
  */
 
 import type {
@@ -22,9 +23,9 @@ const DP_WIRE_TYPE_KEYS: Record<DpWireType, string> = {
   [DpWireType.Bool]: 'tf',
   [DpWireType.Byte]: 'i8',
   [DpWireType.Double]: 'dbl',
-  [DpWireType.I16]: 'i16',
-  [DpWireType.I32]: 'i32',
-  [DpWireType.I64]: 'i64',
+  [DpWireType.Int16]: 'i16',
+  [DpWireType.Int32]: 'i32',
+  [DpWireType.Int64]: 'i64',
   [DpWireType.String]: 'str',
   [DpWireType.Struct]: 'rec',
   [DpWireType.Map]: 'map',
@@ -48,7 +49,7 @@ function wrapValueForMap(value: JsonValue): JsonValue {
   return { str: String(value) };
 }
 
-export class DpJsonProtocol implements DpProtocol {
+export class DpTJsonProtocol implements DpProtocol {
   private output: string = '';
   private writeStack: JsonObj[] = [];
   private listStack: unknown[][] = [];
@@ -279,8 +280,8 @@ export class DpJsonProtocol implements DpProtocol {
     if (typeof raw === 'object' && !Array.isArray(raw)) {
       const obj = raw as JsonObj;
       if ('tf' in obj) t = DpWireType.Bool;
-      else if ('i8' in obj || 'i16' in obj || 'i32' in obj) t = DpWireType.I32;
-      else if ('i64' in obj) t = DpWireType.I64;
+      else if ('i8' in obj || 'i16' in obj || 'i32' in obj) t = DpWireType.Int32;
+      else if ('i64' in obj) t = DpWireType.Int64;
       else if ('dbl' in obj) t = DpWireType.Double;
       else if ('str' in obj) t = DpWireType.String;
       else if ('rec' in obj) t = DpWireType.Struct;

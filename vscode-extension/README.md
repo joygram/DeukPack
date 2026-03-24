@@ -10,16 +10,26 @@
   - Unclosed block comments `/*` `*/`
   - Trailing whitespace
 
-## Install from VSIX (local)
+## Install from VSIX
 
-1. Build the extension:
-   ```bash
-   cd vscode-extension
-   npm install
-   npm run compile
-   npx @vscode/vsce package
-   ```
-2. In VS Code: **Extensions** → **...** → **Install from VSIX** → select `deuk-idl-0.1.0.vsix`.
+**With the npm `deukpack` package:** after `npm install deukpack`, the VSIX is at **`node_modules/deukpack/bundled/deuk-idl.vsix`**. Run:
+
+```bash
+code --install-extension "$(npm root)/deukpack/bundled/deuk-idl.vsix"
+```
+
+(`npm install deukpack` may install it automatically when `code` or `cursor` is on your PATH; skip with `DEUKPACK_SKIP_VSCODE_INSTALL=1`.)
+
+**From this repo:** build locally:
+
+```bash
+cd vscode-extension
+npm install
+npm run compile
+npx @vscode/vsce package
+```
+
+Then in VS Code: **Extensions** → **...** → **Install from VSIX** → select the generated `.vsix`.
 
 ## Publish to Marketplace
 
@@ -35,5 +45,5 @@
 
 ## Links
 
-- [DeukPack site](https://deukpack.app/)
-- [IDL guide](https://deukpack.app/tutorial/idl-guide/)
+- [DeukPack site](https://deukpack.app/en/)
+- [IDL guide](https://deukpack.app/en/tutorial/idl-guide/)

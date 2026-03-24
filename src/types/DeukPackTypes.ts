@@ -17,6 +17,10 @@ export type DeukPackType =
   | 'int16'
   | 'int32'
   | 'int64'
+  | 'uint8'
+  | 'uint16'
+  | 'uint32'
+  | 'uint64'
   | 'float'
   | 'double'
   | 'string'
@@ -55,8 +59,89 @@ export interface DeukPackMapType {
 
 export type Endianness = 'LE' | 'BE';
 
-/** Wire format: 'binary'/'compact' = Thrift 호환; 'pack' = DeukPack 기본(성능·메모리 권장, 엔벨로프에 타입 저장); 'json' = DeukPack JSON. */
-export type WireProtocol = 'binary' | 'compact' | 'pack' | 'json';
+/**
+ * 외부 스택과의 **바이트/의미 호환** (Apache Thrift Binary·Compact, Thrift JSON 래퍼, Google Protobuf).
+ * 식별자: **`tbinary` / `tcompact` / `tjson` / `tproto`** 만 허용.
+ * JS `WireSerializer`는 `interopRootStruct`(및 중첩용 `interopStructDefs`)가 있을 때 동일 와이어로 직렬화한다.
+ */
+export type InteropWireProtocol = 'tbinary' | 'tcompact' | 'tjson' | 'tproto';
+
+/**
+ * **득팩 전용** 와이어: 태그 바이너리(`pack`), 값만 UTF-8 JSON/YAML (`json` / `yaml`).
+ */
+export type DeukNativeWireProtocol = 'pack' | 'json' | 'yaml';
+
+export type WireProtocol = InteropWireProtocol | DeukNativeWireProtocol;
+
+/** `protocol` 문자열이 속한 계열. */
+export type WireProtocolFamily = 'interop' | 'deuk';
+
+export function wireProtocolFamily(protocol: WireProtocol): WireProtocolFamily {
+  if (protocol === 'tbinary' || protocol === 'tcompact' || protocol === 'tjson' || protocol === 'tproto') return 'interop';
+  return 'deuk';
+}
+
+/** 득팩 전용 와이어 목록 — 엔진·CLI 기본은 여기서 `pack` 우선. */
+export const DEUK_NATIVE_WIRE_PROTOCOLS: readonly DeukNativeWireProtocol[] = ['pack', 'json', 'yaml'];
+
+/** Thrift·Protobuf 등 외부 호환 와이어 목록. */
+export const INTEROP_WIRE_PROTOCOLS: readonly InteropWireProtocol[] = ['tbinary', 'tcompact', 'tjson', 'tproto'];
+
+export function isDeukNativeWireProtocol(p: WireProtocol): p is DeukNativeWireProtocol {
+  return (DEUK_NATIVE_WIRE_PROTOCOLS as readonly string[]).includes(p);
+}
+
+export function isInteropWireProtocol(p: WireProtocol): p is InteropWireProtocol {
+  return (INTEROP_WIRE_PROTOCOLS as readonly string[]).includes(p);
+}
+
+/**
+ * 구분된 프로토콜 옵션: **득팩 우선**을 타입으로 고정할 때 사용.
+ * `wireKind: 'deuk'` → `pack` | `json` | `yaml` 만 허용.
+ * `wireKind: 'interop'` → Thrift 호환만 허용(코드에서 호환임이 드러남).
+ */
+export type DeukNativeWireOption = { wireKind: 'deuk'; protocol: DeukNativeWireProtocol };
+export type InteropWireOption = { wireKind: 'interop'; protocol: InteropWireProtocol };
+export type WireProtocolOption = DeukNativeWireOption | InteropWireOption;
+
+export function wireProtocolOptionToFields(
+  opt: WireProtocolOption
+): Pick<SerializationOptions, 'protocol' | 'wireFamily'> {
+  return opt.wireKind === 'deuk'
+    ? { protocol: opt.protocol, wireFamily: 'deuk' }
+    : { protocol: opt.protocol, wireFamily: 'interop' };
+}
+
+/** 득팩 전용 + 계열 명시(권장 조합). */
+export function deukWire(protocol: DeukNativeWireProtocol): Pick<SerializationOptions, 'protocol' | 'wireFamily'> {
+  return { protocol, wireFamily: 'deuk' };
+}
+
+/** 호환 와이어 + 계열 명시(코드젠·메타 힌트). */
+export function interopWire(protocol: InteropWireProtocol): Pick<SerializationOptions, 'protocol' | 'wireFamily'> {
+  return { protocol, wireFamily: 'interop' };
+}
+
+/** 권장 기본: 득팩 `pack` + `wireFamily: 'deuk'`. */
+export const DEFAULT_DEUK_WIRE: Pick<SerializationOptions, 'protocol' | 'wireFamily'> = {
+  protocol: 'pack',
+  wireFamily: 'deuk',
+};
+
+/**
+ * `wireFamily` 가 있으면 `protocol` 과 반드시 일치해야 한다.
+ * (호환 프로토콜인지 득팩 전용인지 호출부에서 명시적으로 구분 가능하게 함.)
+ */
+export function assertSerializationWireOptions(options: SerializationOptions): void {
+  if (options.wireFamily === undefined) return;
+  const inferred = wireProtocolFamily(options.protocol);
+  if (options.wireFamily !== inferred) {
+    throw new Error(
+      `[DeukPack] wireFamily "${options.wireFamily}" does not match protocol "${options.protocol}" (expected "${inferred}"). ` +
+        'Interop: tbinary | tcompact | tjson. Deuk native: pack | json | yaml.'
+    );
+  }
+}
 
 export interface DeukPackField {
   id: number;
@@ -70,8 +155,13 @@ export interface DeukPackField {
   docComment?: string;
   /** C# attributes parsed from doc comment lines like /// [Key], /// [Required] (DeukPack extension) */
   csharpAttributes?: string[];
+  /** Neutral .deuk bracket tags (e.g. key, table:x); codegen maps these per declaration kind */
+  deukBracketAttributes?: string[];
   annotations?: { [key: string]: string };
 }
+
+/** IDL 최상위 정의 키워드에 대응. 코드젠·검증·메타에서 구분용 (와이어/필드 규칙은 record와 동일할 수 있음). */
+export type DeukPackStructDeclarationKind = 'record' | 'entity' | 'message' | 'table';
 
 export interface DeukPackStruct {
   name: string;
@@ -80,17 +170,26 @@ export interface DeukPackStruct {
   docComment?: string;
   /** C# attributes parsed from doc comment lines like /// [Table("Users")] (DeukPack extension) */
   csharpAttributes?: string[];
+  /** Neutral .deuk bracket tags before `{` (e.g. table:x, schema:dbo) */
+  deukBracketAttributes?: string[];
   annotations?: { [key: string]: string };
   /** 테이블 키 필드명(단일 또는 복합). container/table struct의 (key = "level") 또는 (key = "cid,level"). 미선언 시 ["tuid"]. */
   keyFieldNames?: string[];
   sourceFile?: string;
   /** struct 상속: 부모 struct 이름. 파싱 후 resolveExtends에서 부모 필드를 자식에 병합한다. */
   extends?: string;
+  /**
+   * record | entity | message | table — 파서가 키워드로 설정.
+   * 생략 시 레거시(.thrift 등) 또는 구버전 AST는 `record`로 간주할 수 있음.
+   */
+  declarationKind?: DeukPackStructDeclarationKind;
 }
 
 export interface DeukPackEnum {
   name: string;
   values: { [key: string]: number };
+  /** Synthesized for forward refs (e.g. ns.foo_e before parse order); not from IDL */
+  forwardRefPlaceholder?: boolean;
   /** Doc comment immediately above enum (recoverable to IDL) */
   docComment?: string;
   /** C# attributes parsed from doc comment lines like /// [Flags] (DeukPack extension) */
@@ -160,6 +259,8 @@ export interface DeukPackFullStructSchema {
   docComment?: string;
   annotations?: { [key: string]: string };
   sourceFile?: string;
+  /** record | entity | message | table (IDL 키워드 구분) */
+  declarationKind?: DeukPackStructDeclarationKind;
 }
 
 export interface DeukPackFullEnumSchema {
@@ -190,6 +291,8 @@ export interface DeukPackAST {
   typedefs: DeukPackTypedef[];
   constants: DeukPackConstant[];
   includes: string[];
+  /** Canonical source path -> include strings from that file only (umbrella C++ headers). */
+  fileIncludes?: { [sourceFile: string]: string[] };
   filesProcessed?: number;
   annotations?: { [key: string]: string };
   fileNamespaceMap?: { [filePath: string]: string }; // 파일 경로 -> 네임스페이스 매핑
@@ -207,6 +310,8 @@ export enum TokenType {
   // Keywords (득팩 표준: record, message 등)
   NAMESPACE = 'NAMESPACE',
   RECORD = 'RECORD',   // struct | record → 동일 토큰 (득팩 표준 명칭 record)
+  /** DB/ORM 등 영속 행 스키마용 record (문법은 record와 동일, AST에 declarationKind만 구분) */
+  ENTITY = 'ENTITY',
   MESSAGE = 'MESSAGE',
   ENUM = 'ENUM',
   SERVICE = 'SERVICE',
@@ -270,11 +375,28 @@ export enum TokenType {
 }
 
 export interface SerializationOptions {
+  /**
+   * 와이어 계열.
+   * **권장:** 득팩 전용(`pack`/`json`/`yaml`)은 `deuk`를 명시. Thrift 호환(`tbinary`/`tcompact`/`tjson`)은 `interop`로 명시.
+   * 생략 시 `wireProtocolFamily(protocol)`로 추론. npm `serialize`/`deserialize`의 **`WireExtras`**에 넣지 않아도 동일하게 추론된다.
+   */
+  wireFamily?: WireProtocolFamily;
+  /**
+   * 직렬화 포맷. **기본·권장(득팩 우선):** `pack`(태그 바이너리), 또는 `json`/`yaml`.
+   * **호환:** `tbinary` / `tcompact` / `tjson`. JS에서는 `interopRootStruct`(+ `interopStructDefs`)와 함께 `WireSerializer`/`WireDeserializer`로 직렬화 가능.
+   */
   protocol: WireProtocol;
   endianness: Endianness;
   optimizeForSize: boolean;
   includeDefaultValues: boolean;
   validateTypes: boolean;
+  /**
+   * Thrift 호환 직렬화 시 **필수**: 루트 struct 메타(IDL 파싱·스키마의 필드 id·타입).
+   * 생략 시 `WireSerializer`/`WireDeserializer`는 호환 와이어에서 오류를 던진다.
+   */
+  interopRootStruct?: DeukPackStruct;
+  /** 중첩 struct 이름 → 정의. 루트를 제외한 참조 타입은 여기에 등록한다. */
+  interopStructDefs?: Record<string, DeukPackStruct>;
 }
 
 /** parseFileWithIncludes 옵션. includePaths가 있으면 해당 경로만 사용, 없으면 defineRoot 기준으로 기본 경로 구성. */
@@ -283,8 +405,14 @@ export interface ParseFileWithIncludesOptions {
   includePaths?: string[];
   /** IDL 루트 디렉터리명 (예: 'idls', '_thrift'). includePaths 미지정 시 사용, 기본값 'idls'. */
   defineRoot?: string;
+  /** 한 파일에 여러 `namespace` 선언 허용 여부. */
+  allowMultiNamespace?: boolean;
 }
 
+/**
+ * 코드 생성 옵션. **와이어 기본은 득팩 전용 `pack` 권장**(CLI `--protocol`).
+ * Thrift 호환 힌트는 `tbinary` / `tcompact` / `tjson` — `INTEROP_WIRE_PROTOCOLS` / `interopWire()` 참고.
+ */
 export interface GenerationOptions {
   targetLanguage: 'javascript' | 'cpp' | 'csharp';
   outputDir: string;
@@ -304,6 +432,12 @@ export interface GenerationOptions {
    * annotation 없는 필드는 모든 프로파일에 포함된다.
    */
   wireProfilesEmit?: string[];
+  /** C# Nullable Reference Types (NRT) 지원: #nullable enable 및 참조 타입 ? 주석 생성. 기본값 false. */
+  csharpNullable?: boolean;
+  /** 단일 네임스페이스일 때 `namespace { }` 중괄호 블록 생략 여부. 인덴트는 유지. */
+  braceLessNamespace?: boolean;
+  /** 한 파일에 여러 `namespace` 선언 허용 여부. */
+  allowMultiNamespace?: boolean;
 }
 
 export interface PerformanceMetrics {
