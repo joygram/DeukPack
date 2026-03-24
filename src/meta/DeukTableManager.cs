@@ -3,7 +3,6 @@
  * meta_packed 디렉터리에 파일 단위로 저장된 득팩 테이블을 로드·보관.
  * 기존 MetaManager와 별도 구성. 엑셀 분리 전까지 DeukPack 라이브러리에 포함.
  */
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +16,7 @@ namespace DeukPack.Meta
 	public class DeukTableManager
 	{
 		readonly Dictionary<string, object> _tables = new Dictionary<string, object>();
-		Func<string, byte[], object> _deserializer;
+		Func<string, byte[], object>? _deserializer;
 
 		/// <summary>로드된 카테고리 목록</summary>
 		public IReadOnlyList<string> Categories => _tables.Keys.ToList();
@@ -40,7 +39,7 @@ namespace DeukPack.Meta
 		/// <param name="dir">메타 팩 디렉터리 (예: meta_packed)</param>
 		/// <param name="decryptor">null이면 복호화 없음</param>
 		/// <returns>로드된 파일 수. 역직렬화 실패 시 예외 또는 무시(구현에 따라)</returns>
-		public int LoadFromDirectory(string dir, IDeukMetaDecryptor decryptor = null)
+		public int LoadFromDirectory(string dir, IDeukMetaDecryptor? decryptor = null)
 		{
 			if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
 				return 0;
@@ -108,7 +107,7 @@ namespace DeukPack.Meta
 		}
 
 		/// <summary>로드된 카테고리 테이블 반환. 없으면 default.</summary>
-		public T GetTable<T>(string category)
+		public T? GetTable<T>(string category) where T : class
 		{
 			if (_tables.TryGetValue(category, out var o) && o is T t)
 				return t;
@@ -117,24 +116,24 @@ namespace DeukPack.Meta
 
 		/// <summary>컨테이너 타입에서 카테고리 추론 후 테이블 반환. 예: GetTable&lt;mo_skill_meta.container&gt;() → "mo_skill".</summary>
 		/// <remarks>규칙: T의 네임스페이스가 "_meta"로 끝나면 제거한 값이 카테고리 (mo_skill_meta → mo_skill).</remarks>
-		public T GetTable<T>() where T : class
+		public T? GetTable<T>() where T : class
 		{
-			string category = InferCategoryFromContainerType(typeof(T));
-			return string.IsNullOrEmpty(category) ? default : GetTable<T>(category);
+			string? category = InferCategoryFromContainerType(typeof(T));
+			return string.IsNullOrEmpty(category) ? null : GetTable<T>(category);
 		}
 
 		/// <summary>row 타입만으로 데이터 접근. container 중첩 없이 GetData&lt;mo_skill_meta.data&gt;() 로 meta_id→row 딕셔너리 반환.</summary>
 		/// <remarks>규칙: TRow 네임스페이스 *_meta → 카테고리 *. 설계상 container는 내부 구현, 사용처는 row 타입만 알면 됨.</remarks>
-		public IReadOnlyDictionary<long, TRow> GetData<TRow>() where TRow : class, DeukPack.Protocol.IDeukPack
+		public IReadOnlyDictionary<long, TRow>? GetData<TRow>() where TRow : class, DeukPack.Protocol.IDeukPack
 		{
-			string category = InferCategoryFromContainerType(typeof(TRow));
+			string? category = InferCategoryFromContainerType(typeof(TRow));
 			if (string.IsNullOrEmpty(category) || !_tables.TryGetValue(category, out var o)) return null;
 			if (o is DeukPack.Protocol.IDeukMetaContainer<TRow> typed) return typed.Data;
 			return null;
 		}
 
 		/// <summary>_meta 네임스페이스에서 카테고리 추론 (mo_skill_meta → mo_skill). container/row 타입 모두 동일 규칙.</summary>
-		public static string InferCategoryFromContainerType(Type containerType)
+		public static string? InferCategoryFromContainerType(Type? containerType)
 		{
 			if (containerType == null) return null;
 			string ns = containerType.Namespace ?? "";

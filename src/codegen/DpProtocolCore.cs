@@ -2,11 +2,10 @@
  * DeukPack Protocol Core — 인터페이스·와이어 타입·스키마·타입명 유틸.
  * DpProtocolLibrary 모듈화: 공통 타입만 포함.
  */
-#nullable enable
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -41,10 +40,10 @@ namespace DeukPack.Protocol
         public DpMetaInfosWrapper(IReadOnlyDictionary<long, T> inner) { _inner = inner ?? throw new ArgumentNullException(nameof(inner)); }
         public int Count => _inner.Count;
         public bool ContainsKey(long key) => _inner.ContainsKey(key);
-        public bool TryGetValue(long key, out IDeukPack? value)
+        public bool TryGetValue(long key, [MaybeNullWhen(false)] out IDeukPack value)
         {
             if (_inner.TryGetValue(key, out T? v)) { value = v; return true; }
-            value = null; return false;
+            value = null!; return false;
         }
         public IDeukPack this[long key] => _inner[key];
         public IEnumerable<long> Keys => _inner.Keys;
@@ -57,7 +56,7 @@ namespace DeukPack.Protocol
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    public enum DpSchemaType { Bool, Byte, I16, I32, I64, Double, String, Binary, Struct, Enum, List, Set, Map }
+    public enum DpSchemaType { Bool, Byte, Int16, Int32, Int64, Double, String, Binary, Struct, Enum, List, Set, Map }
 
     public enum DpDefinitionKind { Struct, Enum, Typedef, Constant }
 
@@ -110,15 +109,37 @@ namespace DeukPack.Protocol
 
     public static class DpTypeNames
     {
+        /// <summary>DpSchemaType → 득팩 표준 소문자 문자열 (스키마/메타용). ToString() 대신 사용.</summary>
+        public static string SchemaTypeToStandardString(DpSchemaType t)
+        {
+            switch (t)
+            {
+                case DpSchemaType.Bool: return "bool";
+                case DpSchemaType.Byte: return "byte";
+                case DpSchemaType.Int16: return "int16";
+                case DpSchemaType.Int32: return "int32";
+                case DpSchemaType.Int64: return "int64";
+                case DpSchemaType.Double: return "double";
+                case DpSchemaType.String: return "string";
+                case DpSchemaType.Binary: return "binary";
+                case DpSchemaType.Struct: return "struct";
+                case DpSchemaType.Enum: return "enum";
+                case DpSchemaType.List: return "list";
+                case DpSchemaType.Set: return "set";
+                case DpSchemaType.Map: return "map";
+                default: return "string";
+            }
+        }
+
         public static string ToProtocolName(DpWireType t)
         {
             switch (t)
             {
                 case DpWireType.Bool: return "bool";
-                case DpWireType.Byte: return "byte"; // U8 동일 값
-                case DpWireType.Int16: return "int16"; // U16 동일 값
-                case DpWireType.Int32: return "int32"; // U32 동일 값
-                case DpWireType.Int64: return "int64"; // U64 동일 값
+                case DpWireType.Byte: return "byte";
+                case DpWireType.Int16: return "int16";
+                case DpWireType.Int32: return "int32";
+                case DpWireType.Int64: return "int64";
                 case DpWireType.Double: return "double";
                 case DpWireType.String: return "string";
                 case DpWireType.Struct: return "record";
@@ -164,23 +185,23 @@ namespace DeukPack.Protocol
             if (string.IsNullOrEmpty(name)) return DpWireType.String;
             switch (name)
             {
-                case "Bool": return DpWireType.Bool;
-                case "Byte": return DpWireType.Byte;
+                case "bool": case "Bool": return DpWireType.Bool;
+                case "byte": case "Byte": return DpWireType.Byte;
                 case "U8": return DpWireType.U8;
-                case "I16": return DpWireType.Int16;
+                case "int16": case "Int16": case "I16": return DpWireType.Int16;
                 case "U16": return DpWireType.U16;
-                case "I32": return DpWireType.Int32;
+                case "int32": case "Int32": case "I32": return DpWireType.Int32;
                 case "U32": return DpWireType.U32;
-                case "I64": return DpWireType.Int64;
+                case "int64": case "Int64": case "I64": return DpWireType.Int64;
                 case "U64": return DpWireType.U64;
-                case "Double": return DpWireType.Double;
-                case "String":
-                case "Binary": return DpWireType.String;
-                case "Struct": return DpWireType.Struct;
-                case "List": return DpWireType.List;
-                case "Set": return DpWireType.Set;
-                case "Map": return DpWireType.Map;
-                case "Enum": return DpWireType.Int32;
+                case "double": case "Double": return DpWireType.Double;
+                case "string": case "String":
+                case "binary": case "Binary": return DpWireType.String;
+                case "struct": case "Struct": return DpWireType.Struct;
+                case "list": case "List": return DpWireType.List;
+                case "set": case "Set": return DpWireType.Set;
+                case "map": case "Map": return DpWireType.Map;
+                case "enum": case "Enum": return DpWireType.Int32;
                 default: return DpWireType.String;
             }
         }
@@ -265,7 +286,7 @@ namespace DeukPack.Protocol
         {
             if (f == null) return "string";
             string typeName = (f.TypeName ?? "").Trim();
-            DpWireType t = FromSchemaTypeName(f.Type.ToString());
+            DpWireType t = FromSchemaTypeName(SchemaTypeToStandardString(f.Type));
             string proto = ToProtocolName(t);
             if (f.Type == DpSchemaType.Enum || (t == DpWireType.Int32 && typeName.EndsWith("_e")))
             {

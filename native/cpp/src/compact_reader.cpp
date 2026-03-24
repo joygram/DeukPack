@@ -50,7 +50,9 @@ namespace deukpack
 
     std::string CompactReader::ReadString()
     {
-        int32_t length = ReadVarInt();
+        int32_t rawLen = ReadVarInt();
+        if (rawLen < 0) throw std::runtime_error("Negative string length");
+        size_t length = static_cast<size_t>(rawLen);
         if (position_ + length > size_)
         {
             throw std::runtime_error("Buffer overflow");

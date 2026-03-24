@@ -8,6 +8,7 @@
 #ifndef DEUKPACK_WIRE_ENGINE_H
 #define DEUKPACK_WIRE_ENGINE_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -186,13 +187,60 @@ namespace deukpack
         std::unique_ptr<Impl> impl_;
     };
 
-    // Utility functions
-    std::string WireTypeToString(WireType type);
-    WireType StringToWireType(const std::string &str);
-    std::string EndiannessToString(Endianness endianness);
-    Endianness StringToEndianness(const std::string &str);
-    std::string WireProtocolToString(WireProtocol protocol);
-    WireProtocol StringToWireProtocol(const std::string &str);
+    // Utility functions (inline — no separate .cpp needed)
+    inline std::string WireTypeToString(WireType type) {
+        switch (type) {
+            case WireType::Bool:   return "bool";
+            case WireType::Byte:   return "byte";
+            case WireType::I16:    return "int16";
+            case WireType::I32:    return "int32";
+            case WireType::I64:    return "int64";
+            case WireType::Double: return "double";
+            case WireType::String: return "string";
+            case WireType::Binary: return "binary";
+            case WireType::List:   return "list";
+            case WireType::Set:    return "set";
+            case WireType::Map:    return "map";
+            case WireType::Struct: return "struct";
+            case WireType::Enum:   return "enum";
+            default: return "unknown";
+        }
+    }
+    inline WireType StringToWireType(const std::string &str) {
+        if (str == "bool")   return WireType::Bool;
+        if (str == "byte")   return WireType::Byte;
+        if (str == "int16" || str == "i16") return WireType::I16;
+        if (str == "int32" || str == "i32") return WireType::I32;
+        if (str == "int64" || str == "i64") return WireType::I64;
+        if (str == "double") return WireType::Double;
+        if (str == "string") return WireType::String;
+        if (str == "binary") return WireType::Binary;
+        if (str == "list")   return WireType::List;
+        if (str == "set")    return WireType::Set;
+        if (str == "map")    return WireType::Map;
+        if (str == "struct") return WireType::Struct;
+        if (str == "enum")   return WireType::Enum;
+        return WireType::String;
+    }
+    inline std::string EndiannessToString(Endianness endianness) {
+        return endianness == Endianness::Big ? "big" : "little";
+    }
+    inline Endianness StringToEndianness(const std::string &str) {
+        return str == "big" ? Endianness::Big : Endianness::Little;
+    }
+    inline std::string WireProtocolToString(WireProtocol protocol) {
+        switch (protocol) {
+            case WireProtocol::Binary:  return "binary";
+            case WireProtocol::Compact: return "compact";
+            case WireProtocol::Json:    return "json";
+            default: return "binary";
+        }
+    }
+    inline WireProtocol StringToWireProtocol(const std::string &str) {
+        if (str == "compact") return WireProtocol::Compact;
+        if (str == "json")    return WireProtocol::Json;
+        return WireProtocol::Binary;
+    }
 
 } // namespace deukpack
 

@@ -4,7 +4,25 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
-Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) (patches 1.0.1 … 1.0.5 share the same promise). **§0 / §0.1** in that doc summarize **1.0.x vs 1.1.0** and **1.2.0 vs 1.1.0**.
+---
+
+## [1.2.6] — 2026-03-28
+
+### Changed
+
+- **Schema / embedded metadata**: Field and root schema `type` strings use **DeukPack spelling** (`struct`, `enum`, `int16` / `int32` / `int64`, etc.). **C#** `DpSchemaType` uses **`Int16` / `Int32` / `Int64`** with **`SchemaTypeToStandardString`** for string forms. **JSON compatibility wire** object keys (`i32`, `tf`, `str`, `lst`, …) are unchanged.
+- **C# codegen**: Generated types initialize **`string`** / struct references so **`nullable` enable** builds stay clean; optional struct **`Clone()`** uses a null-forgiving path when codegen nullable mode is off.
+- **CI**: **C++** native wire library **build + `ctest`** on **Ubuntu** and **Windows** runners.
+- **Tooling**: **`npm run verify`** runs the same checks as the **GitHub Actions** workflow locally.
+
+---
+
+## [1.2.5] — 2026-03-27
+
+### Changed
+
+- **Package exports (`index`)**: The published npm API (`serialize` / `deserialize`, interop helpers, `packStructWire`, etc.) matches the public **GitHub** TypeScript entry; Excel-only protocol remains outside the open-source tree.
+- **C# (`DeukPack.Protocol`)**: **`WriteString` / `WriteBinary`** use **`string?` / `byte[]?`** to match **`DpProtocol`** (CS8767). **`DpMetaInfosWrapper<T>.TryGetValue`** uses **`[MaybeNullWhen(false)]`** for **`IReadOnlyDictionary<,>`** consistency.
 
 ---
 
@@ -12,7 +30,7 @@ Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md
 
 ### Changed
 
-- **OSS sync (`sync-to-oss.js`)**: **`README.md` / `README.ko.md`** are taken from the **repo root** and written to the public mirror with **`docs/` / `github.com/.../docs/`** links rewritten to **deukpack.app**; **`scripts/oss-stubs/README*.md` removed** (no duplicate maintainer copy). **`npm ci`** runs in the OSS tree before **`npm run build`**; **`examples/consumer-cpp/build/`** excluded from copy.
+- **README (GitHub)**: English and Korean README copies used on **GitHub** rewrite documentation links to **[deukpack.app](https://deukpack.app/)** so readers land on the hosted docs.
 - **Dependencies / toolchain**: **`nan`**, **`node-addon-api` ^8**, **`yaml`**; dev — **Jest 30**, **`protobufjs` ^8**, **`rimraf` ^6**, **`cmake-js` ^8**, **`node-gyp` ^12**, **`@vscode/vsce`**, **`@types/jest` ^30**, **`typescript` ^5.9**, **`@types/node` ^20.19**; **`engines.node` ≥18**; **`scripts/setup.js`** minimum **Node 18**.
 - **Security**: **`npm audit fix`** — transitive **`minimatch`** high-severity ReDoS advisories addressed.
 
@@ -40,7 +58,7 @@ Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md
 - **Breaking (codegen paths)**: **`--ts`** / **`--js`** (and pipeline **`ts`** / **`js`**) emit under **`<out>/ts/`** and **`<out>/js/`** instead of **`typescript/`** and **`javascript/`**.
 - **Pipeline**: **`jobs[].outputDir`** may be **omitted** — defaults to the same relative path as **`defineRoot`** (default **`idls`**), so outputs are **`idls/csharp`**, **`…/cpp`**, **`…/ts`**, **`…/js`** when those generators run.
 - **`deukpack init`**: default generated pipeline uses **`defineScope: "all"`** and **`outputDir`** aligned with **`defineRoot`**; interactive defaults updated.
-- **Docs / examples / kits**: paths updated for **`ts`** / **`js`**; **`YOUR_PROJECT`** **`build-deukpack.js`** stages from **`buildDir/ts`**, with fallback to **`buildDir/typescript`**.
+- **Docs / examples / kits**: paths updated for **`ts`** / **`js`** outputs.
 
 ---
 
@@ -58,8 +76,8 @@ Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md
 
 ### Added
 
-- **Bundled VS Code extension**: npm tarball includes **`bundled/deuk-idl.vsix`**. **postinstall** re-attempts install when **`deukpack` npm version** changes vs **`.deukpack/deuk-idl-vsix.json`**. **Interactive `deukpack bootstrap`** prompts to install/update the VSIX. **`sync-to-oss.js --build`** and post-sync OSS steps run **`bundle:vscode`** so **DeukPackOSS** carries the same VSIX. Details: **`bundled/README.md`**.
-- **Release scope**: [docs/DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) **§0.1** — documents **Unity UPM integration**: embedded package **`app.deukpack.runtime`** with `Runtime/Plugins` for **DeukPack.Protocol** / **DeukPack.ExcelProtocol** (netstandard2.0), populated from a game repo build (e.g. `YOUR_PROJECT` `scripts/build-deukpack.js` → `deukPackUnityRuntimePluginsPath`). This is **not** shipped inside the npm `deukpack` tarball; it is the **recommended client layout** next to generated game code under `Assets/.../DeukDefine` (see `clientDeukDefinePath` in that repo’s config).
+- **Bundled VS Code extension**: npm tarball includes **`bundled/deuk-idl.vsix`**. **postinstall** re-attempts install when **`deukpack` npm version** changes vs **`.deukpack/deuk-idl-vsix.json`**. **Interactive `deukpack bootstrap`** prompts to install/update the VSIX. Details: **`bundled/README.md`**.
+- **Unity**: **[deukpack.app](https://deukpack.app/)** documents embedding **DeukPack.Protocol** (and related) with UPM-style layout; native plugins are built by your game/project pipeline, not shipped inside the npm **`deukpack`** package.
 - **npm wire entry (single shape)**: **`serialize(value, protocol?, extras?)`** / **`deserialize(data, protocol?, extras?)`** with exported **`WireExtras`** / **`WireDeserializeExtras`** (`pretty`, `interopRootStruct`, `interopStructDefs`, `targetType`, …). Full control remains via **`WireSerializer`** / **`WireDeserializer`** + **`SerializationOptions`**.
 
 ### Changed
@@ -68,12 +86,8 @@ Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md
 - **Wire (TypeScript)**: **`BinaryReader`**, **`wireTags`**, **`SerializationWarnings`**; **`WireSerializer` / `WireDeserializer`** expanded so **Deuk native** (`pack`, `json`, `yaml`) and **interop** (`tbinary`, `tcompact`, `tjson` + schema) stay paired. **C# `DeukPack.Protocol`**: csproj / **SharedCompile** props adjusted alongside.
 - **CI**: GitHub Actions use **setup-dotnet** so `DeukPack.Protocol` builds reliably in workflows; YAML step-name quoting fixes for `:` / `&`.
 - **Codegen**: C++ / TypeScript / JavaScript emit paths further **template-driven**; JS/schema output **DeukPack-oriented labeling** aligned with templates.
-- **Docs**: DeukNavigation **game integration** (baking / runtime) expanded; `deukpack.app` submodule bumps; internal **YOUR_PROJECT path standard** aligned (`clientDeukDefinePath`, UPM Plugins vs legacy “Assets/Core” wording removed).
+- **Docs**: DeukNavigation **game integration** (baking / runtime) expanded; **deukpack.app** updates.
 - **Repo hygiene**: ExcelProtocol and example **build artifacts** moved under **gitignore** / removed from tracking.
-
-### Unchanged (same as 1.1.0 promise)
-
-- **§2** out-of-scope items in [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) are **unchanged** for 1.2.0.
 
 ---
 
@@ -93,10 +107,6 @@ Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md
 
 - **Docs / site**: README one-liners; [deukpack.app](https://deukpack.app/) reference layout (tracks submodule commits).
 
-### Unchanged (same as 1.0.x promise)
-
-- Items **out of scope** for v1 in §2 of [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) (full table/Excel pipeline, `generateCode()` stub, no Java emit, etc.) are **still out of scope** in 1.1.0.
-
 ### Verification — DeukPackKits StarterKit (local CLI `1.1.0`)
 
 Checked **2026-03-23** with `npm run build` in this repo, then `node scripts/build_deukpack.js`:
@@ -114,8 +124,7 @@ Checked **2026-03-23** with `npm run build` in this repo, then `node scripts/bui
 
 ### Summary
 
-- **Scope** is fixed in [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md).
-- Patches (e.g. 1.0.1–1.0.5) focused on **bugfixes, packaging, C# multi-targeting, doc paths** without widening §1 / §2.
+- Early **1.0.x** patches focused on **bugfixes, packaging, C# multi-targeting, and documentation paths** without expanding the core feature set.
 
 ---
 

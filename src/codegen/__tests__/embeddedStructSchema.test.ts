@@ -97,7 +97,7 @@ describe('buildEmbeddedStructSchema', () => {
     };
     const schema = buildEmbeddedStructSchema(st, minimalAst()) as Record<string, unknown>;
     expect(schema['name']).toBe('Row');
-    expect(schema['type']).toBe('Struct');
+    expect(schema['type']).toBe('struct');
     const fields = schema['fields'] as Record<string, Record<string, unknown>>;
     expect(fields[1]).toMatchObject({
       id: 1,

@@ -2,7 +2,6 @@
  * DpJsonProtocol — 레거시 호환 JSON 프로토콜. DpProtocolLibrary 모듈화.
  * Thrift/내부 전송용; 타입 래퍼(i64/str/tf/lst 등) 포함. 설정/OpenAPI 라운드트립은 Deuk JSON/YAML 사용.
  */
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,18 +23,18 @@ namespace DeukPack.Protocol
         private readonly Stack<JsonStructState> _writeStack;
         private readonly Stack<List<object>> _listWriteStack;
         private readonly Stack<MapWriteState> _mapWriteStack;
-        private string _currentFieldKey;
+        private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
         private Dictionary<string, object> _rootRead;
         private Stack<JsonReadCursor> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
-        private List<object> _readList;
+        private List<object>? _readList;
         private int _readListIndex;
-        private Dictionary<string, object> _readMapDict;
-        private List<string> _readMapKeys;
+        private Dictionary<string, object>? _readMapDict;
+        private List<string>? _readMapKeys;
         private int _readMapIndex;
         private bool _readMapReadingKey;
-        private string _readMapCurrentKey;
+        private string? _readMapCurrentKey;
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
         public DpJsonProtocol(Stream stream, bool pretty = false, bool includeSchema = false, bool isReadMode = true)
@@ -56,6 +55,10 @@ namespace DeukPack.Protocol
                     _rootRead = JsonProtocolParse(json);
                 }
             }
+            else
+            {
+                _rootRead = new Dictionary<string, object>();
+            }
         }
 
         public void Dispose()
@@ -72,13 +75,13 @@ namespace DeukPack.Protocol
         private struct JsonReadCursor
         {
             public Dictionary<string, object> Obj;
-            public IEnumerator<KeyValuePair<string, object>> Enumerator;
+            public IEnumerator<KeyValuePair<string, object>>? Enumerator;
         }
 
         private class MapWriteState
         {
-            public readonly Dictionary<string, object> Map = new Dictionary<string, object>();
-            public object PendingKey;
+            public readonly Dictionary<string, object?> Map = new Dictionary<string, object?>();
+            public object? PendingKey;
         }
 
         private static string DpWireTypeToJsonKey(DpWireType t)
@@ -86,7 +89,7 @@ namespace DeukPack.Protocol
             return DpTypeNames.ToProtocolName(t);
         }
 
-        private static object WrapValueForJson(object value)
+        private static object? WrapValueForJson(object? value)
         {
             if (value == null) return null;
             if (value is Dictionary<string, object> d) return d;
@@ -94,7 +97,7 @@ namespace DeukPack.Protocol
             if (value is bool b) return new Dictionary<string, object> { { "tf", b } };
             if (value is int || value is long || value is short || value is byte) return new Dictionary<string, object> { { "i64", Convert.ToInt64(value) } };
             if (value is double db) return new Dictionary<string, object> { { "dbl", db } };
-            return new Dictionary<string, object> { { "str", value.ToString() } };
+            return new Dictionary<string, object> { { "str", value.ToString() ?? "" } };
         }
 
         private void WriteValueToCurrent(object value)
@@ -187,8 +190,8 @@ namespace DeukPack.Protocol
         public void WriteI32(int v) { WriteValueToCurrent(v); }
         public void WriteI64(long v) { WriteValueToCurrent(v); }
         public void WriteDouble(double v) { WriteValueToCurrent(v); }
-        public void WriteString(string s) { WriteValueToCurrent(s ?? ""); }
-        public void WriteBinary(byte[] b) { WriteValueToCurrent(Convert.ToBase64String(b ?? Array.Empty<byte>())); }
+        public void WriteString(string? s) { WriteValueToCurrent(s ?? ""); }
+        public void WriteBinary(byte[]? b) { WriteValueToCurrent(Convert.ToBase64String(b ?? Array.Empty<byte>())); }
         public void WriteListBegin(DpList list) { _listWriteStack.Push(new List<object>()); }
         public void WriteListEnd()
         {
@@ -234,7 +237,7 @@ namespace DeukPack.Protocol
                 if (nextObj != null)
                     _readStack.Push(new JsonReadCursor { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
             }
-            else if (_readMapDict != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
+            else if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
             {
                 var mapVal = _readMapDict[_readMapCurrentKey];
                 if (mapVal is Dictionary<string, object> mapStruct)
@@ -291,8 +294,8 @@ namespace DeukPack.Protocol
         public byte[] ReadBinary() { var s = ReadSingleValue<string>("str"); return string.IsNullOrEmpty(s) ? Array.Empty<byte>() : Convert.FromBase64String(s); }
         private T ReadSingleValue<T>(string key)
         {
-            object v = null;
-            if (_readMapDict != null && _readMapIndex < _readMapKeys.Count)
+            object? v = null;
+            if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && _readMapIndex < _readMapKeys.Count)
             {
                 if (_readMapReadingKey)
                 {
@@ -304,11 +307,11 @@ namespace DeukPack.Protocol
                     var valObj = _readMapDict[_readMapCurrentKey];
                     if (valObj is Dictionary<string, object> dict)
                     {
-                        if (dict.TryGetValue(key, out v)) { }
-                        else if (dict.TryGetValue("i32", out v) || dict.TryGetValue("i64", out v) || dict.TryGetValue("i8", out v) || dict.TryGetValue("i16", out v)) { }
-                        else if (dict.TryGetValue("str", out v)) { }
-                        else if (dict.TryGetValue("dbl", out v)) { }
-                        else if (dict.TryGetValue("tf", out v)) { }
+                        if (dict.TryGetValue(key, out var tv)) v = tv;
+                        else if (dict.TryGetValue("i32", out tv) || dict.TryGetValue("i64", out tv) || dict.TryGetValue("i8", out tv) || dict.TryGetValue("i16", out tv)) v = tv;
+                        else if (dict.TryGetValue("str", out tv)) v = tv;
+                        else if (dict.TryGetValue("dbl", out tv)) v = tv;
+                        else if (dict.TryGetValue("tf", out tv)) v = tv;
                     }
                     else
                         v = valObj;
@@ -321,11 +324,11 @@ namespace DeukPack.Protocol
                 var raw = _readList[_readListIndex++];
                 if (raw is Dictionary<string, object> dict)
                 {
-                    if (dict.TryGetValue(key, out v)) { }
-                    else if (dict.TryGetValue("i32", out v) || dict.TryGetValue("i64", out v) || dict.TryGetValue("i8", out v) || dict.TryGetValue("i16", out v)) { }
-                    else if (dict.TryGetValue("str", out v)) { }
-                    else if (dict.TryGetValue("dbl", out v)) { }
-                    else if (dict.TryGetValue("tf", out v)) { }
+                    if (dict.TryGetValue(key, out var tv)) v = tv;
+                    else if (dict.TryGetValue("i32", out tv) || dict.TryGetValue("i64", out tv) || dict.TryGetValue("i8", out tv) || dict.TryGetValue("i16", out tv)) v = tv;
+                    else if (dict.TryGetValue("str", out tv)) v = tv;
+                    else if (dict.TryGetValue("dbl", out tv)) v = tv;
+                    else if (dict.TryGetValue("tf", out tv)) v = tv;
                 }
                 else
                     v = raw;
@@ -333,14 +336,14 @@ namespace DeukPack.Protocol
             else if (_currentReadField.HasValue)
             {
                 var wrapper = _currentReadField.Value.Value as Dictionary<string, object>;
-                if (wrapper != null) wrapper.TryGetValue(key, out v);
+                if (wrapper != null && wrapper.TryGetValue(key, out var tv)) v = tv;
             }
-            if (v == null) return default;
-            if (typeof(T) == typeof(string)) return (T)(object)v.ToString();
+            if (v == null) return default!;
+            if (typeof(T) == typeof(string)) return (T)(object)v.ToString()!;
             if (typeof(T) == typeof(bool)) return (T)(object)Convert.ToBoolean(v);
             if (typeof(T) == typeof(long)) return (T)(object)Convert.ToInt64(v);
             if (typeof(T) == typeof(double)) return (T)(object)Convert.ToDouble(v);
-            return default;
+            return default!;
         }
         public DpList ReadListBegin()
         {
@@ -416,13 +419,13 @@ namespace DeukPack.Protocol
                 if (i < s.Length && s[i] == ':') i++;
                 SkipWs(s, ref i);
                 var val = ParseValue(s, ref i);
-                obj[key] = val;
+                if (val != null) obj[key] = val;
                 SkipWs(s, ref i);
                 if (i < s.Length && s[i] == ',') i++;
             }
             return obj;
         }
-        private static object ParseValue(string s, ref int i)
+        private static object? ParseValue(string s, ref int i)
         {
             SkipWs(s, ref i);
             if (i >= s.Length) return null;
@@ -433,9 +436,9 @@ namespace DeukPack.Protocol
             if (s[i] == 'n') { ParseToken(s, ref i, "null"); return null; }
             return ParseNumber(s, ref i);
         }
-        private static List<object> ParseArray(string s, ref int i)
+        private static List<object?> ParseArray(string s, ref int i)
         {
-            var list = new List<object>();
+            var list = new List<object?>();
             if (i >= s.Length || s[i] != '[') return list;
             i++;
             SkipWs(s, ref i);

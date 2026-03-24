@@ -35,11 +35,11 @@ namespace deukpack
         int16_t value;
         if (endianness_ == Endianness::Little)
         {
-            value = data_[position_] | (data_[position_ + 1] << 8);
+            value = static_cast<int16_t>(data_[position_] | (data_[position_ + 1] << 8));
         }
         else
         {
-            value = (data_[position_] << 8) | data_[position_ + 1];
+            value = static_cast<int16_t>((data_[position_] << 8) | data_[position_ + 1]);
         }
 
         position_ += 2;
@@ -132,7 +132,9 @@ namespace deukpack
 
     std::string BinaryReader::ReadString()
     {
-        int32_t length = ReadI32();
+        int32_t rawLen = ReadI32();
+        if (rawLen < 0) throw std::runtime_error("Negative string length");
+        size_t length = static_cast<size_t>(rawLen);
         if (position_ + length > size_)
         {
             throw std::runtime_error("Buffer overflow");
@@ -145,7 +147,9 @@ namespace deukpack
 
     std::vector<uint8_t> BinaryReader::ReadBinary()
     {
-        int32_t length = ReadI32();
+        int32_t rawLen = ReadI32();
+        if (rawLen < 0) throw std::runtime_error("Negative binary length");
+        size_t length = static_cast<size_t>(rawLen);
         if (position_ + length > size_)
         {
             throw std::runtime_error("Buffer overflow");

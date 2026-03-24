@@ -4,7 +4,25 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
-비교 기준: **1.0.x** = [v1 공개 스펙](docs/DEUKPACK_V1_RELEASE_SCOPE.md)이 고정한 공약(패치 1.0.1 … 1.0.5 동일 범주). **1.0.x ↔ 1.1.0**은 해당 문서 **§0**, **1.2.0 ↔ 1.1.0**은 **§0.1**.
+---
+
+## [1.2.6] — 2026-03-28
+
+### 변경
+
+- **스키마·임베디드 메타**: 필드·루트 스키마의 **`type` 문자열**을 **득팩 표준**(`struct`, `enum`, `int16`/`int32`/`int64` 등)으로 통일. **C#** `DpSchemaType`은 **`Int16`/`Int32`/`Int64`** 및 **`SchemaTypeToStandardString`**. **JSON 호환 와이어** 객체 키(`i32`, `tf`, `str`, `lst` 등)는 **변경 없음**.
+- **C# 코드젠**: **`string`**·구조체 참조 필드 기본 초기화로 **`nullable` 활성** 소비 프로젝트 경고 감소; 코드젠 nullable 모드 꺼짐 시 선택적 구조체 **`Clone()`** 에 null-forgiving 경로.
+- **CI**: **C++** 네이티브 와이어 라이브러리 **빌드 + `ctest`** 를 **Ubuntu·Windows** 러너에서 실행.
+- **도구**: **`npm run verify`** 로 **GitHub Actions** 와 동일한 검증을 로컬에서 실행.
+
+---
+
+## [1.2.5] — 2026-03-27
+
+### 변경
+
+- **패키지 exports (`index`)**: npm에 올라가는 **`serialize` / `deserialize`**, 인터롭, **`packStructWire`** 등 공개 API가 **GitHub** 쪽 TypeScript 진입점과 맞춰짐. Excel 전용 프로토콜은 공개 소스 트리 밖에만 존재.
+- **C# (`DeukPack.Protocol`)**: **`DpProtocol`** 과 맞추기 위해 **`WriteString` / `WriteBinary`** 를 **`string?` / `byte[]?`** 로 정리(CS8767). **`DpMetaInfosWrapper<T>.TryGetValue`** 에 **`[MaybeNullWhen(false)]`** 적용.
 
 ---
 
@@ -12,7 +30,7 @@
 
 ### 변경
 
-- **OSS 동기화 (`sync-to-oss.js`)**: **`README.md` / `README.ko.md`** 를 **루트**에서 읽어 공개 미러에 쓰며 **`docs/`·`github.com/.../docs/`** 링크를 **deukpack.app** 으로 치환; **`scripts/oss-stubs/README*.md` 제거**(이중 유지 없음). OSS 쪽 **`npm run build` 전 `npm ci`**; **`examples/consumer-cpp/build/`** 복사 제외.
+- **README (GitHub)**: **GitHub** 에서 쓰는 영문·국문 README 에서 문서 링크를 **[deukpack.app](https://deukpack.app/)** 로 안내하도록 정리.
 - **의존성·툴체인**: **`nan`**, **`node-addon-api` ^8**, **`yaml`**; dev — **Jest 30**, **`protobufjs` ^8**, **`rimraf` ^6**, **`cmake-js` ^8**, **`node-gyp` ^12**, **`@vscode/vsce`**, **`@types/jest` ^30**, **`typescript` ^5.9**, **`@types/node` ^20.19**; **`engines.node` ≥18**; **`scripts/setup.js`** 최소 **Node 18**.
 - **보안**: **`npm audit fix`** — 전이 **`minimatch`** high ReDoS 권고 대응.
 
@@ -40,7 +58,7 @@
 - **호환 깨짐(생성 경로)**: **`--ts`** / **`--js`**(파이프라인 **`ts`** / **`js`**) 산출이 **`typescript/`**, **`javascript/`** 대신 **`<out>/ts/`**, **`<out>/js/`** 로 바뀜.
 - **파이프라인**: **`jobs[].outputDir` 생략** 시 **`defineRoot`** 와 동일한 상대 경로(기본 **`idls`**)가 출력 루트 → **`csharp`/`cpp`/`ts`/`js`** 하위에 생성.
 - **`deukpack init`**: 기본 생성 파이프라인이 **`defineScope: "all"`**, **`outputDir` = `defineRoot`** 에 맞춤; 대화형 기본값 정리.
-- **문서·예제·키트**: **`ts`/`js`** 경로 반영; **`YOUR_PROJECT`** **`build-deukpack.js`**는 **`buildDir/ts`** 우선, 없으면 **`buildDir/typescript`** 호환.
+- **문서·예제·키트**: **`ts`/`js`** 출력 경로 반영.
 
 ---
 
@@ -58,8 +76,8 @@
 
 ### 추가
 
-- **동봉 VS Code 확장**: npm tarball에 **`bundled/deuk-idl.vsix`** 포함. **postinstall**은 **`.deukpack/deuk-idl-vsix.json`**에 기록된 **`deukpack` npm 버전**과 달라지면 다시 **`code`/`cursor --install-extension`** 시도. **대화형 `deukpack bootstrap`** 마지막에 VSIX 설치·갱신 확인. **`sync-to-oss.js --build`** 및 동기화 후 OSS 쪽 **`bundle:vscode`**로 **DeukPackOSS**에도 동일 VSIX 포함. **`bundled/README.md`** 참고.
-- **릴리스 스펙**: [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) **§0.1** — **Unity UPM 연동**을 명시: 임베디드 패키지 **`app.deukpack.runtime`** 의 `Runtime/Plugins`에 **DeukPack.Protocol** / **DeukPack.ExcelProtocol**(netstandard2.0) DLL을 두고, 게임 레포 빌드(예: `YOUR_PROJECT` `scripts/build-deukpack.js` → `deukPackUnityRuntimePluginsPath`)로 갱신하는 **표준 모델**. npm `deukpack` tarball에는 DLL이 **포함되지 않음**; 생성 게임 코드는 `clientDeukDefinePath` 등 별도 설정.
+- **동봉 VS Code 확장**: npm tarball에 **`bundled/deuk-idl.vsix`** 포함. **postinstall**은 **`.deukpack/deuk-idl-vsix.json`**에 기록된 **`deukpack` npm 버전**과 달라지면 다시 **`code`/`cursor --install-extension`** 시도. **대화형 `deukpack bootstrap`** 마지막에 VSIX 설치·갱신 확인. **`bundled/README.md`** 참고.
+- **Unity**: **[deukpack.app](https://deukpack.app/)** 에 **DeukPack.Protocol** 등을 UPM 스타일로 넣는 방법이 정리됨. 네이티브 플러그인은 게임/프로젝트 빌드로 만들며, npm **`deukpack`** tarball 안에는 포함되지 않음.
 - **npm 와이어 진입(단일 형태)**: **`serialize(값, 프로토콜?, extras?)`** / **`deserialize(데이터, 프로토콜?, extras?)`** —보내는 타입 **`WireExtras`** / **`WireDeserializeExtras`**(`pretty`, `interopRootStruct`, `interopStructDefs`, `targetType` 등). 세부 제어는 **`WireSerializer`/`WireDeserializer`** + **`SerializationOptions`** 유지.
 
 ### 변경
@@ -68,12 +86,8 @@
 - **와이어(TypeScript)**: **`BinaryReader`**, **`wireTags`**, **`SerializationWarnings`** 추가·보강; **`WireSerializer`/`WireDeserializer`** 확장으로 **득팩 네이티브**(`pack`·`json`·`yaml`)와 **인터롭**(`tbinary`·`tcompact`·`tjson`+스키마) 짝 유지. **C# `DeukPack.Protocol`**: csproj·**SharedCompile** props 정리.
 - **CI**: GitHub Actions에 **setup-dotnet** 적용 → `DeukPack.Protocol` 등 C# 빌드 안정화; 단계명 YAML 따옴표(`:`·`&`) 수정.
 - **코드 생성**: C++/TS/JS 출력 **템플릿화** 정리; JS/스키마 **득팩 표기** 정합.
-- **문서**: DeukNavigation **게임 연동**(베이킹·런타임) 보강; `deukpack.app` 서브모듈 갱신; YOUR_PROJECT 연동 **경로 표준**을 내부 문서와 일치(생성 C# → `clientDeukDefinePath`, DLL → UPM Plugins).
+- **문서**: DeukNavigation **게임 연동**(베이킹·런타임) 보강; **deukpack.app** 갱신.
 - **저장소**: ExcelProtocol·예제 **빌드 산출물** gitignore·추적 해제.
-
-### 동일 (1.1.0 공약 유지)
-
-- [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) **§2 비공약**은 **1.2.0에서도 동일**.
 
 ---
 
@@ -93,10 +107,6 @@
 
 - **문서·사이트**: README 한 줄 요약·[deukpack.app](https://deukpack.app/) 레퍼런스 구조(서브모듈 커밋에 맞춰 갱신).
 
-### 동일 (1.0.x 공약 유지)
-
-- [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) **§2 비공약**(테이블·Excel 완결 워크플로, `generateCode()` 스텁, Java emit 없음 등)은 **1.1.0에서도 동일**.
-
 ### 검증 — DeukPackKits 스타터키트 (로컬 CLI `1.1.0`)
 
 **2026-03-23** 이 저장소에서 `npm run build` 후 `node scripts/build_deukpack.js` 로 확인:
@@ -114,8 +124,7 @@
 
 ### 요약
 
-- 공약·비공약은 [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.md) 고정.
-- 패치(예: 1.0.1–1.0.5)는 **버그 수정·패키징·C# 멀티 타깃·문서 경로** 중심이며 **§1·§2 범위는 넓히지 않음**.
+- 초기 **1.0.x** 패치는 **버그 수정·패키징·C# 멀티 타깃·문서 경로** 중심이며, 코어 기능 범위를 넓히지 않음.
 
 ---
 

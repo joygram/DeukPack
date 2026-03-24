@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,9 @@
   "scripts": {
     "setup": "node scripts/setup.js",
     "postinstall": "node scripts/npm-postinstall.js",
-    "prepublishOnly": "node scripts/changelog-release-slice.js && npm run build && npm run bundle:vscode",
+    "prepublishOnly": "node scripts/sync-version-artifacts.js && npm run build && npm run bundle:vscode",
+    "version:sync": "node scripts/sync-version-artifacts.js",
+    "postversion": "node scripts/sync-version-artifacts.js",
     "bundle:vscode": "node scripts/bundle-vscode-vsix.js",
     "build": "tsc && node scripts/copy-codegen-templates.js && npm run build:cs && node scripts/dist_csharp.js",
     "build:native": "node-gyp rebuild",
@@ -22,7 +24,9 @@
     "dev": "node ./node_modules/typescript/lib/tsc.js --watch",
     "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",
     "release-notice:apply": "node scripts/apply-release-notice.js",
-    "release:check": "node scripts/release-check.js && npm run build && npm run bundle:vscode && npm test && npm pack --dry-run"
+    "release:check": "node scripts/release-check.js && npm run build && npm run bundle:vscode && npm test && npm pack --dry-run",
+    "verify": "node scripts/verify-build.js",
+    "verify:quick": "node scripts/verify-build.js --skip-test --skip-codegen"
   },
   "keywords": [
     "deukpack",
