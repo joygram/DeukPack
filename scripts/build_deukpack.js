@@ -314,7 +314,7 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
             ({ run } = require(legacyMigrator));
         } catch (e) {
             console.error('❌ --convert-to-deuk: internal legacy migration scripts are not available.');
-            console.error('   (OSS / npm package excludes project-specific legacy .thrift→.deuk rules.)');
+            console.error('   (Published package omits scripts/internal/legacy-migration/.)');
             console.error('   Use the full DeukPack tree with scripts/internal/legacy-migration/, or migrate by other means.');
             process.exit(1);
         }
@@ -787,7 +787,7 @@ function parseOptions(args) {
         defineRoot: undefined,  // --define-root idls | _thrift
         convertToDeuk: false,
         convertToDeukOutputDir: 'deuk',  // --convert-to-deuk [subdir]
-        emitPerFile: false,  // --emit-per-file  AST 내 각 sourceFile별 .deuk 추가 출력 (server_msg_db 등)
+        emitPerFile: false,  // --emit-per-file
         ef: false,  // --ef  Entity Framework support (meta table entities + DbContext)
         csharpProjectName: 'DeukDefine',  // --csharp-project-name <name>  emitted .csproj AssemblyName/filename
         csharpNullable: false,           // --csharp-nullable  Enable #nullable enable
@@ -994,14 +994,12 @@ async function generateCSharp(engine, ast, outputDir, options = {}) {
 
     // Write each file separately
     for (const [filename, content] of Object.entries(csharpFiles)) {
-        // Windows 예약어 필터링 (nul 등 방지)
         if (!filename || filename === 'nul.cs' || filename.startsWith('nul')) {
             console.warn(`   ⚠️  Skipping invalid filename: ${filename}`);
             continue;
         }
 
         const filePath = path.join(csharpDir, filename);
-        // 경로에 nul이 포함되어 있으면 건너뛰기
         if (filePath.includes('\\nul\\') || filePath.endsWith('\\nul')) {
             console.warn(`   ⚠️  Skipping invalid path: ${filePath}`);
             continue;
