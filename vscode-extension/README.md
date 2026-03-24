@@ -18,7 +18,7 @@
 code --install-extension "$(npm root)/deukpack/bundled/deuk-idl.vsix"
 ```
 
-(`npm install deukpack` may install it automatically when `code` or `cursor` is on your PATH; skip with `DEUKPACK_SKIP_VSCODE_INSTALL=1`.)
+(`npm install deukpack` may install it automatically when `code`, `cursor`, or `antigravity` is on your PATH; skip with `DEUKPACK_SKIP_VSCODE_INSTALL=1`.)
 
 **From this repo:** build locally:
 

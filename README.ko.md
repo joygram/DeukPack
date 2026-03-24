@@ -98,7 +98,7 @@ npx deukpack run         # 기본: ./deukpack.pipeline.json
 
 의존성 전에 `package.json`만 먼저 만들고 싶다면(선택): `npm init -y` 후 `npm install deukpack`. 보통은 **`npm install deukpack`만 해도 됩니다** — npm이 필요하면 `package.json`을 만들거나 갱신합니다.
 
-**`npx deukpack init`**은 **`deukpack.pipeline.json`**을 쓴 뒤 **bootstrap**으로 **`.deukpack/workspace.json`**을 만들거나 갱신합니다(Unity·프로젝트 탐색; **`installKind`** 기본값은 **`package`**이며 **`--kind src`**와 **`--engine-root`**를 같이 줄 때만 엔진 연동). 마지막에 동봉 **`bundled/deuk-idl.vsix`**를 **질문 없이** 설치 시도합니다(**`code`** / **`cursor`** / **`antigravity`**, `PATH` 필요; 생략은 **`--skip-vsix`**). VSIX 경로·수동 설치: [`bundled/README.md`](bundled/README.md).
+**`npx deukpack init`**은 **`deukpack.pipeline.json`**을 쓴 뒤 **bootstrap**으로 **`.deukpack/workspace.json`**을 만들거나 갱신합니다(Unity·프로젝트 탐색; **`installKind`** 기본값은 **`package`**이며 **`--kind src`**와 **`--engine-root`**를 같이 줄 때만 엔진 연동). 마지막에 동봉 **`bundled/deuk-idl.vsix`**를 **질문 없이** 설치 시도합니다(**VS Code** `code` / **Cursor** `cursor` / **Antigravity** `antigravity`, `PATH` 필요; 생략은 **`--skip-vsix`**). VSIX 경로·수동 설치: [`bundled/README.md`](bundled/README.md).
 
 GitHub Release tarball:
 
