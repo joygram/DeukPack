@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * DeukPack (core) — 공통 초기 설정 (OS 공통)
- * 1) Node 16+ 검사  2) npm install  3) npm run build
+ * 1) Node 18+ 검사  2) npm install  3) npm run build
  * Usage: node scripts/setup.js [--skip-build]
  */
 
@@ -10,7 +10,7 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
-const NODE_MIN_MAJOR = 16;
+const NODE_MIN_MAJOR = 18;
 
 function getNodeMajor() {
     const v = process.version;
