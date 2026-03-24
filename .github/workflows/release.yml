@@ -1,4 +1,4 @@
-# OSS: GitHub Release + npm tarball asset; optional npm publish (set NPM_TOKEN secret)
+# Release: GitHub Release + npm tarball asset; optional npm publish (NPM_TOKEN secret)
 name: Release
 
 on:

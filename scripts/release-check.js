@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * OSS/릴리스 전 버전·일치 검사. 실패 시 exit 1.
- * - package.json version 형식 (semver)
- * - package-lock.json root version과 package.json 일치
+ * Pre-release version consistency. Exits 1 on failure.
+ * - package.json semver
+ * - package-lock.json root version matches package.json
  */
 const fs = require('fs');
 const path = require('path');

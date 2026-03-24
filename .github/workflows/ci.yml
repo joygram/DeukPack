@@ -1,5 +1,5 @@
-# OSS: test + build on push/PR (no secrets)
-# Push to main/master 시 빌드 산출물(npm tarball)을 Artifact로 업로드 → GitHub Actions에서 다운로드 가능
+# CI: test + build on push/PR (no secrets)
+# On push to main/master, upload npm pack tarball as workflow artifact
 name: CI
 
 on:
