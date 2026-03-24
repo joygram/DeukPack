@@ -1,13 +1,5 @@
 #!/usr/bin/env node
-/**
- * package.json version 기준으로 버전·이력 산출물을 맞춘다.
- * - CHANGELOG.release.md / CHANGELOG.release.ko.md (changelog-release-slice)
- * - package-lock.json 루트 version (npm install --package-lock-only)
- * - release-notice.json 최상위 version (불일치 시 갱신)
- *
- * 수동: npm run version:sync
- * npm version 직후: postversion 훅으로 실행되며, 출력된 git 안내로 amend 권장.
- */
+/** Align version artifacts (changelog slices, package-lock, release-notice) with package.json version. */
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -32,7 +24,7 @@ function syncPackageLock() {
     { cwd: root, stdio: 'inherit', shell: true }
   );
   if (r.status !== 0) {
-    console.error('❌ package-lock 갱신 실패. `npm install` 로 수동 확인.');
+    console.error('❌ package-lock update failed. Run `npm install` manually.');
     process.exit(r.status || 1);
   }
   console.log('✓ package-lock.json (root version)');
@@ -49,14 +41,14 @@ function syncReleaseNoticeVersion(ver) {
   }
   notice.version = ver;
   fs.writeFileSync(noticePath, JSON.stringify(notice, null, 2) + '\n', 'utf8');
-  console.log('✓ release-notice.json version →', ver, '(상위 필드만; announce/landing/product 문구는 별도 편집)');
+  console.log('✓ release-notice.json version →', ver);
 }
 
 function main() {
   const pkg = readPkg();
   const ver = pkg.version;
   if (!ver || typeof ver !== 'string') {
-    console.error('❌ package.json: version 없음');
+    console.error('❌ package.json: version missing');
     process.exit(1);
   }
 
@@ -72,10 +64,10 @@ function main() {
   if (rc.status !== 0) process.exit(rc.status || 1);
 
   console.log('');
-  console.log('✅ 버전 산출물 동기화 완료.');
+  console.log('✅ Version artifacts synced.');
   if (process.env.npm_lifecycle_event === 'postversion') {
     console.log('');
-    console.log('   `npm version` 직후라면 스테이징 후 커밋에 포함하세요:');
+    console.log('   Stage and amend the version commit:');
     console.log('   git add package-lock.json CHANGELOG.release.md CHANGELOG.release.ko.md release-notice.json');
     console.log('   git commit --amend --no-edit');
   }

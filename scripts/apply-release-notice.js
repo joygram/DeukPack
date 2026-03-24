@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 /**
- * release-notice.json → MkDocs 상단 배너(announce) + docs/_includes 랜딩 노티.
- * 정본 JSON은 OSS 동기화 대상(DeukPack 루트). 키트·deukpack.app 단독 저장소 CI에서는
- * raw.githubusercontent.com 에서 JSON·이 스크립트를 받아 동일 인자로 실행한다.
+ * release-notice.json → MkDocs announce banner + docs/_includes notices.
  *
  * 사용 예:
  *   node scripts/apply-release-notice.js
