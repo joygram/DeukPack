@@ -1,11 +1,19 @@
 {
-  "version": "1.2.3",
+  "version": "1.2.4",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce": "<strong>득팩 코어 1.2.3</strong> — <code>deukpack init</code> 대화형 정리·bootstrap 항상·VSIX는 마지막(<code>code</code>/<code>cursor</code>/<code>antigravity</code>)·<code>--skip-workspace</code> 제거 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/en/releases/\">EN</a>",
-  "landing_ko": "**득팩 코어 1.2.3** — `deukpack init` 대화형 단순화(디렉터리 전체 IDL); `.deukpack/workspace.json` bootstrap 항상; 동봉 VSIX는 bootstrap 이후 설치 시도 순서 `code`→`cursor`→`antigravity`; README `npx` 안내 정리. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
-  "landing_en": "**DeukPack core 1.2.3** — `deukpack init` interactive trimmed (directory-wide IDL); workspace bootstrap always; bundled VSIX after bootstrap (`code` / `cursor` / `antigravity`); `--skip-workspace` removed; README `npx` guidance. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/en/releases/)",
+  "announce": "<strong>득팩 코어 1.2.4</strong> — OSS README 루트 동기화·의존성 최신화·Node 18+·audit 정리 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/en/releases/\">EN</a>",
+  "landing_ko": "**득팩 코어 1.2.4** — 공개 미러 `README`는 루트에서 복사·`docs` 링크를 deukpack.app으로 치환; `sync-to-oss`에 OSS `npm ci`·의존성(Jest 30 등)·`minimatch` audit 대응·`engines` Node 18+. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.2.4** — Public mirror README from repo root with `docs` links rewritten to deukpack.app; OSS sync runs **`npm ci`**; dependency refresh (Jest 30, etc.), **`minimatch` audit fix**, **`engines` Node 18+**. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/en/releases/)",
   "product_notices": [
+    {
+      "date": "2026-03-26",
+      "products": ["core-engine", "extension", "pipeline-unity"],
+      "title_ko": "1.2.4 — OSS README·의존성·Node 18·audit",
+      "title_en": "1.2.4 — OSS README sync, deps, Node 18, audit",
+      "body_ko": "- **OSS 동기화**: 루트 README → 미러, `docs`/GitHub docs URL → deukpack.app; 스텁 README 제거; OSS 빌드 전 `npm ci`.\n- **의존성**: Jest 30, protobufjs 8, node-addon-api 8, yaml/nan, rimraf 6, cmake-js 8, node-gyp 12 등.\n- **보안·환경**: `npm audit fix`(minimatch); `engines`·setup 최소 Node 18.",
+      "body_en": "- **OSS sync**: root README → mirror with `docs`/GitHub doc links rewritten to deukpack.app; stub READMEs removed; **`npm ci`** before OSS build.\n- **Dependencies**: Jest 30, protobufjs 8, node-addon-api 8, yaml/nan, rimraf 6, cmake-js 8, node-gyp 12, etc.\n- **Security / runtime**: **`npm audit fix`** (minimatch); **`engines`** and setup minimum **Node 18**."
+    },
     {
       "date": "2026-03-25",
       "products": ["core-engine", "extension", "pipeline-unity"],

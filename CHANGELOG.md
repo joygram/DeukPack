@@ -8,6 +8,16 @@ Baseline: **1.0.x** = public support scope in [docs/DEUKPACK_V1_RELEASE_SCOPE.md
 
 ---
 
+## [1.2.4] — 2026-03-26
+
+### Changed
+
+- **OSS sync (`sync-to-oss.js`)**: **`README.md` / `README.ko.md`** are taken from the **repo root** and written to the public mirror with **`docs/` / `github.com/.../docs/`** links rewritten to **deukpack.app**; **`scripts/oss-stubs/README*.md` removed** (no duplicate maintainer copy). **`npm ci`** runs in the OSS tree before **`npm run build`**; **`examples/consumer-cpp/build/`** excluded from copy.
+- **Dependencies / toolchain**: **`nan`**, **`node-addon-api` ^8**, **`yaml`**; dev — **Jest 30**, **`protobufjs` ^8**, **`rimraf` ^6**, **`cmake-js` ^8**, **`node-gyp` ^12**, **`@vscode/vsce`**, **`@types/jest` ^30**, **`typescript` ^5.9**, **`@types/node` ^20.19**; **`engines.node` ≥18**; **`scripts/setup.js`** minimum **Node 18**.
+- **Security**: **`npm audit fix`** — transitive **`minimatch`** high-severity ReDoS advisories addressed.
+
+---
+
 ## [1.2.3] — 2026-03-25
 
 ### Changed

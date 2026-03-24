@@ -8,6 +8,16 @@
 
 ---
 
+## [1.2.4] — 2026-03-26
+
+### 변경
+
+- **OSS 동기화 (`sync-to-oss.js`)**: **`README.md` / `README.ko.md`** 를 **루트**에서 읽어 공개 미러에 쓰며 **`docs/`·`github.com/.../docs/`** 링크를 **deukpack.app** 으로 치환; **`scripts/oss-stubs/README*.md` 제거**(이중 유지 없음). OSS 쪽 **`npm run build` 전 `npm ci`**; **`examples/consumer-cpp/build/`** 복사 제외.
+- **의존성·툴체인**: **`nan`**, **`node-addon-api` ^8**, **`yaml`**; dev — **Jest 30**, **`protobufjs` ^8**, **`rimraf` ^6**, **`cmake-js` ^8**, **`node-gyp` ^12**, **`@vscode/vsce`**, **`@types/jest` ^30**, **`typescript` ^5.9**, **`@types/node` ^20.19**; **`engines.node` ≥18**; **`scripts/setup.js`** 최소 **Node 18**.
+- **보안**: **`npm audit fix`** — 전이 **`minimatch`** high ReDoS 권고 대응.
+
+---
+
 ## [1.2.3] — 2026-03-25
 
 ### 변경
