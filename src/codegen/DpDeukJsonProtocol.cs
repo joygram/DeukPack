@@ -3,7 +3,6 @@
  * 설정·OpenAPI 라운드트립용. 타입 래퍼 없음. 레거시 호환 JSON(DpJsonProtocol)과 별도.
  * See: DeukPack/docs/DEUKPACK_DEUK_JSON_YAML.md
  */
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,18 +27,18 @@ namespace DeukPack.Protocol
         private readonly Stack<DeukStructState> _writeStack;
         private readonly Stack<List<object>> _listWriteStack;
         private readonly Stack<DeukMapState> _mapWriteStack;
-        private string _currentFieldKey;
+        private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
         private Dictionary<string, object> _rootRead;
         private Stack<DeukReadCursor> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
-        private List<object> _readList;
+        private List<object>? _readList;
         private int _readListIndex;
-        private Dictionary<string, object> _readMapDict;
-        private List<string> _readMapKeys;
+        private Dictionary<string, object>? _readMapDict;
+        private List<string>? _readMapKeys;
         private int _readMapIndex;
         private bool _readMapReadingKey;
-        private string _readMapCurrentKey;
+        private string? _readMapCurrentKey;
         private short _readFieldSequenceId;
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
@@ -61,6 +60,10 @@ namespace DeukPack.Protocol
                     _rootRead = DeukJsonParse(json);
                 }
             }
+            else
+            {
+                _rootRead = new Dictionary<string, object>();
+            }
         }
 
         public void Dispose()
@@ -77,13 +80,13 @@ namespace DeukPack.Protocol
         private struct DeukReadCursor
         {
             public Dictionary<string, object> Obj;
-            public IEnumerator<KeyValuePair<string, object>> Enumerator;
+            public IEnumerator<KeyValuePair<string, object>>? Enumerator;
         }
 
         private class DeukMapState
         {
-            public readonly Dictionary<string, object> Map = new Dictionary<string, object>();
-            public object PendingKey;
+            public readonly Dictionary<string, object?> Map = new Dictionary<string, object?>();
+            public object? PendingKey;
         }
 
         private static bool IsReservedKey(string key)
@@ -195,8 +198,8 @@ namespace DeukPack.Protocol
         public void WriteI32(int v) { WriteValueToCurrentRaw((long)v); }
         public void WriteI64(long v) { WriteValueToCurrentRaw(v); }
         public void WriteDouble(double v) { WriteValueToCurrentRaw(v); }
-        public void WriteString(string s) { WriteValueToCurrentRaw(s ?? ""); }
-        public void WriteBinary(byte[] b) { WriteValueToCurrentRaw(Convert.ToBase64String(b ?? Array.Empty<byte>())); }
+        public void WriteString(string? s) { WriteValueToCurrentRaw(s ?? ""); }
+        public void WriteBinary(byte[]? b) { WriteValueToCurrentRaw(Convert.ToBase64String(b ?? Array.Empty<byte>())); }
 
         public void WriteListBegin(DpList list) { _listWriteStack.Push(new List<object>()); }
         public void WriteListEnd()
@@ -249,7 +252,7 @@ namespace DeukPack.Protocol
                     _readStack.Push(new DeukReadCursor { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
                 }
             }
-            else if (_readMapDict != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
+            else if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
             {
                 var mapVal = _readMapDict[_readMapCurrentKey];
                 if (mapVal is Dictionary<string, object> mapStruct)
@@ -321,10 +324,10 @@ namespace DeukPack.Protocol
             return DpWireType.String;
         }
 
-        private object ReadRawCurrentValue()
+        private object? ReadRawCurrentValue()
         {
-            object v = null;
-            if (_readMapDict != null && _readMapKeys != null && _readMapIndex < _readMapKeys.Count)
+            object? v = null;
+            if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && _readMapIndex < _readMapKeys.Count)
             {
                 if (_readMapReadingKey)
                 {
@@ -436,14 +439,14 @@ namespace DeukPack.Protocol
                 if (i < s.Length && s[i] == ':') i++;
                 SkipWs(s, ref i);
                 var val = ParseValue(s, ref i);
-                obj[key] = val;
+                if (val != null) obj[key] = val;
                 SkipWs(s, ref i);
                 if (i < s.Length && s[i] == ',') i++;
             }
             return obj;
         }
 
-        private static object ParseValue(string s, ref int i)
+        private static object? ParseValue(string s, ref int i)
         {
             SkipWs(s, ref i);
             if (i >= s.Length) return null;
@@ -455,9 +458,9 @@ namespace DeukPack.Protocol
             return ParseNumber(s, ref i);
         }
 
-        private static List<object> ParseArray(string s, ref int i)
+        private static List<object?> ParseArray(string s, ref int i)
         {
-            var list = new List<object>();
+            var list = new List<object?>();
             if (i >= s.Length || s[i] != '[') return list;
             i++;
             SkipWs(s, ref i);

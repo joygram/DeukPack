@@ -3,7 +3,7 @@
 import { logMissingRequiredField } from '../protocols/SerializationWarnings';
 
 export type EmbeddedPackSchemaField = { id: number; name: string; type: string; typeName: string; required?: boolean; defaultValue?: unknown; docComment?: string; annotations?: Record<string, string> };
-export type EmbeddedPackStructSchema = { name: string; type: 'Struct'; fields: Record<string, EmbeddedPackSchemaField>; docComment?: string; annotations?: Record<string, string> };
+export type EmbeddedPackStructSchema = { name: string; type: 'struct'; fields: Record<string, EmbeddedPackSchemaField>; docComment?: string; annotations?: Record<string, string> };
 
 // --- Deuk native `pack` wire (WireSerializer / WireDeserializer parity, LE) ---
 var _PackTag = { Null: 0, False: 1, True: 2, Int32: 3, Int64: 4, Double: 5, String: 6, Binary: 7, Array: 8, Map: 9, Object: 10 };
@@ -207,7 +207,7 @@ function _packElemWireType(em) {
   return "struct";
 }
 function _packWriteStructBody(a, schema, obj, schemas) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
   a.push(_PackTag.Object);
   var ids = Object.keys(schema.fields)
     .map(function (k) { return parseInt(k, 10); })
@@ -324,7 +324,7 @@ function _packReadValue(r, f, schemas) {
 export function structFromPackBinary(schema, buf, schemas) {
   var u8 = buf && buf.buffer ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) : new Uint8Array(buf || []);
   var r = { u8: u8, i: 0 };
-  if (!schema || schema.type !== "Struct" || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
   if (_prU8(r) !== _PackTag.Object) throw new Error("[DeukPack] pack: expected Object tag");
   var cnt = _prI32(r);
   var raw = {};

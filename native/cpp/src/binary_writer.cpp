@@ -28,13 +28,13 @@ namespace deukpack
 
         if (endianness_ == Endianness::Little)
         {
-            currentBuffer_[position_] = value & 0xFF;
-            currentBuffer_[position_ + 1] = (value >> 8) & 0xFF;
+            currentBuffer_[position_]     = static_cast<uint8_t>(value & 0xFF);
+            currentBuffer_[position_ + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);
         }
         else
         {
-            currentBuffer_[position_] = (value >> 8) & 0xFF;
-            currentBuffer_[position_ + 1] = value & 0xFF;
+            currentBuffer_[position_]     = static_cast<uint8_t>((value >> 8) & 0xFF);
+            currentBuffer_[position_ + 1] = static_cast<uint8_t>(value & 0xFF);
         }
 
         position_ += 2;
@@ -46,17 +46,17 @@ namespace deukpack
 
         if (endianness_ == Endianness::Little)
         {
-            currentBuffer_[position_] = value & 0xFF;
-            currentBuffer_[position_ + 1] = (value >> 8) & 0xFF;
-            currentBuffer_[position_ + 2] = (value >> 16) & 0xFF;
-            currentBuffer_[position_ + 3] = (value >> 24) & 0xFF;
+            currentBuffer_[position_]     = static_cast<uint8_t>(value & 0xFF);
+            currentBuffer_[position_ + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);
+            currentBuffer_[position_ + 2] = static_cast<uint8_t>((value >> 16) & 0xFF);
+            currentBuffer_[position_ + 3] = static_cast<uint8_t>((value >> 24) & 0xFF);
         }
         else
         {
-            currentBuffer_[position_] = (value >> 24) & 0xFF;
-            currentBuffer_[position_ + 1] = (value >> 16) & 0xFF;
-            currentBuffer_[position_ + 2] = (value >> 8) & 0xFF;
-            currentBuffer_[position_ + 3] = value & 0xFF;
+            currentBuffer_[position_]     = static_cast<uint8_t>((value >> 24) & 0xFF);
+            currentBuffer_[position_ + 1] = static_cast<uint8_t>((value >> 16) & 0xFF);
+            currentBuffer_[position_ + 2] = static_cast<uint8_t>((value >> 8) & 0xFF);
+            currentBuffer_[position_ + 3] = static_cast<uint8_t>(value & 0xFF);
         }
 
         position_ += 4;
@@ -70,14 +70,14 @@ namespace deukpack
         {
             for (int i = 0; i < 8; i++)
             {
-                currentBuffer_[position_ + i] = (value >> (i * 8)) & 0xFF;
+                currentBuffer_[position_ + i] = static_cast<uint8_t>((value >> (i * 8)) & 0xFF);
             }
         }
         else
         {
             for (int i = 0; i < 8; i++)
             {
-                currentBuffer_[position_ + i] = (value >> ((7 - i) * 8)) & 0xFF;
+                currentBuffer_[position_ + i] = static_cast<uint8_t>((value >> ((7 - i) * 8)) & 0xFF);
             }
         }
 

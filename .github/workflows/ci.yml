@@ -43,6 +43,12 @@ jobs:
       - name: Pack (dry run for publish layout)
         run: npm pack --dry-run
 
+      - name: C++ wire build + test
+        run: |
+          cmake -S native/cpp -B native/cpp/build
+          cmake --build native/cpp/build --config Release
+          ctest --test-dir native/cpp/build --output-on-failure -C Release
+
       - name: Example IDL codegen (C#/C++/JS smoke)
         run: node scripts/build_deukpack.js examples/sample_idl/sample.thrift examples/out --csharp --cpp --js --protocol tbinary
 

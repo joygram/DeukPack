@@ -115,7 +115,7 @@ export function buildEmbeddedFieldsObject(fields: DeukPackField[], ast: DeukPack
 export function buildEmbeddedStructSchema(struct: DeukPackStruct, ast: DeukPackAST): Record<string, unknown> {
   return {
     name: struct.name,
-    type: 'Struct',
+    type: 'struct',
     fields: buildEmbeddedFieldsObject(struct.fields || [], ast),
     docComment: struct.docComment != null ? struct.docComment : undefined,
     annotations: struct.annotations && Object.keys(struct.annotations).length ? struct.annotations : undefined,

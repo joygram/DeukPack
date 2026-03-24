@@ -79,13 +79,13 @@ function _elemType(tn) {
   return "struct";
 }
 function _toDpJson(schema, obj, schemas) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) return obj;
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) return obj;
   var out = {};
   for (var id in schema.fields) { var f = schema.fields[id]; var v = obj && obj[f.name]; if (v === undefined && f.defaultValue !== undefined && f.defaultValue !== null) v = f.defaultValue; if (v !== undefined) out[String(id)] = _wrapDpJson(f.type, f.typeName, v, schemas); }
   return out;
 }
 function _toDpJsonFiltered(schema, obj, schemas, fieldIds, overrides) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) return obj;
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) return obj;
   var idSet = fieldIds ? {} : null;
   if (fieldIds) { for (var i = 0; i < fieldIds.length; i++) idSet[fieldIds[i]] = true; }
   var out = {};
@@ -120,7 +120,7 @@ function _unwrapDpJson(type, typeName, jsonVal, schemas) {
   return jsonVal;
 }
 function _fromDpJson(schema, jsonObj, schemas) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) return jsonObj || {};
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) return jsonObj || {};
   var structName = (schema && schema.name) ? schema.name : 'Struct';
   if (jsonObj && typeof jsonObj === 'object') {
     for (var k in jsonObj) { if (Object.prototype.hasOwnProperty.call(jsonObj, k) && !schema.fields[k]) _deukSerializationWarn('unknown', structName, k, k); }
@@ -211,7 +211,7 @@ function _xlReadField(field, fid, colMap, sheet, row, schemas, enums, parentPath
   return _xlParsePrimitive(type, sheet.cellValue(row, e.col), e.dt, enums);
 }
 function _fromExcelRow(schema, sheet, row, schemas, enums) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) return {};
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) return {};
   var colMap = _xlBuildColMap(sheet), out = {};
   for (var fid in schema.fields) { var f = schema.fields[fid]; var v = _xlReadField(f, fid, colMap, sheet, row, schemas, enums); if (v !== undefined && v !== null) out[f.name] = v; }
   return out;

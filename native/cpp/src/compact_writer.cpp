@@ -4,6 +4,7 @@
  */
 
 #include "compact_writer.h"
+#include <algorithm>
 #include <cstring>
 
 namespace deukpack
@@ -23,12 +24,13 @@ namespace deukpack
 
     void CompactWriter::WriteVarInt(int32_t value)
     {
-        while (value >= 0x80)
+        auto uval = static_cast<uint32_t>(value);
+        while (uval >= 0x80)
         {
-            WriteByte((value & 0x7F) | 0x80);
-            value >>= 7;
+            WriteByte(static_cast<uint8_t>((uval & 0x7F) | 0x80));
+            uval >>= 7;
         }
-        WriteByte(value & 0x7F);
+        WriteByte(static_cast<uint8_t>(uval & 0x7F));
     }
 
     void CompactWriter::WriteString(const std::string &value)

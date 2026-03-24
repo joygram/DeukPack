@@ -1,8 +1,6 @@
 /**
  * DeukPackSerializer — 직렬화 헬퍼. DpProtocolLibrary 모듈화.
  */
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -265,7 +263,7 @@ namespace DeukPack.Protocol
                 else
                 {
                     var keyValue = ReadValue(iprot, keyType, typeof(TKey));
-                    key = keyValue is TKey k ? k : default(TKey);
+                    key = keyValue is TKey k ? k : default!;
                 }
 
                 TValue value;
@@ -276,10 +274,10 @@ namespace DeukPack.Protocol
                 else
                 {
                     var valueObj = ReadValue(iprot, valueType, typeof(TValue));
-                    value = valueObj is TValue v ? v : default(TValue);
+                    value = valueObj is TValue v ? v : default!;
                 }
 
-                map[key] = value;
+                map[key!] = value;
             }
             iprot.ReadMapEnd();
             return map;

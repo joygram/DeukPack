@@ -200,7 +200,7 @@ function _packElemWireType(em) {
   return "struct";
 }
 function _packWriteStructBody(a, schema, obj, schemas) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
   a.push(_PackTag.Object);
   var ids = Object.keys(schema.fields)
     .map(function (k) { return parseInt(k, 10); })
@@ -235,7 +235,7 @@ function _structToPackBinaryFiltered(schema, obj, schemas, fieldIds, overrides) 
   return new Uint8Array(a);
 }
 function _packWriteStructBodyFiltered(a, schema, obj, schemas, fieldIds, overrides) {
-  if (!schema || schema.type !== "Struct" || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
   var idSet = fieldIds ? {} : null;
   if (fieldIds) { for (var i = 0; i < fieldIds.length; i++) idSet[fieldIds[i]] = true; }
   a.push(_PackTag.Object);
@@ -350,7 +350,7 @@ function _packReadValue(r, f, schemas) {
 function _structFromPackBinary(schema, buf, schemas) {
   var u8 = buf && buf.buffer ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) : new Uint8Array(buf || []);
   var r = { u8: u8, i: 0 };
-  if (!schema || schema.type !== "Struct" || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
+  if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
   if (_prU8(r) !== _PackTag.Object) throw new Error("[DeukPack] pack: expected Object tag");
   var cnt = _prI32(r);
   var raw = {};

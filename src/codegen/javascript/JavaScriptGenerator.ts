@@ -106,7 +106,7 @@ export class JavaScriptGenerator extends CodeGenerator {
     const safeName = enumDef.name.replace(/\./g, '_');
     const schemaObj = {
       name: enumDef.name,
-      type: 'Enum',
+      type: 'enum',
       values: enumDef.values,
       docComment: enumDef.docComment != null ? enumDef.docComment : undefined,
       valueComments:

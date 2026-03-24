@@ -128,11 +128,148 @@ function hasDeukFileUnder(dirAbs) {
     }
 }
 
+/* ── Language auto-detection (tiered) ── */
+
+function hasAnyLang(l) { return l.csharp || l.cpp || l.ts || l.js; }
+
+function fileExistsIn(dir, name) {
+    return fsSync.existsSync(path.join(dir, name));
+}
+
+function anyFileMatchesIn(dir, test) {
+    try { return fsSync.readdirSync(dir).some(test); }
+    catch { return false; }
+}
+
+/**
+ * Tiered project language detection.
+ * Tier 1: Project / build config files (.csproj, CMakeLists.txt, tsconfig.json …)
+ * Tier 2: Source file extensions (.cs, .cpp, .ts, .js)
+ * Tier 3: template.json (DeukPackKits convention)
+ * Tier 4: Folder name heuristic
+ * @returns {{ csharp:boolean, cpp:boolean, ts:boolean, js:boolean, outputDir:string|null, source:string }|null}
+ */
+function detectProjectLanguages(configDir) {
+    const langs = { csharp: false, cpp: false, ts: false, js: false };
+    let outputDir = null;
+    let source = '';
+
+    /* ── Tier 1: project / build files ── */
+
+    // C#
+    if (anyFileMatchesIn(configDir, n => n.endsWith('.csproj') || n.endsWith('.sln'))
+        || fileExistsIn(configDir, 'global.json')) {
+        langs.csharp = true;
+    }
+    // C++
+    if (fileExistsIn(configDir, 'CMakeLists.txt')
+        || anyFileMatchesIn(configDir, n => n.endsWith('.vcxproj'))
+        || fileExistsIn(configDir, 'Makefile') || fileExistsIn(configDir, 'GNUmakefile')
+        || fileExistsIn(configDir, 'build.ninja')
+        || fileExistsIn(configDir, 'meson.build')
+        || fileExistsIn(configDir, 'premake5.lua')
+        || fileExistsIn(configDir, 'vcpkg.json')
+        || fileExistsIn(configDir, 'xmake.lua')) {
+        langs.cpp = true;
+    }
+    // TypeScript
+    if (fileExistsIn(configDir, 'tsconfig.json')
+        || anyFileMatchesIn(configDir, n => /^tsconfig\..*\.json$/.test(n))) {
+        langs.ts = true;
+    }
+    // Unity → C#
+    if (fileExistsIn(path.join(configDir, 'Packages'), 'manifest.json')
+        || (fsSync.existsSync(path.join(configDir, 'Assets'))
+            && fsSync.existsSync(path.join(configDir, 'ProjectSettings')))) {
+        langs.csharp = true;
+    }
+    // package.json: check for typescript dep → TS; otherwise Node/JS
+    if (!langs.ts && fileExistsIn(configDir, 'package.json')) {
+        try {
+            const pkg = JSON.parse(fsSync.readFileSync(path.join(configDir, 'package.json'), 'utf8'));
+            const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+            if (allDeps.typescript) langs.ts = true;
+        } catch { /* ignore */ }
+    }
+
+    if (hasAnyLang(langs)) source = 'project files';
+
+    /* ── Tier 2: source file extensions (shallow) ── */
+    if (!hasAnyLang(langs)) {
+        try {
+            const entries = fsSync.readdirSync(configDir);
+            if (entries.some(e => e.endsWith('.cs'))) langs.csharp = true;
+            if (entries.some(e => /\.(cpp|cc|cxx|hpp)$/.test(e))) langs.cpp = true;
+            if (entries.some(e => /\.(ts|tsx)$/.test(e))) langs.ts = true;
+            if (!langs.ts && entries.some(e => /\.(js|mjs|jsx)$/.test(e))) langs.js = true;
+        } catch { /* ignore */ }
+        if (hasAnyLang(langs)) source = 'source files';
+    }
+
+    /* ── Tier 3: template.json (DeukPackKits) ── */
+    const tmplPath = path.join(configDir, 'template.json');
+    if (fsSync.existsSync(tmplPath)) {
+        try {
+            const tmpl = JSON.parse(fsSync.readFileSync(tmplPath, 'utf8'));
+            const codegen = (tmpl.scripts && tmpl.scripts.codegen) || '';
+
+            if (!hasAnyLang(langs)) {
+                const stack = Array.isArray(tmpl.stack) ? tmpl.stack : [];
+                for (const s of stack) {
+                    const l = s.toLowerCase();
+                    if (l === 'csharp' || l === 'unity') langs.csharp = true;
+                    else if (l === 'cpp') langs.cpp = true;
+                    else if (l === 'typescript') {
+                        if (codegen.includes('--ts')) langs.ts = true;
+                        else langs.js = true;
+                    }
+                    else if (l === 'nodejs' || l === 'javascript') langs.js = true;
+                }
+                if (hasAnyLang(langs)) source = 'template.json';
+            }
+
+            // Extract outputDir from codegen command regardless of tier
+            if (codegen) {
+                const m = codegen.match(/deukpack\s+\S+\.deuk\s+(\S+)/);
+                if (m && !m[1].startsWith('-')) outputDir = m[1];
+            }
+        } catch { /* ignore */ }
+    }
+
+    /* ── Tier 4: folder name heuristic ── */
+    if (!hasAnyLang(langs)) {
+        const folder = path.basename(configDir).toLowerCase();
+        if (folder === 'csharp' || folder === 'cs') langs.csharp = true;
+        else if (folder === 'cpp' || folder === 'c++') langs.cpp = true;
+        else if (folder === 'ts' || folder === 'typescript') langs.js = true;
+        else if (folder === 'js' || folder === 'javascript') langs.js = true;
+        if (hasAnyLang(langs)) source = 'folder name';
+    }
+
+    if (!hasAnyLang(langs)) return null;
+    return { ...langs, outputDir, source };
+}
+
+function formatDetectedLangs(detected) {
+    const names = [];
+    if (detected.csharp) names.push('C#');
+    if (detected.cpp) names.push('C++');
+    if (detected.ts) names.push('TypeScript');
+    if (detected.js) names.push('JavaScript');
+    return names.join(', ');
+}
+
 function buildDefaultPipelineConfig(configDir) {
     const defineRoot = 'idls';
     const base = path.join(configDir, defineRoot);
     if (!fsSync.existsSync(base) || !hasDeukFileUnder(base)) {
         return null;
+    }
+    const detected = detectProjectLanguages(configDir);
+    const langs = detected || { csharp: true, cpp: false, ts: false, js: false };
+    const outputDirVal = (detected && detected.outputDir) || defineRoot;
+    if (detected) {
+        console.log(`[deukpack] Detected languages (${detected.source}): ${formatDetectedLangs(detected)}`);
     }
     const includePaths = [{ path: defineRoot, recursive: true }];
     return {
@@ -141,11 +278,11 @@ function buildDefaultPipelineConfig(configDir) {
                 name: 'main',
                 defineScope: 'all',
                 exclude: [],
-                outputDir: defineRoot,
-                csharp: true,
-                cpp: false,
-                ts: false,
-                js: false,
+                outputDir: outputDirVal,
+                csharp: !!langs.csharp,
+                cpp: !!langs.cpp,
+                ts: !!langs.ts,
+                js: !!langs.js,
             },
         ],
         defineRoot,
@@ -177,20 +314,32 @@ async function writePipelineFromInteractive(rl, outPath, configDir, existing, fo
     );
 
     const dr = String(defineRootIn || '').trim() || 'idls';
-    const outputDir = dr;
     const includeRel = normalizeRelToConfig(configDir, dr) || dr.replace(/\\/g, '/');
     const includePaths = includeRel ? [{ path: includeRel, recursive: true }] : [];
 
-    console.log('\nGenerators (enable at least one):');
-    const csharp = await promptYes(rl, 'Generate C#', job0.csharp !== false);
-    const cpp = await promptYes(rl, 'C++', !!job0.cpp);
-    const ts = await promptYes(rl, 'TypeScript', !!job0.ts);
-    const js = await promptYes(rl, 'JavaScript', !!job0.js);
+    const detected = detectProjectLanguages(configDir);
+    let csharp, cpp, ts, js;
+    if (detected && hasAnyLang(detected)) {
+        console.log(`\nDetected languages (${detected.source}): ${formatDetectedLangs(detected)}`);
+        console.log('Edit deukpack.pipeline.json after init to change generators.\n');
+        csharp = detected.csharp;
+        cpp = detected.cpp;
+        ts = detected.ts;
+        js = detected.js;
+    } else {
+        console.log('\nGenerators (enable at least one):');
+        csharp = await promptYes(rl, 'Generate C#', job0.csharp !== false);
+        cpp = await promptYes(rl, 'C++', !!job0.cpp);
+        ts = await promptYes(rl, 'TypeScript', !!job0.ts);
+        js = await promptYes(rl, 'JavaScript', !!job0.js);
+    }
 
     if (!csharp && !cpp && !ts && !js) {
         console.error('Enable at least one language.');
         process.exit(1);
     }
+
+    const outputDir = (detected && detected.outputDir) || dr;
 
     const job = {
         name: job0.name || 'main',
