@@ -1,0 +1,16 @@
+{
+  "defineRoot": "idls",
+  "exclude": ["draft/", "experiments/**"],
+  "includePaths": [{ "path": "idls", "recursive": true }],
+  "jobs": [
+    {
+      "name": "main",
+      "defineScope": "all",
+      "exclude": [],
+      "csharp": true,
+      "cpp": false,
+      "ts": false,
+      "js": false
+    }
+  ]
+}

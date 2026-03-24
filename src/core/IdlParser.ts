@@ -6,7 +6,7 @@
 import * as fs from 'fs/promises';
 import { DeukPackAST, DeukPackStruct, DeukPackEnum, DeukPackService, DeukPackTypedef, DeukPackConstant, DeukPackException } from '../types/DeukPackTypes';
 import { IdlLexer } from '../lexer/IdlLexer';
-import { DeukPackASTBuilder } from '../ast/DeukPackASTBuilder';
+import { DeukPackASTBuilder, DeukPackASTBuilderOptions } from '../ast/DeukPackASTBuilder';
 
 export class IdlParser {
   private lexer: IdlLexer;
@@ -18,19 +18,19 @@ export class IdlParser {
     this.astBuilder = new DeukPackASTBuilder();
   }
 
-  parse(content: string, filePath: string): DeukPackAST {
+  parse(content: string, filePath: string, options?: DeukPackASTBuilderOptions): DeukPackAST {
     try {
       const tokens = this.lexer.tokenize(content);
-      return this.astBuilder.build(tokens, filePath);
+      return this.astBuilder.build(tokens, filePath, options);
     } catch (error) {
       throw new DeukPackException(`Failed to parse file ${filePath}: ${(error as Error).message}`);
     }
   }
 
-  async parseFiles(filePaths: string[]): Promise<DeukPackAST> {
+  async parseFiles(filePaths: string[], options?: DeukPackASTBuilderOptions): Promise<DeukPackAST> {
     const startTime = Date.now();
     try {
-      const parsePromises = filePaths.map(filePath => this.parseFile(filePath));
+      const parsePromises = filePaths.map(filePath => this.parseFile(filePath, options));
       const asts = await Promise.all(parsePromises);
       const mergedAST = this.mergeASTs(asts);
       const endTime = Date.now();
@@ -41,12 +41,12 @@ export class IdlParser {
     }
   }
 
-  async parseFile(filePath: string): Promise<DeukPackAST> {
+  async parseFile(filePath: string, options?: DeukPackASTBuilderOptions): Promise<DeukPackAST> {
     try {
       if (this.includeCache.has(filePath)) return this.includeCache.get(filePath)!;
       const content = await fs.readFile(filePath, 'utf8');
       const tokens = this.lexer.tokenize(content);
-      const ast = this.astBuilder.build(tokens, filePath);
+      const ast = this.astBuilder.build(tokens, filePath, options);
       this.includeCache.set(filePath, ast);
       return ast;
     } catch (error) {
@@ -54,10 +54,10 @@ export class IdlParser {
     }
   }
 
-  parseContent(content: string, fileName: string = 'input.idl'): DeukPackAST {
+  parseContent(content: string, fileName: string = 'input.idl', options?: DeukPackASTBuilderOptions): DeukPackAST {
     try {
       const tokens = this.lexer.tokenize(content);
-      return this.astBuilder.build(tokens, fileName);
+      return this.astBuilder.build(tokens, fileName, options);
     } catch (error) {
       throw new DeukPackException(`Failed to parse content: ${(error as Error).message}`);
     }

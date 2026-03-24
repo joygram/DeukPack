@@ -1,0 +1,20 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Sample", "version": "1.0.0" },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" }
+        },
+        "required": ["id"]
+      },
+      "Status": {
+        "type": "string",
+        "enum": ["Active", "Inactive"]
+      }
+    }
+  }
+}

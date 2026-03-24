@@ -1,0 +1,5 @@
+@@DOC_COMMENT@@  struct @@STRUCT_NAME@@ {
+@@FIELD_DECL_LINES@@
+
+@@FIELD_ID_LINES@@
+  };

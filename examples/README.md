@@ -18,7 +18,7 @@ bash examples/scripts/gen-sample.sh
 Protobuf sample:
 
 ```bash
-node scripts/build_deukpack.js examples/sample_idl/sample.proto examples/out --csharp --cpp --js --protocol binary
+node scripts/build_deukpack.js examples/sample_idl/sample.proto examples/out --csharp --cpp --js --protocol tbinary
 ```
 
 Windows:
@@ -33,7 +33,7 @@ Pipeline mode (config paths are relative to `examples/`):
 node scripts/build_deukpack.js --pipeline examples/pipeline.sample.json
 ```
 
-Output: `examples/out/` (`csharp/`, `cpp/`, `javascript/`) — ignored by git (`out/`).
+Output: `examples/out/` (`csharp/`, `cpp/`, `js/`, `ts/` when used) — ignored by git (`out/`).
 
 ## Consumer projects
 
@@ -46,4 +46,4 @@ Run **gen-sample** first, then:
 | `consumer-ts/` | `npm install && npm run parse` |
 | `consumer-js/` | `npm install && npm run codegen` |
 
-**Starter kits**: [deukpack.app/starter-kits](https://deukpack.app/starter-kits/)
+**Kits lineup**: [deukpack.app/starter-kits](https://deukpack.app/en/starter-kits/)

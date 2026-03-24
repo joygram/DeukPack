@@ -14,9 +14,9 @@ namespace DeukPack.Protocol
             {
                 case DpWireType.Bool: prot.ReadBool(); break;
                 case DpWireType.Byte: prot.ReadByte(); break;
-                case DpWireType.I16: prot.ReadI16(); break;
-                case DpWireType.I32: prot.ReadI32(); break;
-                case DpWireType.I64: prot.ReadI64(); break;
+                case DpWireType.Int16: prot.ReadI16(); break;
+                case DpWireType.Int32: prot.ReadI32(); break;
+                case DpWireType.Int64: prot.ReadI64(); break;
                 case DpWireType.Double: prot.ReadDouble(); break;
                 case DpWireType.String: prot.ReadBinary(); break;
                 case DpWireType.List:

@@ -176,6 +176,23 @@ export class IdlLexer {
     const startLine = this.line;
     const startColumn = this.column;
     let value = '';
+    if (this.input[this.position] === '0') {
+      const nx = this.peek();
+      if (nx === 'x' || nx === 'X') {
+        value += '0';
+        this.advance();
+        value += this.input[this.position] || '';
+        this.advance();
+        let digits = 0;
+        while (this.position < this.input.length && this.isHexDigit(this.input[this.position] || '')) {
+          value += this.input[this.position];
+          this.advance();
+          digits++;
+        }
+        if (digits === 0) return this.createToken(TokenType.NUMBER, '0', startPos, startLine, startColumn);
+        return this.createToken(TokenType.NUMBER, value, startPos, startLine, startColumn);
+      }
+    }
     while (this.position < this.input.length && this.isDigit(this.input[this.position] || '')) {
       value += this.input[this.position];
       this.advance();
@@ -276,6 +293,10 @@ export class IdlLexer {
   private isAlphaNumeric(char: string): boolean { return this.isAlpha(char) || this.isDigit(char); }
 
   private isDigit(char: string): boolean { return char >= '0' && char <= '9'; }
+
+  private isHexDigit(char: string): boolean {
+    return this.isDigit(char) || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F');
+  }
 
   private isWhitespace(char: string): boolean { return char === ' ' || char === '\t' || char === '\n' || char === '\r'; }
 

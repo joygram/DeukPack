@@ -5,6 +5,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 node scripts/build_deukpack.js examples/sample_idl/sample.thrift examples/out \
-  --csharp --cpp --js --protocol binary
+  --csharp --cpp --js --protocol tbinary
 echo "[OK] Sample codegen (thrift) → examples/out/"
-echo "     Protobuf: ... sample_idl/sample.proto examples/out --csharp --cpp --js --protocol binary"
+echo "     Protobuf: ... sample_idl/sample.proto examples/out --csharp --cpp --js --protocol tbinary"

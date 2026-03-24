@@ -5,6 +5,7 @@
 
 import { DeukPackAST, GenerationOptions, DeukPackStruct, DeukPackEnum, DeukPackField } from '../types/DeukPackTypes';
 import { CodeGenerator } from './CodeGenerator';
+import { getDeukPackPackageVersion } from '../deukpackVersion';
 
 export class HighPerformanceCSharpGenerator extends CodeGenerator {
   async generate(ast: DeukPackAST, _options: GenerationOptions): Promise<{ [filename: string]: string }> {
@@ -15,13 +16,10 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
       const lines: string[] = [];
       
       // High-performance header
-      lines.push('/**');
-      lines.push(' * High-Performance DeukPack v1.0.0');
-      lines.push(' * Generated code optimized for 100x performance');
-      lines.push(' *');
-      lines.push(' * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING');
-      lines.push(' *  @generated');
-      lines.push(' */');
+      lines.push(`// High-Performance DeukPack v${getDeukPackPackageVersion()}`);
+      lines.push('// Generated code optimized for 100x performance');
+      lines.push('// DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING');
+      lines.push('//  @generated');
       lines.push('');
       lines.push('using System;');
       lines.push('using System.Collections.Generic;');
@@ -43,26 +41,40 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
         includes: [],
         annotations: {}
       });
-      
+
+      let emittedAny = false;
+
       for (const [namespace, namespaceDefs] of Object.entries(namespaceGroups)) {
+        const hasContent =
+          namespaceDefs.enums.length > 0 || namespaceDefs.structs.length > 0;
+        if (!hasContent) {
+          continue;
+        }
+
+        emittedAny = true;
+
         if (namespace !== 'Generated') {
           lines.push(`namespace ${namespace}`);
           lines.push('{');
         }
-        
+
         // Generate enums
         for (const enumDef of namespaceDefs.enums) {
           lines.push(...this.generateHighPerformanceEnum(enumDef));
         }
-        
+
         // Generate structs
         for (const struct of namespaceDefs.structs) {
           lines.push(...this.generateHighPerformanceStruct(struct));
         }
-        
+
         if (namespace !== 'Generated') {
           lines.push('}');
         }
+      }
+
+      if (!emittedAny) {
+        continue;
       }
 
       const filename = this.getFilenameFromSource(sourceFile);
@@ -75,9 +87,7 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
   private generateHighPerformanceEnum(enumDef: DeukPackEnum): string[] {
     const lines: string[] = [];
     
-    lines.push('  /// <summary>');
-    lines.push(`  /// High-performance enum: ${enumDef.name}`);
-    lines.push('  /// </summary>');
+    lines.push(`  // High-performance enum: ${enumDef.name}`);
     lines.push(`  [System.Flags]`);
     lines.push(`  public enum ${enumDef.name} : int`);
     lines.push('  {');
@@ -95,10 +105,8 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
   private generateHighPerformanceStruct(struct: DeukPackStruct): string[] {
     const lines: string[] = [];
     
-    lines.push('  /// <summary>');
-    lines.push(`  /// High-performance struct: ${struct.name}`);
-    lines.push('  /// Optimized for maximum serialization speed');
-    lines.push('  /// </summary>');
+    lines.push(`  // High-performance struct: ${struct.name}`);
+    lines.push('  // Optimized for maximum serialization speed');
     lines.push(`  [StructLayout(LayoutKind.Sequential, Pack = 1)]`);
     lines.push(`  [System.Serializable]`);
     lines.push(`  public struct ${struct.name} : IEquatable<${struct.name}>`);
@@ -175,9 +183,7 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
     const csharpType = this.getCSharpType(field.type);
     const defaultValue = field.defaultValue !== undefined ? ` = ${this.getCSharpDefaultValue(field.defaultValue, field.type)}` : '';
     
-    lines.push('    /// <summary>');
-    lines.push(`    /// Field: ${field.name} (ID: ${field.id})`);
-    lines.push('    /// </summary>');
+    lines.push(`    // Field: ${field.name} (ID: ${field.id})`);
     lines.push(`    public ${csharpType} ${this.capitalize(field.name)}${defaultValue};`);
     
     return lines;
@@ -410,6 +416,10 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
         case 'int16': return 'short';
         case 'int32': return 'int';
         case 'int64': return 'long';
+        case 'uint8': return 'byte';
+        case 'uint16': return 'ushort';
+        case 'uint32': return 'uint';
+        case 'uint64': return 'ulong';
         case 'float': return 'float';
         case 'double': return 'double';
         case 'string': return 'string';
@@ -465,8 +475,9 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
 
   private getFilenameFromSource(sourceFile: string): string {
     const filename = sourceFile.split('/').pop()?.split('\\').pop() || 'unknown';
-    const nameWithoutExt = filename.replace(/\.thrift$/, '');
-    return `${nameWithoutExt}.cs`;
+    const nameWithoutExt = filename.replace(/\.(thrift|deuk|proto)$/i, '');
+    if (!nameWithoutExt || nameWithoutExt.toLowerCase() === 'nul') return 'unknown_deuk.cs';
+    return `${nameWithoutExt}_deuk.cs`;
   }
 
   private groupBySourceFile(ast: DeukPackAST): { [sourceFile: string]: { enums: DeukPackEnum[], structs: DeukPackStruct[], typedefs: any[], constants: any[] } } {

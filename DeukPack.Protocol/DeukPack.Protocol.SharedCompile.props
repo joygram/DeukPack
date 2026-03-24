@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Shared sources for DeukPack.Protocol (main TFMs) and DeukPack.Protocol.Unity (netstandard2.0, Unity/plugins). -->
+  <ItemGroup>
+    <Compile Include="..\src\codegen\DpProtocolCore.cs" Link="DpProtocolCore.cs" />
+    <Compile Include="..\src\codegen\DpBinaryProtocol.cs" Link="DpBinaryProtocol.cs" />
+    <Compile Include="..\src\codegen\DpJsonProtocol.cs" Link="DpJsonProtocol.cs" />
+    <Compile Include="..\src\codegen\DpDeukJsonProtocol.cs" Link="DpDeukJsonProtocol.cs" />
+    <Compile Include="..\src\codegen\DeukPackSerializationWarnings.cs" Link="DeukPackSerializationWarnings.cs" />
+    <Compile Include="..\src\codegen\DeukPackSerializer.cs" Link="DeukPackSerializer.cs" />
+    <Compile Include="..\src\codegen\DpProtocolUtil.cs" Link="DpProtocolUtil.cs" />
+    <Compile Include="..\src\codegen\TBinaryProtocol.cs" Link="TBinaryProtocol.cs" />
+    <Compile Include="..\src\codegen\DeukPackThriftCompat.cs" Link="DeukPackThriftCompat.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\src\meta\IDeukMetaDecryptor.cs" Link="Meta\IDeukMetaDecryptor.cs" />
+    <Compile Include="..\src\meta\DeukTableManager.cs" Link="Meta\DeukTableManager.cs" />
+  </ItemGroup>
+</Project>

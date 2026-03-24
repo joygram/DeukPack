@@ -17,6 +17,7 @@ export class DeukLexer {
     ['namespace', TokenType.NAMESPACE],
     ['struct', TokenType.RECORD],
     ['record', TokenType.RECORD],
+    ['entity', TokenType.ENTITY],
     ['enum', TokenType.ENUM],
     ['service', TokenType.SERVICE],
     ['typedef', TokenType.TYPEDEF],
@@ -143,6 +144,23 @@ export class DeukLexer {
     const startLine = this.line;
     const startColumn = this.column;
     let value = '';
+    if (this.input[this.position] === '0') {
+      const nx = this.peek();
+      if (nx === 'x' || nx === 'X') {
+        value += '0';
+        this.advance();
+        value += this.input[this.position] || '';
+        this.advance();
+        let digits = 0;
+        while (this.position < this.input.length && this.isHexDigit(this.input[this.position] || '')) {
+          value += this.input[this.position];
+          this.advance();
+          digits++;
+        }
+        if (digits === 0) return this.createToken(TokenType.NUMBER, '0', startPos, startLine, startColumn);
+        return this.createToken(TokenType.NUMBER, value, startPos, startLine, startColumn);
+      }
+    }
     while (this.position < this.input.length && this.isDigit(this.input[this.position] || '')) {
       value += this.input[this.position];
       this.advance();
@@ -178,6 +196,11 @@ export class DeukLexer {
     while (this.position < this.input.length &&
       (this.isAlphaNumeric(this.input[this.position] || '') || (this.input[this.position] || '') === '_')) {
       value += this.input[this.position];
+      this.advance();
+    }
+    // `[c#: …]` — `#` must not start a line comment inside the bracket attribute
+    if (value === 'c' && this.position < this.input.length && this.input[this.position] === '#') {
+      value += '#';
       this.advance();
     }
     const keywordType = this.keywords.get(value);
@@ -250,6 +273,9 @@ export class DeukLexer {
   }
   private isDigit(c: string): boolean {
     return c >= '0' && c <= '9';
+  }
+  private isHexDigit(c: string): boolean {
+    return this.isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
   }
   private isWhitespace(c: string): boolean {
     return c === ' ' || c === '\t' || c === '\n' || c === '\r';

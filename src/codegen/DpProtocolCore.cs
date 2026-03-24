@@ -2,8 +2,10 @@
  * DeukPack Protocol Core — 인터페이스·와이어 타입·스키마·타입명 유틸.
  * DpProtocolLibrary 모듈화: 공통 타입만 포함.
  */
+#nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -24,7 +26,7 @@ namespace DeukPack.Protocol
 
     public interface IDeukMetaContainer : IDeukPack
     {
-        object Header { get; set; }
+        object? Header { get; set; }
         IReadOnlyDictionary<long, IDeukPack> Infos { get; }
     }
 
@@ -39,9 +41,9 @@ namespace DeukPack.Protocol
         public DpMetaInfosWrapper(IReadOnlyDictionary<long, T> inner) { _inner = inner ?? throw new ArgumentNullException(nameof(inner)); }
         public int Count => _inner.Count;
         public bool ContainsKey(long key) => _inner.ContainsKey(key);
-        public bool TryGetValue(long key, out IDeukPack value)
+        public bool TryGetValue(long key, out IDeukPack? value)
         {
-            if (_inner.TryGetValue(key, out T v)) { value = v; return true; }
+            if (_inner.TryGetValue(key, out T? v)) { value = v; return true; }
             value = null; return false;
         }
         public IDeukPack this[long key] => _inner[key];
@@ -63,28 +65,47 @@ namespace DeukPack.Protocol
     {
         public int Id { get; set; }
         public int Order { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         public DpSchemaType Type { get; set; }
-        public string TypeName { get; set; }
+        public string TypeName { get; set; } = "";
         public bool Required { get; set; }
-        public object DefaultValue { get; set; }
-        public string DocComment { get; set; }
-        public Dictionary<string, string> Annotations { get; set; }
+        public object? DefaultValue { get; set; }
+        public string? DocComment { get; set; }
+        public Dictionary<string, string>? Annotations { get; set; }
     }
 
     public class DpSchema
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         public DpDefinitionKind Type { get; set; }
-        public Dictionary<int, DpFieldSchema> Fields { get; set; }
-        public string DocComment { get; set; }
-        public Dictionary<string, string> Annotations { get; set; }
+        public Dictionary<int, DpFieldSchema> Fields { get; set; } = new();
+        public string? DocComment { get; set; }
+        public Dictionary<string, string>? Annotations { get; set; }
     }
 
+    /// <summary>
+    /// 바이너리 와이어 필드 구분자(Thrift TType과 동일한 바이트 값).
+    /// 정수 멤버명은 IDL <c>int16</c>/<c>int32</c>/<c>int64</c>와 대응. 레거시 JSON 키 <c>i16</c>/<c>i32</c>/<c>i64</c>는 호환용.
+    /// 부호 없는 정수는 동일 폭과 같은 와이어(§2.2.1).
+    /// </summary>
     public enum DpWireType
     {
-        Stop = 0, Void = 1, Bool = 2, Byte = 3, Double = 4, I16 = 6, I32 = 8, I64 = 10,
-        String = 11, Binary = 11, Struct = 12, Map = 13, Set = 14, List = 15
+        Stop = 0, Void = 1, Bool = 2, Byte = 3, Double = 4,
+        /// <summary>와이어 값 6(Thrift T_I16). IDL <c>int16</c>/<c>uint16</c>.</summary>
+        Int16 = 6,
+        /// <summary>와이어 값 8(Thrift T_I32). IDL <c>int32</c>/<c>uint32</c>.</summary>
+        Int32 = 8,
+        /// <summary>와이어 값 10(Thrift T_I64). IDL <c>int64</c>/<c>uint64</c>.</summary>
+        Int64 = 10,
+        String = 11, Binary = 11, Struct = 12, Map = 13, Set = 14, List = 15,
+        /// <summary>IDL uint8. 와이어는 <see cref="DpWireType.Byte"/>와 동일(i8).</summary>
+        U8 = Byte,
+        /// <summary>IDL uint16. 와이어는 <see cref="DpWireType.Int16"/>와 동일.</summary>
+        U16 = Int16,
+        /// <summary>IDL uint32. 와이어는 <see cref="DpWireType.Int32"/>와 동일.</summary>
+        U32 = Int32,
+        /// <summary>IDL uint64. 와이어는 <see cref="DpWireType.Int64"/>와 동일.</summary>
+        U64 = Int64,
     }
 
     public static class DpTypeNames
@@ -94,10 +115,10 @@ namespace DeukPack.Protocol
             switch (t)
             {
                 case DpWireType.Bool: return "bool";
-                case DpWireType.Byte: return "byte";
-                case DpWireType.I16: return "int16";
-                case DpWireType.I32: return "int32";
-                case DpWireType.I64: return "int64";
+                case DpWireType.Byte: return "byte"; // U8 동일 값
+                case DpWireType.Int16: return "int16"; // U16 동일 값
+                case DpWireType.Int32: return "int32"; // U32 동일 값
+                case DpWireType.Int64: return "int64"; // U64 동일 값
                 case DpWireType.Double: return "double";
                 case DpWireType.String: return "string";
                 case DpWireType.Struct: return "record";
@@ -108,14 +129,15 @@ namespace DeukPack.Protocol
             }
         }
 
+        /// <summary>문자열 타입명 → 와이어. <c>int32</c> 등 IDL 권장명과 <c>i32</c> 등 Thrift/레거시 JSON 키 모두 허용.</summary>
         public static DpWireType FromProtocolName(string dt)
         {
             if (string.IsNullOrEmpty(dt)) return DpWireType.String;
             string lower = dt.Trim().ToLowerInvariant();
-            if (lower == "i64" || lower == "int64") return DpWireType.I64;
-            if (lower == "i32" || lower == "int32") return DpWireType.I32;
-            if (lower == "i16" || lower == "int16") return DpWireType.I16;
-            if (lower == "i8" || lower == "int8" || lower == "byte") return DpWireType.Byte;
+            if (lower == "i64" || lower == "int64" || lower == "u64" || lower == "uint64") return DpWireType.Int64;
+            if (lower == "i32" || lower == "int32" || lower == "u32" || lower == "uint32") return DpWireType.Int32;
+            if (lower == "i16" || lower == "int16" || lower == "u16" || lower == "uint16") return DpWireType.Int16;
+            if (lower == "i8" || lower == "int8" || lower == "byte" || lower == "u8" || lower == "uint8") return DpWireType.Byte;
             if (lower == "str" || lower == "string") return DpWireType.String;
             if (lower == "dbl" || lower == "double") return DpWireType.Double;
             if (lower == "tf" || lower == "bool") return DpWireType.Bool;
@@ -123,7 +145,7 @@ namespace DeukPack.Protocol
             if (lower.StartsWith("lst") || lower.StartsWith("list")) return DpWireType.List;
             if (lower.StartsWith("set")) return DpWireType.Set;
             if (lower.StartsWith("map")) return DpWireType.Map;
-            if (lower.StartsWith("enum")) return DpWireType.I32;
+            if (lower.StartsWith("enum")) return DpWireType.Int32;
             if (dt.IndexOf('.') >= 0) return DpWireType.Struct;
             return DpWireType.String;
         }
@@ -144,9 +166,13 @@ namespace DeukPack.Protocol
             {
                 case "Bool": return DpWireType.Bool;
                 case "Byte": return DpWireType.Byte;
-                case "I16": return DpWireType.I16;
-                case "I32": return DpWireType.I32;
-                case "I64": return DpWireType.I64;
+                case "U8": return DpWireType.U8;
+                case "I16": return DpWireType.Int16;
+                case "U16": return DpWireType.U16;
+                case "I32": return DpWireType.Int32;
+                case "U32": return DpWireType.U32;
+                case "I64": return DpWireType.Int64;
+                case "U64": return DpWireType.U64;
                 case "Double": return DpWireType.Double;
                 case "String":
                 case "Binary": return DpWireType.String;
@@ -154,7 +180,7 @@ namespace DeukPack.Protocol
                 case "List": return DpWireType.List;
                 case "Set": return DpWireType.Set;
                 case "Map": return DpWireType.Map;
-                case "Enum": return DpWireType.I32;
+                case "Enum": return DpWireType.Int32;
                 default: return DpWireType.String;
             }
         }
@@ -241,7 +267,7 @@ namespace DeukPack.Protocol
             string typeName = (f.TypeName ?? "").Trim();
             DpWireType t = FromSchemaTypeName(f.Type.ToString());
             string proto = ToProtocolName(t);
-            if (f.Type == DpSchemaType.Enum || (t == DpWireType.I32 && typeName.EndsWith("_e")))
+            if (f.Type == DpSchemaType.Enum || (t == DpWireType.Int32 && typeName.EndsWith("_e")))
             {
                 int dot = typeName.LastIndexOf('.');
                 string shortName = dot >= 0 ? typeName.Substring(dot + 1) : typeName;
@@ -270,8 +296,8 @@ namespace DeukPack.Protocol
         void WriteI32(int i32);
         void WriteI64(long i64);
         void WriteDouble(double d);
-        void WriteString(string s);
-        void WriteBinary(byte[] b);
+        void WriteString(string? s);
+        void WriteBinary(byte[]? b);
         void WriteListBegin(DpList list);
         void WriteListEnd();
         void WriteSetBegin(DpSet set);

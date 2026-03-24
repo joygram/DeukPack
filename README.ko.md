@@ -40,7 +40,7 @@ npm install deukpack
 ```bash
 npx deukpack ./schema.deuk ./out --csharp --cpp
 
-npx deukpack ./api.deuk ./gen -I ./includes --csharp --protocol binary
+npx deukpack ./api.deuk ./gen -I ./includes --csharp --protocol tbinary
 
 npx deukpack --pipeline ./deukpack-pipeline.json
 ```
@@ -64,7 +64,7 @@ npx deukpack --pipeline ./deukpack-pipeline.json
 | **튜토리얼** | [deukpack.app/tutorial](https://deukpack.app/tutorial/) |
 | **API 레퍼런스** | [deukpack.app/reference/api](https://deukpack.app/reference/api/) |
 | **제품군** | [deukpack.app/products](https://deukpack.app/products/) |
-| **스타터 키트** | [deukpack.app/starter-kits](https://deukpack.app/starter-kits/) |
+| **득팩 키트 라인업** | [deukpack.app/starter-kits](https://deukpack.app/starter-kits/) |
 | **라이선스** | [deukpack.app/license](https://deukpack.app/license/) |
 
 **사이트:** [deukpack.app](https://deukpack.app/) · **문의:** contact@deukpack.app
