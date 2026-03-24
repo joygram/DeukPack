@@ -9,9 +9,109 @@
 const { DeukPackEngine } = require('../dist/index');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 
-async function main() {
-    const args = process.argv.slice(2);
+const _deukpackPkg = require('../package.json');
+const DEUKPACK_CLI_VERSION = typeof _deukpackPkg.version === 'string' ? _deukpackPkg.version : 'unknown';
+
+/**
+ * True if the CLI will produce codegen, convert, or schema emit output (not parse-only).
+ */
+function defaultPipelinePath() {
+    return path.join(process.cwd(), 'deukpack.pipeline.json');
+}
+
+function warnIfNoPipelineFileAtCwd() {
+    if (fsSync.existsSync(defaultPipelinePath())) return;
+    console.warn(
+        '[deukpack] No deukpack.pipeline.json in this working directory. This one-shot invocation will still run; for a repeatable setup, run: npx deukpack init'
+    );
+}
+
+function hasCodegenOrEmit(options) {
+    return !!(
+        options.csharp ||
+        options.cpp ||
+        options.ts ||
+        options.js ||
+        options.convertToDeuk ||
+        (options.openapi && String(options.openapi).trim()) ||
+        (options.csv && String(options.csv).trim()) ||
+        (options.psv && String(options.psv).trim()) ||
+        (typeof options.json === 'string' && options.json.trim()) ||
+        (options.excel && String(options.excel).trim())
+    );
+}
+
+/**
+ * @param {{ full?: boolean, useStdout?: boolean }} [opts]
+ */
+function printCliUsage(opts = {}) {
+    const full = !!opts.full;
+    const useStdout = !!opts.useStdout;
+    const line = useStdout ? (...a) => console.log(...a) : (...a) => console.error(...a);
+
+    line(`DeukPack CLI v${DEUKPACK_CLI_VERSION}`);
+    line('');
+    line('Usage:');
+    line('  deukpack init | deukpack config   Pipeline + workspace bootstrap + VSIX install last (unless --skip-vsix); --non-interactive uses defaults + npm sync');
+    line('  deukpack bootstrap               Same as: deukpack init --workspace-only');
+    line('  deukpack run [pipeline.json]      Run --pipeline on ./deukpack.pipeline.json or a given file');
+    line('  deukpack <entry.deuk> <outDir> [flags]');
+    line('  deukpack build <entry.deuk> <outDir> [flags]   (same)');
+    line('  deukpack --pipeline <config.json>   (jobs: defineScope "all" = every .deuk under defineRoot minus exclude; else thriftFile entry)');
+    line('  deukpack bootstrap [args]');
+    line('  deukpack sync-runtime [args]');
+    line('');
+    line('Includes (single-shot CLI):');
+    line('  The entry file’s directory is always searched.');
+    line('  -I <dir>   add one include directory.');
+    line('  -r <dir>   add that directory and all nested subdirectories (deep recursion).');
+    line('  Pipeline JSON: { "path": "<dir>", "recursive": true } matches -r.');
+    line('  Alternative: rely on one umbrella .deuk and only paths reachable from its folder.');
+    line('');
+    line('Pick at least one output mode, e.g.:');
+    line('  --csharp   C# (+ .csproj by default)   --ts   TypeScript   --js   JavaScript   --cpp   C++');
+    line('  --openapi <file>   emit OpenAPI from AST');
+    line('  --convert-to-deuk [subdir]   emit .deuk from legacy .thrift (full tree only)');
+    line('  --csv/--psv/--json/--excel <file>   emit table schema from first struct');
+    line('');
+    line('Typical (Unity/game IDL):');
+    line('  deukpack path/to/root.deuk ./gen --csharp -r path/to/_deuk_define');
+    line('');
+    line('From repo: node scripts/build_deukpack.js …   (same arguments as deukpack)');
+    if (!full) {
+        line('');
+        line('Full flag list: deukpack help --full');
+        return;
+    }
+    line('');
+    line('All flags:');
+    line('  -I, -i <path>   Include path (individual)');
+    line('  -r <path>       That directory + all nested subdirectories (deep recursion; same as pipeline recursive)');
+    line('  --define-root <name>  IDL root folder (default: _deuk_define, legacy: _thrift)');
+    line('  --csharp    Generate C# code (and DeukDefine.csproj by default)');
+    line('  --csharp-project-name <name>  C# project/assembly name (default: DeukDefine)');
+    line('  --csharp-nullable    Enable Nullable Reference Types in generated C#');
+    line('  --no-csharp-csproj    Do not emit .csproj when generating C#');
+    line('  --allow-multi-namespace  Permit multiple namespace blocks in a single IDL file');
+    line('  --brace-less-namespace   Omit namespace { } braces in output for single-namespace files (indented)');
+    line('  --cpp       Generate C++ code');
+    line('  --ts        Generate TypeScript under <out>/ts/ (1st-stage types; JS via app build or tsc). See docs/DEUKPACK_JS_BUILD_PIPELINE.md');
+    line('  --js        Generate JavaScript under <out>/js/ (Path B: direct JS for Node/tools). App bundle: use TS output + app build.');
+    line('  --protocol <protocol>  Wire hint: deuk pack|json|yaml (default pack); Thrift interop tbinary|tcompact|tjson — see docs/DEUKPACK_WIRE_INTEROP_VS_NATIVE.md');
+    line('  --endianness <endian>  Endianness (little|big)');
+    line('  --convert-to-deuk [subdir]  Emit .deuk from parsed .thrift (subdir default: deuk). Legacy→table migration.');
+    line('  --ef    Enable Entity Framework support ( [Table]/[Key]/[Column] + DeukPackDbContext.g.cs ).');
+    line('  --wire-profile <name>  Repeat or comma-separated: emit C# (and --js) subset types per profile (annotation wireProfiles on fields).');
+    line('  --import-openapi <file>  Merge OpenAPI 3.x components/schemas into AST.');
+    line('  --openapi <file>  Emit OpenAPI 3.x from AST.');
+    line('  --import-csv/--import-psv/--import-json/--import-excel <file>  Merge schema (first row/keys) into AST.');
+    line('  --csv/--psv/--json/--excel <file>  Emit schema from AST (first struct). Round-trip: format → deuk → format.');
+}
+
+async function main(argv) {
+    const args = argv !== undefined ? argv : process.argv.slice(2);
 
     // Pipeline mode: --pipeline <config.json>
     if (args[0] === '--pipeline' && args[1]) {
@@ -25,27 +125,7 @@ async function main() {
     }
 
     if (args.length < 2) {
-        console.error('Usage: node build_deukpack.js <thrift_file> <output_dir> [options]');
-        console.error('       node build_deukpack.js --pipeline <pipeline_config.json>');
-        console.error('Options:');
-        console.error('  -I, -i <path>   Include path (individual)');
-        console.error('  -r <path>       Include path + direct subdirs (recursive)');
-        console.error('  --define-root <name>  IDL root folder (default: _deuk_define, legacy: _thrift)');
-        console.error('  --csharp    Generate C# code (and DeukDefine.csproj by default)');
-        console.error('  --csharp-project-name <name>  C# project/assembly name (default: DeukDefine)');
-        console.error('  --no-csharp-csproj    Do not emit .csproj when generating C#');
-        console.error('  --cpp       Generate C++ code');
-        console.error('  --ts        Generate TypeScript (1st-stage types; JS via app build or tsc). See docs/DEUKPACK_JS_BUILD_PIPELINE.md');
-        console.error('  --js        Generate JavaScript (Path B: direct JS for Node/tools). App bundle: use TS output + app build.');
-        console.error('  --protocol <protocol>  Serialization protocol (binary|compact|json)');
-        console.error('  --endianness <endian>  Endianness (little|big)');
-        console.error('  --convert-to-deuk [subdir]  Emit .deuk from parsed .thrift (subdir default: deuk). Legacy→table migration.');
-        console.error('  --ef    Enable Entity Framework support ( [Table]/[Key]/[Column] + DeukPackDbContext.g.cs ).');
-        console.error('  --wire-profile <name>  Repeat or comma-separated: emit C# (and --js) subset types per profile (annotation wireProfiles on fields).');
-        console.error('  --import-openapi <file>  Merge OpenAPI 3.x components/schemas into AST.');
-        console.error('  --openapi <file>  Emit OpenAPI 3.x from AST.');
-        console.error('  --import-csv/--import-psv/--import-json/--import-excel <file>  Merge schema (first row/keys) into AST.');
-        console.error('  --csv/--psv/--json/--excel <file>  Emit schema from AST (first struct). Round-trip: format → deuk → format.');
+        printCliUsage({ full: false, useStdout: false });
         process.exit(1);
     }
 
@@ -53,15 +133,24 @@ async function main() {
     const outputDir = args[1];
     const { options, includePaths: extraIncludePaths, includePathsRecursive } = parseOptions(args.slice(2));
 
+    if (!hasCodegenOrEmit(options)) {
+        console.error('❌ No output mode specified (parse-only is not supported). Add e.g. --csharp, --ts, --openapi <file>, …');
+        printCliUsage({ full: false, useStdout: false });
+        process.exit(1);
+    }
+
+    warnIfNoPipelineFileAtCwd();
+
     const baseDir = path.dirname(path.resolve(thriftFile));
     const expandedRecursive = await expandRecursiveIncludePaths(includePathsRecursive.map(p => path.resolve(p)));
     const includePaths = [baseDir, ...extraIncludePaths, ...expandedRecursive];
     const parseOpts = {
         includePaths,
-        defineRoot: options.defineRoot
+        defineRoot: options.defineRoot,
+        allowMultiNamespace: options.allowMultiNamespace === true
     };
 
-    console.log(`🚀 DeukPack Builder v1.0.0`);
+    console.log(`🚀 DeukPack Builder v${DEUKPACK_CLI_VERSION}`);
     console.log(`📁 Input: ${thriftFile}`);
     console.log(`📁 Output: ${outputDir}`);
     console.log(`⚙️  Options:`, options);
@@ -78,8 +167,8 @@ async function main() {
 /**
  * Run a single thrift build: parse + generate. Used by both single-file and pipeline mode.
  * @param {string} thriftFile - Path to root thrift file
- * @param {string} outputDir - Directory for generated output (csharp/, cpp/, etc.)
- * @param {object} options - { csharp, cpp, ts, js, json, defineRoot, wireProfiles }
+ * @param {string} outputDir - Base directory; per-language output is outputDir plus subdirs (default csharp, cpp, ts, js; partial override via options.langOutputSubdirs).
+ * @param {object} options - { csharp, cpp, ts, js, json, defineRoot, wireProfiles, langOutputSubdirs? }
  * @param {object} parseOpts - { includePaths, defineRoot } for parseFileWithIncludes
  */
 function loadOpenApiSpec(filePath) {
@@ -116,6 +205,8 @@ function getSchemaInputKind(filePath) {
 }
 
 async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
+    const langOutputSubdirs = mergeLangOutputSubdirs(options.langOutputSubdirs);
+    options = { ...options, langOutputSubdirs };
     await fs.mkdir(outputDir, { recursive: true });
     const engine = new DeukPackEngine();
     const defineVersionFile = path.join(path.dirname(path.resolve(thriftFile)), 'define_version.txt');
@@ -211,7 +302,7 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
 
     const generationPromises = [];
     if (options.csharp) generationPromises.push(generateCSharp(engine, ast, outputDir, { ...options, defineVersionFile }));
-    if (options.cpp) generationPromises.push(generateCpp(engine, ast, outputDir));
+    if (options.cpp) generationPromises.push(generateCpp(engine, ast, outputDir, options));
     if (options.ts) generationPromises.push(generateTypeScript(engine, ast, outputDir, options));
     if (options.js) generationPromises.push(generateJavaScript(engine, ast, outputDir, options));
     await Promise.all(generationPromises);
@@ -284,23 +375,186 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
 }
 
 /**
- * Expand directories to [dir, ...direct subdirs]. Each entry in dirPaths is an absolute path.
- * Used for recursive include: one path becomes root + all first-level subdirs.
+ * Expand each root directory to itself and every nested subdirectory (depth-first).
+ * Each entry in dirPaths is an absolute path.
  */
 async function expandRecursiveIncludePaths(dirPaths) {
-    const result = [];
-    for (const dir of dirPaths) {
+    const seen = new Set();
+    async function walk(absDir) {
+        const norm = path.resolve(absDir);
+        if (seen.has(norm)) return;
+        let st;
         try {
-            const entries = await fs.readdir(dir, { withFileTypes: true });
-            result.push(dir);
-            for (const e of entries) {
-                if (e.isDirectory()) result.push(path.join(dir, e.name));
+            st = await fs.stat(norm);
+        } catch {
+            console.warn(`   ⚠️  Skip recursive include (missing or not readable): ${absDir}`);
+            return;
+        }
+        if (!st.isDirectory()) return;
+        seen.add(norm);
+        let entries;
+        try {
+            entries = await fs.readdir(norm, { withFileTypes: true });
+        } catch {
+            return;
+        }
+        for (const e of entries) {
+            if (e.isDirectory()) {
+                await walk(path.join(norm, e.name));
             }
-        } catch (e) {
-            console.warn(`   ⚠️  Skip recursive include (missing or not readable): ${dir}`);
         }
     }
-    return result;
+    for (const dir of dirPaths) {
+        await walk(dir);
+    }
+    return [...seen];
+}
+
+const DEUKPACK_SKIP_WALK_DIRS = new Set(['node_modules', '.git', 'bin', 'obj', 'Library']);
+
+/**
+ * @param {unknown} a
+ * @param {unknown} b
+ * @returns {string[]}
+ */
+function mergeExcludePatterns(a, b) {
+    const g = Array.isArray(a) ? a : [];
+    const j = Array.isArray(b) ? b : [];
+    return [...g, ...j].map((x) => String(x).trim()).filter(Boolean);
+}
+
+/**
+ * @param {string} relPosix path under define root, forward slashes
+ * @param {string} patternRaw exclude pattern (see docs/DEUKPACK_PIPELINE_AND_ENTRY.md)
+ */
+function pathMatchesExclude(relPosix, patternRaw) {
+    const norm = relPosix.replace(/\\/g, '/');
+    const p0 = String(patternRaw).trim().replace(/\\/g, '/');
+    if (!p0) return false;
+    if (p0.includes('*')) {
+        if (p0.startsWith('**/')) {
+            const suf = p0.slice(3);
+            return norm === suf || norm.endsWith('/' + suf);
+        }
+        if (p0.startsWith('*') && !p0.includes('/')) {
+            return norm.endsWith(p0.slice(1));
+        }
+    }
+    const asTree = p0.endsWith('/') || p0.endsWith('/**');
+    const base = p0.replace(/\/\*\*$/, '').replace(/\/$/, '');
+    if (asTree) {
+        return norm === base || norm.startsWith(base + '/');
+    }
+    return norm === p0 || norm === base;
+}
+
+/**
+ * @param {string} relPosix
+ * @param {string[]} patterns
+ */
+function isExcludedRel(relPosix, patterns) {
+    if (!patterns.length) return false;
+    return patterns.some((p) => pathMatchesExclude(relPosix, p));
+}
+
+/**
+ * @param {string} defineRootAbs
+ * @param {string[]} excludePatterns
+ * @returns {Promise<string[]>} relative POSIX paths from define root
+ */
+async function collectDeukRelPaths(defineRootAbs, excludePatterns) {
+    const out = [];
+    async function walk(absDir, relPosix) {
+        let entries;
+        try {
+            entries = await fs.readdir(absDir, { withFileTypes: true });
+        } catch {
+            return;
+        }
+        for (const e of entries) {
+            if (e.name === '.' || e.name === '..') continue;
+            const rel = relPosix ? `${relPosix}/${e.name}` : e.name;
+            if (e.isDirectory()) {
+                if (DEUKPACK_SKIP_WALK_DIRS.has(e.name)) continue;
+                if (isExcludedRel(rel + '/', excludePatterns)) continue;
+                await walk(path.join(absDir, e.name), rel);
+            } else if (e.name.endsWith('.deuk')) {
+                if (!isExcludedRel(rel, excludePatterns)) out.push(rel);
+            }
+        }
+    }
+    try {
+        await fs.access(defineRootAbs);
+    } catch {
+        throw new Error(`defineRoot not found: ${defineRootAbs}`);
+    }
+    await walk(defineRootAbs, '');
+    out.sort();
+    return out;
+}
+
+/**
+ * @param {object} job
+ * @returns {'all' | 'entry'}
+ */
+function resolveJobDefineScope(job) {
+    if (job.defineScope === 'all') return 'all';
+    if (job.defineScope === 'entry') return 'entry';
+    const tf = job.thriftFile != null ? String(job.thriftFile).trim() : '';
+    if (tf) return 'entry';
+    return 'all';
+}
+
+/**
+ * @returns {Promise<{ absPath: string, cleanup: (() => Promise<void>) | null }>}
+ */
+async function preparePipelineEntryThriftPath({
+    job,
+    jobIndex,
+    configDir,
+    defineRoot,
+    globalExclude,
+}) {
+    const scope = resolveJobDefineScope(job);
+    const dr = defineRoot || '_deuk_define';
+    const defineRootAbs = path.resolve(configDir, dr);
+    const exclude = mergeExcludePatterns(globalExclude, job.exclude);
+
+    if (scope === 'entry') {
+        const tf = job.thriftFile != null ? String(job.thriftFile).trim() : '';
+        if (!tf) {
+            throw new Error(
+                `Pipeline job "${job.name || jobIndex}" needs "thriftFile" or set defineScope to "all"`
+            );
+        }
+        const abs = path.resolve(configDir, tf);
+        try {
+            await fs.access(abs);
+        } catch {
+            throw new Error(`Pipeline job entry file not found: ${tf}`);
+        }
+        return { absPath: abs, cleanup: null };
+    }
+
+    const rels = await collectDeukRelPaths(defineRootAbs, exclude);
+    if (rels.length === 0) {
+        throw new Error(`defineScope "all": no .deuk files under "${dr}" (after exclude)`);
+    }
+    const esc = (s) => s.replace(/\\/g, '/').replace(/"/g, '\\"');
+    const body = [
+        '// Auto-generated by deukpack pipeline (defineScope: all). Do not edit.',
+        ...rels.map((r) => `include "${esc(r)}"`),
+    ].join('\n');
+    const safeName = String(job.name || `job${jobIndex}`).replace(/[^a-zA-Z0-9_-]+/g, '_');
+    const bundleAbs = path.join(defineRootAbs, `__deukpack_pipeline_bundle_${jobIndex}_${safeName}.deuk`);
+    await fs.writeFile(bundleAbs, `${body}\n`, 'utf8');
+    console.log(`   📎 defineScope all: bundled ${rels.length} .deuk → ${path.relative(configDir, bundleAbs)}`);
+    return {
+        absPath: bundleAbs,
+        cleanup: async () => {
+            await fs.unlink(bundleAbs).catch(() => {});
+        },
+    };
 }
 
 /**
@@ -322,11 +576,77 @@ async function resolveIncludePathsFromConfig(includePaths, configDir) {
     return [...resolved, ...expanded];
 }
 
+const DEFAULT_LANG_OUTPUT_SUBDIRS = Object.freeze({
+    csharp: 'csharp',
+    cpp: 'cpp',
+    ts: 'ts',
+    js: 'js',
+});
+
 /**
- * Pipeline config (JSON): { defineRoot?, includePaths?, jobs: [ { name?, thriftFile, outputDir, includePaths?, csharp?, cpp?, ts?, js?, json?, ef?, wireProfiles?, importOpenApi?, openapi?, copy?: [ { from, to } ] } ] }
- * ts: TypeScript (1st-stage). js: Path B direct JS. importOpenApi/openapi: OpenAPI ↔ Deuk round-trip. See docs/DEUKPACK_OPENAPI_ROUNDTRIP.md.
- * includePaths: string[] (individual) or mixed: string | { path: string, recursive: true } (recursive = path + direct subdirs).
- * Paths in config are resolved relative to the config file directory.
+ * @param {string} name
+ * @param {string} field
+ * @returns {string}
+ */
+function assertLangOutputSubdirSegment(name, field) {
+    const s = String(name).trim();
+    if (!s || s === '.' || s === '..' || s.includes('..') || s.includes('/') || s.includes('\\')) {
+        throw new Error(`Invalid outputLangSubdirs.${field}: must be a single directory name, got "${name}"`);
+    }
+    return s;
+}
+
+/**
+ * @param {Record<string, unknown> | null | undefined} partial
+ * @returns {{ csharp: string, cpp: string, ts: string, js: string }}
+ */
+function mergeLangOutputSubdirs(partial) {
+    const out = {
+        csharp: DEFAULT_LANG_OUTPUT_SUBDIRS.csharp,
+        cpp: DEFAULT_LANG_OUTPUT_SUBDIRS.cpp,
+        ts: DEFAULT_LANG_OUTPUT_SUBDIRS.ts,
+        js: DEFAULT_LANG_OUTPUT_SUBDIRS.js,
+    };
+    if (!partial || typeof partial !== 'object') return out;
+    for (const k of ['csharp', 'cpp', 'ts', 'js']) {
+        if (partial[k] != null && String(partial[k]).trim() !== '') {
+            out[k] = assertLangOutputSubdirSegment(String(partial[k]), k);
+        }
+    }
+    return out;
+}
+
+/**
+ * @param {object} config
+ * @returns {string}
+ */
+function normalizeConfigDefineRoot(config) {
+    if (config.defineRoot != null && String(config.defineRoot).trim() !== '') {
+        return String(config.defineRoot).trim().replace(/\\/g, '/');
+    }
+    return '_deuk_define';
+}
+
+/**
+ * Default job output base = defineRoot (e.g. _deuk_define) so emits land in _deuk_define/csharp, …/ts, …/js, …/cpp.
+ * @param {object} job
+ * @param {object} config
+ * @returns {string}
+ */
+function resolvePipelineJobOutputDir(job, config) {
+    const od = job.outputDir;
+    if (od == null || (typeof od === 'string' && od.trim() === '')) {
+        return normalizeConfigDefineRoot(config);
+    }
+    return typeof od === 'string' ? od.trim().replace(/\\/g, '/') : String(od);
+}
+
+/**
+ * Pipeline config (JSON): { defineRoot?, exclude?, includePaths?, jobs: [ { name?, defineScope?, thriftFile?, exclude?, outputDir?, outputLangSubdirs?, … } ] }
+ * defineScope: "all" (default when thriftFile omitted) = every .deuk under defineRoot, minus exclude; "entry" = thriftFile required.
+ * exclude: string[] relative to defineRoot (merged: config.exclude + job.exclude). See docs/DEUKPACK_PIPELINE_AND_ENTRY.md.
+ * outputDir: optional; omitted = same as defineRoot (default _deuk_define). Per-language folders: csharp, cpp, ts, js (override outputLangSubdirs).
+ * ts: TypeScript (1st-stage). js: Path B direct JS. See docs/DEUKPACK_OPENAPI_ROUNDTRIP.md, docs/DEUKPACK_PIPELINE_AND_ENTRY.md.
  */
 async function runPipeline(configPath) {
     const configDir = path.dirname(path.resolve(configPath));
@@ -343,21 +663,19 @@ async function runPipeline(configPath) {
     }
 
     const defineRoot = config.defineRoot;
+    const globalEx = Array.isArray(config.exclude) ? config.exclude : [];
     const globalIncludePaths = await resolveIncludePathsFromConfig(config.includePaths || [], configDir);
 
-    console.log(`🚀 DeukPack Pipeline v1.0.0`);
+    console.log(`🚀 DeukPack Pipeline v${DEUKPACK_CLI_VERSION}`);
     console.log(`📄 Config: ${configPath}`);
     console.log(`   Jobs: ${jobs.length}`);
 
     for (let i = 0; i < jobs.length; i++) {
         const job = jobs[i];
         const name = job.name || job.thriftFile || `job${i + 1}`;
-        const thriftFile = path.resolve(configDir, job.thriftFile);
-        const outputDir = path.resolve(configDir, job.outputDir);
+        const outputRel = resolvePipelineJobOutputDir(job, config);
+        const outputDir = path.resolve(configDir, outputRel);
         const jobIncludePaths = await resolveIncludePathsFromConfig(job.includePaths || [], configDir);
-        const baseDir = path.dirname(thriftFile);
-        const includePaths = [baseDir, ...globalIncludePaths, ...jobIncludePaths];
-        const parseOpts = { includePaths, defineRoot };
         const options = {
             csharp: !!job.csharp,
             cpp: !!job.cpp,
@@ -371,12 +689,36 @@ async function runPipeline(configPath) {
             convertToDeuk: !!job.convertToDeuk,
             convertToDeukOutputDir: job.convertToDeukOutputDir || 'deuk',
             csharpProjectName: job.csharpProjectName || 'DeukDefine',
+            csharpNullable: !!job.csharpNullable,
             emitCsproj: job.emitCsproj !== false,
-            wireProfiles: normalizeWireProfiles(job.wireProfiles)
+            wireProfiles: normalizeWireProfiles(job.wireProfiles),
+            allowMultiNamespace: !!job.allowMultiNamespace,
+            braceLessNamespace: !!job.braceLessNamespace,
+            langOutputSubdirs: job.outputLangSubdirs
         };
 
         console.log(`\n--- Job: ${name} ---`);
-        await runOneBuild(thriftFile, outputDir, options, parseOpts);
+        let prepared = null;
+        try {
+            prepared = await preparePipelineEntryThriftPath({
+                job,
+                jobIndex: i,
+                configDir,
+                defineRoot,
+                globalExclude: globalEx,
+            });
+            const absEntry = prepared.absPath;
+            const baseDir = path.dirname(absEntry);
+            const includePaths = [baseDir, ...globalIncludePaths, ...jobIncludePaths];
+            const parseOpts = {
+                includePaths,
+                defineRoot,
+                allowMultiNamespace: !!job.allowMultiNamespace
+            };
+            await runOneBuild(absEntry, outputDir, options, parseOpts);
+        } finally {
+            if (prepared && prepared.cleanup) await prepared.cleanup();
+        }
 
         const copyList = job.copy || [];
         for (const rule of copyList) {
@@ -440,7 +782,7 @@ function parseOptions(args) {
         ts: false,
         js: false,
         json: false,
-        protocol: 'binary',
+        protocol: 'pack',
         endianness: 'little',
         defineRoot: undefined,  // --define-root _deuk_define | _thrift
         convertToDeuk: false,
@@ -448,8 +790,11 @@ function parseOptions(args) {
         emitPerFile: false,  // --emit-per-file  AST 내 각 sourceFile별 .deuk 추가 출력 (server_msg_db 등)
         ef: false,  // --ef  Entity Framework support (meta table entities + DbContext)
         csharpProjectName: 'DeukDefine',  // --csharp-project-name <name>  emitted .csproj AssemblyName/filename
+        csharpNullable: false,           // --csharp-nullable  Enable #nullable enable
         emitCsproj: true,  // set false with --no-csharp-csproj to skip generating DeukDefine.csproj
-        wireProfiles: []
+        wireProfiles: [],
+        allowMultiNamespace: false,
+        braceLessNamespace: false
     };
 
     const includePaths = [];
@@ -516,6 +861,15 @@ function parseOptions(args) {
             case '--no-csharp-csproj':
                 options.emitCsproj = false;
                 break;
+            case '--csharp-nullable':
+                options.csharpNullable = true;
+                break;
+            case '--allow-multi-namespace':
+                options.allowMultiNamespace = true;
+                break;
+            case '--brace-less-namespace':
+                options.braceLessNamespace = true;
+                break;
             case '--protocol':
                 if (i + 1 < args.length) {
                     options.protocol = args[++i];
@@ -579,6 +933,13 @@ function parseOptions(args) {
         }
     }
 
+    const WIRE_ALLOWED = new Set(['pack', 'json', 'yaml', 'tbinary', 'tcompact', 'tjson']);
+    if (!WIRE_ALLOWED.has(options.protocol)) {
+        throw new Error(
+            `Unknown --protocol "${options.protocol}". Use pack|json|yaml|tbinary|tcompact|tjson.`
+        );
+    }
+
     return { options, includePaths, includePathsRecursive };
 }
 
@@ -596,7 +957,7 @@ function getDefaultCsprojContent(assemblyName = 'DeukDefine') {
     <AssemblyName>${assemblyName}</AssemblyName>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-    <Nullable>disable</Nullable>
+    <Nullable>@@NULLABLE@@</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup Condition="'$(DeukPackProtocolProject)' != ''">
@@ -614,7 +975,7 @@ async function generateCSharp(engine, ast, outputDir, options = {}) {
     console.log('🔧 Generating C# code...');
     const startTime = Date.now();
 
-    const csharpDir = path.join(outputDir, 'csharp');
+    const csharpDir = path.join(outputDir, options.langOutputSubdirs.csharp);
     await fs.mkdir(csharpDir, { recursive: true });
 
     // Use the actual C# generator
@@ -623,8 +984,11 @@ async function generateCSharp(engine, ast, outputDir, options = {}) {
 
     const genOptions = {
         efSupport: options.ef === true,
+        csharpNullable: options.csharpNullable === true,
         defineVersionFile: options.defineVersionFile,
-        wireProfilesEmit: normalizeWireProfiles(options.wireProfiles)
+        wireProfilesEmit: normalizeWireProfiles(options.wireProfiles),
+        allowMultiNamespace: options.allowMultiNamespace === true,
+        braceLessNamespace: options.braceLessNamespace === true
     };
     const csharpFiles = await generator.generate(ast, genOptions);
 
@@ -652,7 +1016,9 @@ async function generateCSharp(engine, ast, outputDir, options = {}) {
         const projectName = options.csharpProjectName || 'DeukDefine';
         const csprojName = projectName + '.csproj';
         const csprojPath = path.join(csharpDir, csprojName);
-        await fs.writeFile(csprojPath, getDefaultCsprojContent(projectName), 'utf8');
+        let csprojContent = getDefaultCsprojContent(projectName);
+        csprojContent = csprojContent.replace('@@NULLABLE@@', options.csharpNullable ? 'enable' : 'disable');
+        await fs.writeFile(csprojPath, csprojContent, 'utf8');
         console.log(`   📄 Generated: ${csprojName}`);
     }
 
@@ -660,16 +1026,29 @@ async function generateCSharp(engine, ast, outputDir, options = {}) {
     console.log(`✅ C# generated ${Object.keys(csharpFiles).length} files in ${generateTime}ms`);
 }
 
-async function generateCpp(engine, ast, outputDir) {
+async function generateCpp(engine, ast, outputDir, options = {}) {
     console.log('🔧 Generating C++ code...');
     const startTime = Date.now();
 
-    const cppDir = path.join(outputDir, 'cpp');
+    const cppDir = path.join(outputDir, options.langOutputSubdirs.cpp);
     await fs.mkdir(cppDir, { recursive: true });
 
-    const { CppGenerator } = require('../dist/codegen/CppGenerator');
+    const { CppGenerator } = require('../dist/codegen/cpp');
     const generator = new CppGenerator();
-    const cppFiles = await generator.generate(ast, {});
+    const cppGenOptions = {
+        targetLanguage: 'cpp',
+        outputDir: cppDir,
+        generateTypes: true,
+        generateSerializers: true,
+        generateDeserializers: true,
+        generateValidators: false,
+        generateTests: false,
+        indentSize: 2,
+        useTabs: false,
+        braceLessNamespace: options.braceLessNamespace === true,
+        allowMultiNamespace: options.allowMultiNamespace === true
+    };
+    const cppFiles = await generator.generate(ast, cppGenOptions);
 
     for (const [filename, content] of Object.entries(cppFiles)) {
         if (!filename || filename === 'nul.h' || filename === 'nul.cpp' || filename.startsWith('nul')) {
@@ -696,10 +1075,10 @@ async function generateTypeScript(engine, ast, outputDir, options = {}) {
     console.log('🔧 Generating TypeScript code...');
     const startTime = Date.now();
 
-    const tsDir = path.join(outputDir, 'typescript');
+    const tsDir = path.join(outputDir, options.langOutputSubdirs.ts);
     await fs.mkdir(tsDir, { recursive: true });
 
-    const { TypeScriptGenerator } = require('../dist/codegen/TypeScriptGenerator');
+    const { TypeScriptGenerator } = require('../dist/codegen/typescript');
     const generator = new TypeScriptGenerator();
     const tsFiles = await generator.generate(ast, {});
 
@@ -722,319 +1101,37 @@ async function generateTypeScript(engine, ast, outputDir, options = {}) {
 }
 
 /**
- * 레거시 타입명 → 득팩 표준 typeName (엑셀 스키마 뷰/비교에서 동일하게 표기).
- */
-function toDeukPackStandardTypeName(t) {
-    if (!t || typeof t !== 'string') return t;
-    const k = t.trim().toLowerCase();
-    const map = { i16: 'int16', i32: 'int32', i64: 'int64', i8: 'int8', list: 'list', lst: 'list', set: 'set', map: 'map', struct: 'record', rec: 'record' };
-    return map[k] !== undefined ? map[k] : t;
-}
-
-/**
- * Get schema type string for a DeukPack (IDL) field type. typeName은 득팩 표준으로 출력(엑셀 스키마 뷰/비교용).
- * @param {any} fieldType - string e.g. 'i32' or object e.g. { type: 'list', elementType: 'i32' }
- * @returns {{ type: string, typeName: string }}
- */
-function csharpSuffixFromProfile(profile) {
-    const parts = String(profile).trim().split(/[^a-zA-Z0-9]+/).filter(Boolean);
-    if (parts.length === 0) return '_Subset';
-    return '_' + parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('');
-}
-
-function fieldIncludedInWireProfileJs(field, profileLower) {
-    const ann = field.annotations;
-    if (!ann) return true;
-    const raw = ann.wireProfiles != null ? ann.wireProfiles : ann.wire_profiles;
-    if (raw == null || String(raw).trim() === '') return true;
-    const list = String(raw).split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-    return list.includes(profileLower);
-}
-
-function filterStructFieldsForProfileJs(struct, profileLower) {
-    return (struct.fields || []).filter((f) => fieldIncludedInWireProfileJs(f, profileLower));
-}
-
-function getSchemaTypeInfo(fieldType) {
-    if (typeof fieldType === 'string') {
-        const typeMap = {
-            bool: 'Bool', byte: 'Byte', i8: 'Byte', i16: 'I16', i32: 'I32', i64: 'I64',
-            double: 'Double', string: 'String', binary: 'Binary'
-        };
-        const typeName = toDeukPackStandardTypeName(fieldType);
-        return { type: typeMap[fieldType] || 'Struct', typeName };
-    }
-    if (fieldType && typeof fieldType === 'object') {
-        if (fieldType.type === 'list') {
-            const elem = getSchemaTypeInfo(fieldType.elementType);
-            return { type: 'List', typeName: elem.typeName };
-        }
-        if (fieldType.type === 'set') {
-            const elem = getSchemaTypeInfo(fieldType.elementType);
-            return { type: 'Set', typeName: elem.typeName };
-        }
-        if (fieldType.type === 'map') {
-            const k = getSchemaTypeInfo(fieldType.keyType);
-            const v = getSchemaTypeInfo(fieldType.valueType);
-            return { type: 'Map', typeName: `map<${k.typeName},${v.typeName}>` };
-        }
-    }
-    const raw = typeof fieldType === 'string' ? fieldType : 'struct';
-    return { type: 'Struct', typeName: toDeukPackStandardTypeName(raw) };
-}
-
-/**
  * Generate JavaScript (Path B: direct JS for Node/tools).
  * JS build pipeline: docs/DEUKPACK_JS_BUILD_PIPELINE.md — Path A = TS 1st then app build; Path B = this direct --js output.
  * Output: DeukPack JS objects (getSchema(), toJson/fromJson, applyOverrides, projectFields). Consumer-agnostic.
  */
 async function generateJavaScript(engine, ast, outputDir, options = {}) {
     console.log('🔧 Generating JavaScript code...');
-    DeukPackEngine.resolveExtends(ast);
     const startTime = Date.now();
 
-    const jsDir = path.join(outputDir, 'javascript');
+    const jsDir = path.join(outputDir, options.langOutputSubdirs.js);
     await fs.mkdir(jsDir, { recursive: true });
 
-    const lines = [];
-    lines.push('// Generated by DeukPack v1.0.0');
-    lines.push('// ' + new Date().toISOString());
-    lines.push('// JS build pipeline: Path B (direct JS). See DeukPack docs/DEUKPACK_JS_BUILD_PIPELINE.md');
-    lines.push('// DeukPack JS objects with embedded schema (getSchema(), toJson/fromJson).');
-    lines.push('// Protocol helpers: toJson/fromJson (DeukPack JSON), toBinary/fromBinary (binary).');
-    lines.push('');
+    const { JavaScriptGenerator } = require('../dist/codegen/javascript');
+    const generator = new JavaScriptGenerator();
+    const genOptions = {
+        wireProfilesEmit: normalizeWireProfiles(options.wireProfiles)
+    };
+    const jsFiles = await generator.generate(ast, genOptions);
 
-    lines.push('// --- Protocol runtime (DeukPack JSON shape: field-id keys, { i32|str|lst|map|rec|... } wrappers) ---');
-    lines.push('function _wrapDpJson(type, typeName, val, schemas) {');
-    lines.push('  if (val === null || val === undefined) return null;');
-    lines.push('  switch (type) {');
-    lines.push('    case "Bool": return { tf: !!val };');
-    lines.push('    case "Byte": case "I16": case "I32": return { i32: Number(val) };');
-    lines.push('    case "I64": return { i64: Number(val) };');
-    lines.push('    case "Double": return { dbl: Number(val) };');
-    lines.push('    case "String": return { str: String(val) };');
-    lines.push('    case "Binary":');
-    lines.push('      if (typeof Buffer !== "undefined") return { str: Buffer.from(val).toString("base64") };');
-    lines.push('      var arr = val && val.length != null ? val : []; var s = ""; for (var i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i] & 255); return { str: (typeof btoa !== "undefined" ? btoa(s) : "") };');
-    lines.push('    case "List": case "Set":');
-    lines.push('      var elem = (typeName.match(/^(?:list|set)<(.+)>$/) || [])[1];');
-    lines.push('      return { lst: (val || []).map(function(e) { return _wrapDpJson(_elemType(elem), elem, e, schemas); }) };');
-    lines.push('    case "Map":');
-    lines.push('      var m = (typeName.match(/^map<([^,]+),(.+)>$/) || []);');
-    lines.push('      var out = {};');
-    lines.push('      for (var k in val) if (Object.prototype.hasOwnProperty.call(val, k)) out[String(k)] = _wrapDpJson(_elemType(m[2]), m[2], val[k], schemas);');
-    lines.push('      return { map: out };');
-    lines.push('    default:');
-    lines.push('      var s = schemas && schemas[typeName];');
-    lines.push('      return s ? { rec: _toDpJson(s, val, schemas) } : { str: String(val) };');
-    lines.push('  }');
-    lines.push('}');
-    lines.push('function _elemType(tn) { if (!tn) return "String"; var m = tn.match(/^(?:list|set)<(.+)>$/); return m ? _elemType(m[1]) : (tn === "i32" || tn === "i64" ? "I32" : (tn === "double" ? "Double" : (tn === "string" ? "String" : "Struct"))); }');
-    lines.push('function _toDpJson(schema, obj, schemas) {');
-    lines.push('  if (!schema || schema.type !== "Struct" || !schema.fields) return obj;');
-    lines.push('  var out = {};');
-    lines.push('  for (var id in schema.fields) { var f = schema.fields[id]; var v = obj && obj[f.name]; if (v === undefined && f.defaultValue !== undefined && f.defaultValue !== null) v = f.defaultValue; if (v !== undefined) out[String(id)] = _wrapDpJson(f.type, f.typeName, v, schemas); }');
-    lines.push('  return out;');
-    lines.push('}');
-    lines.push('function _unwrapDpJson(type, typeName, jsonVal, schemas) {');
-    lines.push('  if (jsonVal === null || jsonVal === undefined) return null;');
-    lines.push('  if (type !== "Struct" && typeof jsonVal === "object" && !Array.isArray(jsonVal)) {');
-    lines.push('    if (type === "Binary" && jsonVal.str) { var b64 = jsonVal.str; if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(b64, "base64")); var bin = typeof atob !== "undefined" ? atob(b64) : ""; var arr = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return arr; }');
-    lines.push('    if (jsonVal.str !== undefined) return jsonVal.str;');
-    lines.push('    if (jsonVal.i32 !== undefined) return jsonVal.i32;');
-    lines.push('    if (jsonVal.i64 !== undefined) return Number(jsonVal.i64);');
-    lines.push('    if (jsonVal.dbl !== undefined) return jsonVal.dbl;');
-    lines.push('    if (jsonVal.tf !== undefined) return jsonVal.tf;');
-    lines.push('    if (jsonVal.lst !== undefined) { var elem = (typeName.match(/^(?:list|set)<(.+)>$/) || [])[1]; return jsonVal.lst.map(function(e) { return _unwrapDpJson(_elemType(elem), elem, e, schemas); }); }');
-    lines.push('    if (jsonVal.map !== undefined) { var m = (typeName.match(/^map<([^,]+),(.+)>$/) || []); var o = {}; for (var k in jsonVal.map) o[k] = _unwrapDpJson(_elemType(m[2]), m[2], jsonVal.map[k], schemas); return o; }');
-    lines.push('    if (jsonVal.rec !== undefined) { var s = schemas && schemas[typeName]; return s ? _fromDpJson(s, jsonVal.rec, schemas) : jsonVal.rec; }');
-    lines.push('  }');
-    lines.push('  return jsonVal;');
-    lines.push('}');
-    lines.push('function _fromDpJson(schema, jsonObj, schemas) {');
-    lines.push('  if (!schema || schema.type !== "Struct" || !schema.fields) return jsonObj || {};');
-    lines.push('  var out = {};');
-    lines.push('  for (var id in schema.fields) { var f = schema.fields[id]; var w = jsonObj && jsonObj[String(id)]; if (w !== undefined) out[f.name] = _unwrapDpJson(f.type, f.typeName, w, schemas); }');
-    lines.push('  return out;');
-    lines.push('}');
-    lines.push('');
-
-
-    lines.push('// --- WriteWithOverrides runtime: apply field-id overrides without cloning ---');
-    lines.push('function _applyOverrides(obj, overrides, schema) {');
-    lines.push('  if (!overrides || !schema || !schema.fields) return obj;');
-    lines.push('  var out = {};');
-    lines.push('  for (var k in obj) if (Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k];');
-    lines.push('  for (var id in overrides) {');
-    lines.push('    var f = schema.fields[id];');
-    lines.push('    if (f) out[f.name] = overrides[id];');
-    lines.push('  }');
-    lines.push('  return out;');
-    lines.push('}');
-    lines.push('');
-    lines.push('// --- WriteFields runtime: project only specified field IDs (+ optional overrides) ---');
-    lines.push('function _projectFields(obj, fieldIds, schema, overrides) {');
-    lines.push('  if (!fieldIds || !schema || !schema.fields) return {};');
-    lines.push('  var set = {}; for (var i = 0; i < fieldIds.length; i++) set[fieldIds[i]] = true;');
-    lines.push('  var out = {};');
-    lines.push('  for (var fid in schema.fields) {');
-    lines.push('    if (!set[fid]) continue;');
-    lines.push('    var f = schema.fields[fid];');
-    lines.push('    out[f.name] = (overrides && overrides[fid] !== undefined) ? overrides[fid] : obj[f.name];');
-    lines.push('  }');
-    lines.push('  return out;');
-    lines.push('}');
-    lines.push('');
-
-    // Enums: value map + getSchema() with docComment, annotations, valueComments (full recoverable)
-    for (const enumDef of ast.enums || []) {
-        const safeName = enumDef.name.replace(/\./g, '_');
-        const schemaObj = {
-            name: enumDef.name,
-            type: 'Enum',
-            values: enumDef.values,
-            docComment: enumDef.docComment != null ? enumDef.docComment : undefined,
-            valueComments: enumDef.valueComments && Object.keys(enumDef.valueComments || {}).length ? enumDef.valueComments : undefined,
-            annotations: enumDef.annotations && Object.keys(enumDef.annotations || {}).length ? enumDef.annotations : undefined
-        };
-        lines.push('const _schema_' + safeName + ' = ' + JSON.stringify(schemaObj) + ';');
-        lines.push(`const ${safeName} = {`);
-        lines.push('  values: _schema_' + safeName + '.values,');
-        lines.push('  getSchema() { return _schema_' + safeName + '; }');
-        lines.push('};');
-        lines.push('');
-    }
-
-    // Structs: schema constant + getSchema() with docComment, annotations, full defaultValue (mirrors C# GetSchema())
-    for (const struct of ast.structs || []) {
-        const safeName = struct.name.replace(/\./g, '_');
-        const fieldsObj = {};
-        for (const field of struct.fields || []) {
-            const ti = getSchemaTypeInfo(field.type);
-            const f = {
-                id: field.id,
-                name: field.name,
-                type: ti.type,
-                typeName: ti.typeName,
-                required: !!field.required,
-                defaultValue: field.defaultValue !== undefined ? field.defaultValue : null,
-                docComment: field.docComment != null ? field.docComment : undefined,
-                annotations: field.annotations && Object.keys(field.annotations).length ? field.annotations : undefined
-            };
-            fieldsObj[field.id] = f;
+    for (const [filename, content] of Object.entries(jsFiles)) {
+        if (!filename || filename === 'nul.js' || filename.startsWith('nul')) {
+            console.warn(`   ⚠️  Skipping invalid filename: ${filename}`);
+            continue;
         }
-        const schemaObj = {
-            name: struct.name,
-            type: 'Struct',
-            fields: fieldsObj,
-            docComment: struct.docComment != null ? struct.docComment : undefined,
-            annotations: struct.annotations && Object.keys(struct.annotations || {}).length ? struct.annotations : undefined
-        };
-        const schemaJson = JSON.stringify(schemaObj);
-        lines.push(`const _schema_${safeName} = ${schemaJson};`);
-        lines.push(`const ${safeName} = {`);
-        lines.push('  getSchema() { return _schema_' + safeName + '; },');
-        lines.push('  create() { return {}; },');
-        lines.push('  toJson(obj) { return JSON.stringify(_toDpJson(_schema_' + safeName + ', obj, _schemas)); },');
-        lines.push('  fromJson(str) { return _fromDpJson(_schema_' + safeName + ', JSON.parse(str || "{}"), _schemas); },');
-        lines.push('  toBinary(obj) { throw new Error("toBinary: use C#/TS runtime or DeukPack binary protocol"); },');
-        lines.push('  fromBinary(buf) { throw new Error("fromBinary: use C#/TS runtime or DeukPack binary protocol"); },');
-        lines.push('  applyOverrides(obj, overrides) { return _applyOverrides(obj, overrides, _schema_' + safeName + '); },');
-        lines.push('  toJsonWithOverrides(obj, overrides) { return JSON.stringify(_toDpJson(_schema_' + safeName + ', _applyOverrides(obj, overrides, _schema_' + safeName + '), _schemas)); },');
-        lines.push('  projectFields(obj, fieldIds, overrides) { return _projectFields(obj, fieldIds, _schema_' + safeName + ', overrides); },');
-        lines.push('  toJsonWithFields(obj, fieldIds, overrides) { return JSON.stringify(_toDpJson(_schema_' + safeName + ', _projectFields(obj, fieldIds, _schema_' + safeName + ', overrides), _schemas)); },');
-        const fieldIdEntries = (struct.fields || []).map(f => {
-            const cap = f.name.charAt(0).toUpperCase() + f.name.slice(1);
-            return `${cap}: ${f.id}`;
-        });
-        lines.push('  FieldId: { ' + fieldIdEntries.join(', ') + ' }');
-        lines.push('};');
-        lines.push('');
-    }
-
-    const wireProfilesJs = normalizeWireProfiles(options.wireProfiles);
-    const wireProfileExportNames = [];
-    for (const profile of wireProfilesJs) {
-        const profileLower = profile.toLowerCase();
-        const suffix = csharpSuffixFromProfile(profile);
-        for (const struct of ast.structs || []) {
-            const filtered = filterStructFieldsForProfileJs(struct, profileLower);
-            if (filtered.length === 0) continue;
-            const subsetExportName = struct.name.replace(/\./g, '_') + suffix;
-            wireProfileExportNames.push(subsetExportName);
-            const fieldsObj = {};
-            for (const field of filtered) {
-                const ti = getSchemaTypeInfo(field.type);
-                const f = {
-                    id: field.id,
-                    name: field.name,
-                    type: ti.type,
-                    typeName: ti.typeName,
-                    required: !!field.required,
-                    defaultValue: field.defaultValue !== undefined ? field.defaultValue : null,
-                    docComment: field.docComment != null ? field.docComment : undefined,
-                    annotations: field.annotations && Object.keys(field.annotations).length ? field.annotations : undefined
-                };
-                fieldsObj[field.id] = f;
-            }
-            const schemaObj = {
-                name: struct.name,
-                type: 'Struct',
-                fields: fieldsObj,
-                docComment: struct.docComment != null ? struct.docComment : undefined,
-                annotations: struct.annotations && Object.keys(struct.annotations).length ? struct.annotations : undefined,
-                wireProfile: profile
-            };
-            const schemaJson = JSON.stringify(schemaObj);
-            lines.push(`// wire profile "${profile}" subset`);
-            lines.push(`const _schema_${subsetExportName} = ${schemaJson};`);
-            lines.push(`const ${subsetExportName} = {`);
-            lines.push('  getSchema() { return _schema_' + subsetExportName + '; },');
-            lines.push('  create() { return {}; },');
-            lines.push('  toJson(obj) { return JSON.stringify(_toDpJson(_schema_' + subsetExportName + ', obj, _schemas)); },');
-            lines.push('  fromJson(str) { return _fromDpJson(_schema_' + subsetExportName + ', JSON.parse(str || "{}"), _schemas); },');
-            lines.push('  toBinary(obj) { throw new Error("toBinary: use C#/TS runtime or DeukPack binary protocol"); },');
-            lines.push('  fromBinary(buf) { throw new Error("fromBinary: use C#/TS runtime or DeukPack binary protocol"); },');
-            lines.push('};');
-            lines.push('');
+        const filePath = path.join(jsDir, filename);
+        if (filePath.includes('\\nul\\') || filePath.endsWith('\\nul')) {
+            console.warn(`   ⚠️  Skipping invalid path: ${filePath}`);
+            continue;
         }
+        await fs.writeFile(filePath, content, 'utf8');
+        console.log(`   📄 Generated: ${filename}`);
     }
-
-    lines.push('var _schemas = {};');
-    for (const struct of ast.structs || []) {
-        const safeName = struct.name.replace(/\./g, '_');
-        lines.push('_schemas["' + struct.name.replace(/"/g, '\\"') + '"] = _schema_' + safeName + ';');
-    }
-    for (const profile of wireProfilesJs) {
-        const profileLower = profile.toLowerCase();
-        const suffix = csharpSuffixFromProfile(profile);
-        for (const struct of ast.structs || []) {
-            const filtered = filterStructFieldsForProfileJs(struct, profileLower);
-            if (filtered.length === 0) continue;
-            const subsetExportName = struct.name.replace(/\./g, '_') + suffix;
-            const schemaKey = struct.name + suffix;
-            lines.push('_schemas["' + schemaKey.replace(/"/g, '\\"') + '"] = _schema_' + subsetExportName + ';');
-        }
-    }
-    lines.push('var _enums = {};');
-    for (const enumDef of ast.enums || []) {
-        const safeName = enumDef.name.replace(/\./g, '_');
-        lines.push('_enums["' + enumDef.name.replace(/"/g, '\\"') + '"] = _schema_' + safeName + ';');
-    }
-    lines.push('');
-
-    // Export for Node/UMD
-    lines.push('if (typeof module !== "undefined" && module.exports) {');
-    const allNames = []
-        .concat((ast.enums || []).map(e => e.name.replace(/\./g, '_')))
-        .concat((ast.structs || []).map(s => s.name.replace(/\./g, '_')))
-        .concat(wireProfileExportNames);
-    allNames.forEach(n => { lines.push('  module.exports.' + n + ' = ' + n + ';'); });
-    lines.push('}');
-    lines.push('');
-
-    const jsContent = lines.join('\n');
-    await fs.writeFile(path.join(jsDir, 'generated.js'), jsContent);
 
     const generateTime = Date.now() - startTime;
     console.log(`✅ JavaScript generated (${ast.structs.length} structs, ${ast.enums.length} enums) in ${generateTime}ms`);
@@ -1045,4 +1142,4 @@ if (require.main === module) {
     main().catch(console.error);
 }
 
-module.exports = { main, runOneBuild, runPipeline, copyDir };
+module.exports = { main, runOneBuild, runPipeline, copyDir, printCliUsage, hasCodegenOrEmit };

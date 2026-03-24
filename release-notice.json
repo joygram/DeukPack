@@ -1,0 +1,50 @@
+{
+  "version": "1.2.3",
+  "info_title_ko": "득팩 코어 업데이트",
+  "info_title_en": "DeukPack core update",
+  "announce": "<strong>득팩 코어 1.2.3</strong> — <code>deukpack init</code> 대화형 정리·bootstrap 항상·VSIX는 마지막(<code>code</code>/<code>cursor</code>/<code>antigravity</code>)·<code>--skip-workspace</code> 제거 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/en/releases/\">EN</a>",
+  "landing_ko": "**득팩 코어 1.2.3** — `deukpack init` 대화형 단순화(디렉터리 전체 IDL); `.deukpack/workspace.json` bootstrap 항상; 동봉 VSIX는 bootstrap 이후 설치 시도 순서 `code`→`cursor`→`antigravity`; README `npx` 안내 정리. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.2.3** — `deukpack init` interactive trimmed (directory-wide IDL); workspace bootstrap always; bundled VSIX after bootstrap (`code` / `cursor` / `antigravity`); `--skip-workspace` removed; README `npx` guidance. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/en/releases/)",
+  "product_notices": [
+    {
+      "date": "2026-03-25",
+      "products": ["core-engine", "extension", "pipeline-unity"],
+      "title_ko": "1.2.3 — init·bootstrap·VSIX 순서·Antigravity",
+      "title_en": "1.2.3 — init flow, bootstrap, VSIX order, Antigravity",
+      "body_ko": "- **init**: 질문 정리; bootstrap 항상; `--skip-workspace` 제거.\n- **VSIX**: bootstrap 이후; 자동 설치 `code`→`cursor`→`antigravity`.\n- **문서**: `npx` vs `npm deukpack` 안내.",
+      "body_en": "- **init**: fewer prompts; bootstrap always; `--skip-workspace` removed.\n- **VSIX**: after bootstrap; auto-install `code`→`cursor`→`antigravity`.\n- **Docs**: `npx` vs `npm deukpack`."
+    },
+    {
+      "date": "2026-03-24",
+      "products": ["core-engine", "extension", "pipeline-unity"],
+      "title_ko": "1.2.2 — 파이프라인 전체 스캔·출력 경로·ts/js",
+      "title_en": "1.2.2 — pipeline all-deuk scan, output paths, ts/js dirs",
+      "body_ko": "- **파이프라인**: `defineScope: all`(기본), `exclude`, 임시 번들 엔트리.\n- **출력**: `outputDir` 생략 시 `defineRoot`와 동일; 하위 폴더 기본 `csharp`/`cpp`/`ts`/`js`; `outputLangSubdirs`로 이름 변경.\n- **init·문서·예제**: 기본 파이프라인·경로 정합.",
+      "body_en": "- **Pipeline**: `defineScope: all` (default), `exclude`, short-lived bundle entry.\n- **Output**: omit `outputDir` → same as `defineRoot`; default subdirs `csharp`/`cpp`/`ts`/`js`; rename via `outputLangSubdirs`.\n- **init / docs / examples**: defaults and paths aligned."
+    },
+    {
+      "date": "2026-03-24",
+      "products": ["core-engine", "extension", "pipeline-unity"],
+      "title_ko": "1.2.1 — README·파이프라인 경고·VSIX 자동 갱신",
+      "title_en": "1.2.1 — README, pipeline warning, VSIX auto on version bump",
+      "body_ko": "- **README**: 로컬 설치 절차 코드 블록·전역 `-g` 제거·키트 **득팩 테일** 표기.\n- **CLI**: `deukpack.pipeline.json` 없을 때 단발 실행 경고 → `npx deukpack init` 유도.\n- **init/bootstrap/VSIX**: 저장된 npm 버전과 불일치 시 VSIX 자동 설치 시도; Unity 근처 감지·비대화형 ensure.",
+      "body_en": "- **README**: local install code blocks; drop global `-g` from guide; **DeukPack Tale** label for kits.\n- **CLI**: warn on one-shot runs when default pipeline JSON is missing; nudge **`npx deukpack init`**.\n- **init/bootstrap/VSIX**: auto VSIX attempt on npm version mismatch; Unity-aware prompts; non-interactive ensure."
+    },
+    {
+      "date": "2026-03-23",
+      "products": ["core-engine", "protocol", "pipeline-unity", "extension"],
+      "title_ko": "1.2.0 — 동봉 VSIX·npm 와이어·Unity 연동 문서",
+      "title_en": "1.2.0 — bundled VSIX, npm wire, Unity integration docs",
+      "body_ko": "- **VS Code 확장**: npm tarball에 **`bundled/deuk-idl.vsix`** 동봉; **postinstall**·**bootstrap**·**`sync-to-oss --build`** 경로 정리(`bundled/README.md`).\n- **npm**: `serialize` / `deserialize` 를 `WireExtras`·`WireDeserializeExtras` 중심으로 정리(구 시그니처 제거).\n- **TypeScript 와이어**: `BinaryReader`, `wireTags`, `SerializationWarnings` 등 보강; `pack`·`json`·`yaml`·인터롭 와이어 짝 유지.\n- **문서·연동**: UPM·`clientDeukDefinePath` 등 Unity 쪽 경로를 릴리스 스펙(§0.1)과 맞춤.\n- **생성·CI**: C++/TS/JS 템플릿·JS 스키마 득팩 표기 정리, C# 프로토콜 CI 안정화.",
+      "body_en": "- **VS Code extension**: npm tarball ships **`bundled/deuk-idl.vsix`**; **postinstall**, **bootstrap**, and **`sync-to-oss --build`** wired (`bundled/README.md`).\n- **npm**: `serialize` / `deserialize` use `WireExtras` / `WireDeserializeExtras` (legacy overload removed).\n- **TypeScript wire**: `BinaryReader`, `wireTags`, `SerializationWarnings`; Deuk native and interop protocols stay paired.\n- **Docs & layout**: Unity UPM / `clientDeukDefinePath` aligned with release scope (§0.1).\n- **Codegen & CI**: C++/TS/JS templates and Deuk-oriented JS schema labeling; C# protocol CI stabilized."
+    },
+    {
+      "date": "2026-03-20",
+      "products": ["core-engine"],
+      "title_ko": "1.1.0 — C++ uint 타입·레거시 message·CLI",
+      "title_en": "1.1.0 — C++ uint types, legacy message block, CLI",
+      "body_ko": "- **C++ (`--cpp`)**: `uint8` 등 → `<cstdint>` 고정폭 타입.\n- **IDL**: Thrift 스타일 레거시 `message { }` 블록 파싱.\n- **CLI**: `deukpack` → `scripts/build_deukpack.js` 위임.",
+      "body_en": "- **C++ (`--cpp`)**: `uint8` … → `<cstdint>` aliases.\n- **IDL**: legacy Thrift-style `message { … }` blocks.\n- **CLI**: delegates to `scripts/build_deukpack.js`."
+    }
+  ]
+}

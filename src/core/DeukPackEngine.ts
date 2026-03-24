@@ -4,6 +4,7 @@
  */
 
 import { DeukPackAST, DeukPackError, DeukPackException, PerformanceMetrics, SerializationOptions, GenerationOptions, DeukPackStruct, DeukPackEnum, DeukPackNamespace, DeukPackTypedef, DeukPackConstant, DeukPackService, ParseFileWithIncludesOptions } from '../types/DeukPackTypes';
+import { DeukPackASTBuilderOptions } from '../ast/DeukPackASTBuilder';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { existsSync } from 'fs';
@@ -14,6 +15,103 @@ import { DeukPackGenerator } from './DeukPackGenerator';
 import { WireSerializer } from '../serialization/WireSerializer';
 import { WireDeserializer } from '../serialization/WireDeserializer';
 import { PerformanceMonitor } from '../utils/PerformanceMonitor';
+import { getDeukPackPackageVersion } from '../deukpackVersion';
+
+/**
+ * Canonical key for the include graph so each physical file is parsed once:
+ * - Cycles (A includes B includes A) stop instead of Thrift-style unbounded recursion.
+ * - Equivalent paths (e.g. dir/../file.deuk vs file.deuk) map to one entry.
+ * Uses realpath when available (symlinks / stable casing on some platforms).
+ */
+async function canonicalIncludeFileKey(filePath: string): Promise<string> {
+  const normalizedAbs = path.resolve(path.normalize(filePath));
+  try {
+    return await fs.realpath(normalizedAbs);
+  } catch {
+    return normalizedAbs;
+  }
+}
+
+function normSourcePath(p: string): string {
+  return p.replace(/\\/g, '/');
+}
+
+function sourcePathsEqual(a: string | undefined, b: string | undefined): boolean {
+  if (a == null || b == null) return false;
+  return normSourcePath(a) === normSourcePath(b);
+}
+
+function countDefinitionsOnSourceFile(
+  sourceFile: string,
+  structs: DeukPackStruct[],
+  enums: DeukPackEnum[],
+  typedefs: DeukPackTypedef[],
+  constants: DeukPackConstant[],
+  services: DeukPackService[]
+): number {
+  let c = 0;
+  for (const s of structs) {
+    if (sourcePathsEqual(s.sourceFile, sourceFile)) c++;
+  }
+  for (const e of enums) {
+    if (e.forwardRefPlaceholder === true) continue;
+    if (sourcePathsEqual(e.sourceFile, sourceFile)) c++;
+  }
+  for (const t of typedefs) {
+    if (sourcePathsEqual(t.sourceFile, sourceFile)) c++;
+  }
+  for (const k of constants) {
+    if (sourcePathsEqual(k.sourceFile, sourceFile)) c++;
+  }
+  for (const svc of services) {
+    if (sourcePathsEqual(svc.sourceFile, sourceFile)) c++;
+  }
+  return c;
+}
+
+/**
+ * Forward-ref placeholder enums must not be attributed to include-only stubs (namespace + include only),
+ * or C#/C++ emit empty/spurious files. Prefer a source file in the same namespace that has real definitions.
+ */
+function pickSourceFileForForwardRefEnum(
+  nsName: string,
+  fileNamespaceMap: { [filePath: string]: string },
+  structs: DeukPackStruct[],
+  enums: DeukPackEnum[],
+  typedefs: DeukPackTypedef[],
+  constants: DeukPackConstant[],
+  services: DeukPackService[],
+  entryFile: string
+): string {
+  const candidates = Object.keys(fileNamespaceMap).filter((f) => fileNamespaceMap[f] === nsName);
+  let best: string | undefined;
+  let bestScore = -1;
+  for (const f of candidates) {
+    const score = countDefinitionsOnSourceFile(f, structs, enums, typedefs, constants, services);
+    if (score > bestScore) {
+      bestScore = score;
+      best = f;
+    } else if (score === bestScore && score > 0 && best != null) {
+      if (normSourcePath(f).localeCompare(normSourcePath(best)) < 0) best = f;
+    }
+  }
+  if (best != null && bestScore > 0) {
+    return best;
+  }
+  for (const s of structs) {
+    if (!s.sourceFile) continue;
+    const ns = fileNamespaceMap[s.sourceFile] ??
+      Object.entries(fileNamespaceMap).find(([k]) => sourcePathsEqual(k, s.sourceFile))?.[1];
+    if (ns === nsName) return s.sourceFile;
+  }
+  for (const e of enums) {
+    if (e.forwardRefPlaceholder === true || !e.sourceFile) continue;
+    const ns = fileNamespaceMap[e.sourceFile] ??
+      Object.entries(fileNamespaceMap).find(([k]) => sourcePathsEqual(k, e.sourceFile))?.[1];
+    if (ns === nsName) return e.sourceFile;
+  }
+  return entryFile;
+}
 
 export class DeukPackEngine {
   private parser: IdlParser;
@@ -48,9 +146,9 @@ export class DeukPackEngine {
   /**
    * Parse IDL files into AST
    */
-  async parseFiles(filePaths: string[]): Promise<DeukPackAST> {
+  async parseFiles(filePaths: string[], options?: DeukPackASTBuilderOptions): Promise<DeukPackAST> {
     try {
-      return await this.parser.parseFiles(filePaths);
+      return await this.parser.parseFiles(filePaths, options);
     } catch (error) {
       throw new DeukPackException(`Failed to parse files: ${(error as Error).message}`);
     }
@@ -125,35 +223,38 @@ export class DeukPackEngine {
     const allServices: DeukPackService[] = [];
     const allIncludes: string[] = [];
     const fileNamespaceMap: { [filePath: string]: string } = {};
+    const fileIncludesMap: { [sourceFile: string]: string[] } = {};
 
     const opts: ParseFileWithIncludesOptions = Array.isArray(options) ? { includePaths: options } : (options ?? {});
     const customIncludePaths = opts.includePaths;
     const defineRoot = opts.defineRoot ?? '_deuk_define';
 
-    const baseDir = path.dirname(filePath);
+    const entryResolved = path.resolve(path.normalize(filePath));
+    const baseDir = path.dirname(entryResolved);
 
     const SUBDIRS = ['_engine', 'engine', 'game_define', 'deuk_table', 'protocol_server', 'protocol_user', 'generated_define', '_project_common'] as const;
 
     const parseFileRecursive = async (currentPath: string) => {
-      if (processedFiles.has(currentPath)) {
+      const stackKey = await canonicalIncludeFileKey(currentPath);
+      if (processedFiles.has(stackKey)) {
         return;
       }
+      processedFiles.add(stackKey);
 
-      processedFiles.add(currentPath);
-
-      const content = await fs.readFile(currentPath, 'utf-8');
-      const ext = path.extname(currentPath).toLowerCase();
+      const content = await fs.readFile(stackKey, 'utf-8');
+      const ext = path.extname(stackKey).toLowerCase();
+      const parserOpts = { allowMultiNamespace: opts.allowMultiNamespace ?? false };
       const ast = ext === '.deuk'
-        ? this.deukParser.parse(content, currentPath)
+        ? this.deukParser.parse(content, stackKey, parserOpts)
         : ext === '.proto'
-          ? this.protoParser.parse(content, currentPath)
-          : this.parser.parse(content, currentPath);
+          ? this.protoParser.parse(content, stackKey)
+          : this.parser.parse(content, stackKey, parserOpts);
 
       // 파일의 네임스페이스 찾기 및 저장
       const namespaceForFile = ast.namespaces.find(ns => ns.language === '*' || ns.language === 'csharp');
       if (namespaceForFile) {
-        fileNamespaceMap[currentPath] = namespaceForFile.name;
-        namespaceForFile.sourceFile = currentPath;
+        fileNamespaceMap[stackKey] = namespaceForFile.name;
+        namespaceForFile.sourceFile = stackKey;
       }
 
       // Merge all definitions
@@ -164,6 +265,7 @@ export class DeukPackEngine {
       allConstants.push(...ast.constants);
       allServices.push(...ast.services);
       allIncludes.push(...ast.includes);
+      fileIncludesMap[stackKey] = (ast.includes || []).map((i) => i.trim()).filter(Boolean);
 
       // table/container 사용 시 deuk.deuk를 최종 AST에만 추가 (파싱은 하지 않음 — 코드젠용)
       if (processedFiles.size === 1 && ast.structs) {
@@ -195,11 +297,14 @@ export class DeukPackEngine {
           return list;
         };
 
+        // Same-directory first (so e.g. _engine/gplat_define.deuk can include "deuk_geometry.deuk")
+        const currentFileDir = path.dirname(stackKey);
+        const sameDirPath = path.resolve(currentFileDir, trimmedInclude);
         const customResolved = customIncludePaths && customIncludePaths.length > 0
           ? customIncludePaths.filter(p => p).map(p => path.resolve(p, trimmedInclude))
           : [];
         const defineRootPaths = buildDefineRootPaths();
-        const includePaths = customResolved.length > 0 ? [...customResolved, ...defineRootPaths] : defineRootPaths;
+        const includePaths = [sameDirPath, ...(customResolved.length > 0 ? customResolved : defineRootPaths)];
 
         let found = false;
         for (const includePath of includePaths) {
@@ -213,7 +318,7 @@ export class DeukPackEngine {
         if (!found) {
           const errorMsg = `Could not find include file: ${trimmedInclude}`;
           console.error(`[DeukPack ERROR] ${errorMsg}`);
-          console.error(`[DeukPack]   Referenced from: ${currentPath}`);
+          console.error(`[DeukPack]   Referenced from: ${stackKey}`);
           console.error(`[DeukPack]   Original include string: "${include}"`);
           console.error(`[DeukPack]   Searched in ${includePaths.length} locations:`);
           if (customIncludePaths) {
@@ -226,13 +331,13 @@ export class DeukPackEngine {
           if (includePaths.length > 10) {
             console.error(`[DeukPack]     ... and ${includePaths.length - 10} more locations`);
           }
-          throw new Error(`${errorMsg} (referenced from ${currentPath})`);
+          throw new Error(`${errorMsg} (referenced from ${stackKey})`);
         }
       }
     };
 
     try {
-      await parseFileRecursive(filePath);
+      await parseFileRecursive(entryResolved);
 
       const referencedEnums = new Map<string, { namespace: string, name: string }>();
 
@@ -258,19 +363,25 @@ export class DeukPackEngine {
                 if (!existingEnum && !existingStruct) {
                   const key = `${nsName}.${typeName}`;
                   if (!referencedEnums.has(key)) {
-                    const namespaceDef = allNamespaces.find(ns => ns.name === nsName);
-                    const targetFile = (namespaceDef?.sourceFile ||
-                                      Object.keys(fileNamespaceMap).find(f => fileNamespaceMap[f] === nsName) ||
-                                      filePath) as string;
+                    const finalTargetFile = pickSourceFileForForwardRefEnum(
+                      nsName,
+                      fileNamespaceMap,
+                      allStructs,
+                      allEnums,
+                      allTypedefs,
+                      allConstants,
+                      allServices,
+                      entryResolved
+                    );
 
                     referencedEnums.set(key, { namespace: nsName as string, name: typeName as string });
 
-                    const finalTargetFile: string = targetFile || filePath;
-                    if (!allEnums.find(e => e.name === typeName && (e.sourceFile ?? '') === finalTargetFile)) {
+                    if (!allEnums.find(e => e.name === typeName && sourcePathsEqual(e.sourceFile, finalTargetFile))) {
                       const newEnum: DeukPackEnum = {
                         name: typeName,
                         values: { _NONE: 0, _END: 1 } as { [key: string]: number },
-                        sourceFile: finalTargetFile as string
+                        sourceFile: finalTargetFile,
+                        forwardRefPlaceholder: true
                       };
                       allEnums.push(newEnum);
                     }
@@ -290,6 +401,7 @@ export class DeukPackEngine {
         constants: allConstants,
         services: allServices,
         includes: allIncludes,
+        fileIncludes: fileIncludesMap,
         filesProcessed: processedFiles.size,
         fileNamespaceMap: fileNamespaceMap
       };
@@ -308,7 +420,7 @@ export class DeukPackEngine {
    */
   async build(filePaths: string[], _outputDir: string, options: GenerationOptions): Promise<PerformanceMetrics> {
     try {
-      const ast = await this.parseFiles(filePaths);
+      const ast = await this.parseFiles(filePaths, { allowMultiNamespace: options.allowMultiNamespace ?? false });
       await this.generateCode(ast, options);
       return this.getPerformanceMetrics();
     } catch (error) {
@@ -421,7 +533,7 @@ export class DeukPackEngine {
   getEngineInfo(): { name: string; version: string; native: boolean } {
     return {
       name: 'DeukPack',
-      version: '1.0.0',
+      version: getDeukPackPackageVersion(),
       native: this.useNative
     };
   }

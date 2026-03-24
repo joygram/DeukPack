@@ -47,7 +47,8 @@ async function runBenchmarks() {
 
     for (let i = 0; i < serializeIterations; i++) {
         engine.serialize(testStruct, {
-            protocol: 'binary',
+            wireFamily: 'deuk',
+            protocol: 'pack',
             endianness: 'LE',
             optimizeForSize: true,
             includeDefaultValues: false,
@@ -70,7 +71,8 @@ async function runBenchmarks() {
 
     const largeDataStart = process.hrtime.bigint();
     const serializedData = engine.serialize(testData, {
-        protocol: 'binary',
+        wireFamily: 'deuk',
+        protocol: 'pack',
         endianness: 'LE',
         optimizeForSize: true,
         includeDefaultValues: false,
@@ -108,7 +110,7 @@ async function runBenchmarks() {
     console.log('📊 Protocol Comparison');
     console.log('======================');
 
-    const protocols = ['binary', 'compact', 'pack', 'json'];
+    const protocols = ['pack', 'json', 'yaml'];
     const protocolResults = {};
 
     for (const protocol of protocols) {
@@ -116,6 +118,7 @@ async function runBenchmarks() {
 
         for (let i = 0; i < 1000; i++) {
             engine.serialize(testStruct, {
+                wireFamily: 'deuk',
                 protocol: protocol,
                 endianness: 'LE',
                 optimizeForSize: true,
@@ -155,7 +158,8 @@ async function runBenchmarks() {
 
         for (let i = 0; i < 1000; i++) {
             engine.serialize(testStruct, {
-                protocol: 'binary',
+                wireFamily: 'deuk',
+                protocol: 'pack',
                 endianness: endianness,
                 optimizeForSize: true,
                 includeDefaultValues: false,

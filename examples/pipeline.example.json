@@ -1,25 +1,26 @@
 {
-  "defineRoot": "_thrift",
+  "defineRoot": "_deuk_define",
   "includePaths": [
-    "_thrift/_engine",
-    "_thrift/_engine/_project_common",
-    "_thrift/game_define",
-    "_thrift/deuk_table",
-    "_thrift/protocol_server",
-    "_thrift/protocol_user",
-    "_thrift/generated_define"
+    "_deuk_define",
+    "_deuk_define/_engine",
+    "_deuk_define/generated_define",
+    "_deuk_define/game_define",
+    "_deuk_define/deuk_table",
+    "_deuk_define/msg_user",
+    "_deuk_define/msg_server"
   ],
   "jobs": [
     {
       "name": "main",
-      "thriftFile": "_thrift/_thrift.thrift",
-      "outputDir": "_thrift/libThriftDefine/.thrift",
+      "thriftFile": "_deuk_define/_deuk_define.deuk",
+      "outputDir": "libDeukDefine/.thrift",
       "csharp": true,
       "cpp": true,
       "json": false,
       "copy": [
-        { "from": "_thrift/libThriftDefine/.thrift/csharp", "to": "_thrift/libThriftDefine/csharp/_thrift_code" },
-        { "from": "_thrift/libThriftDefine/.thrift/cpp", "to": "_thrift/libThriftDefine/cpp/_thrift_code" }
+        { "from": "libDeukDefine/.thrift/csharp", "to": "libDeukDefine/csharp" },
+        { "from": "libDeukDefine/.thrift/cpp", "to": "libDeukDefine/cpp" },
+        { "from": "libDeukDefine/.thrift/typescript", "to": "libDeukDefine/javascript" }
       ]
     }
   ]

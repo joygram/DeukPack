@@ -36,7 +36,7 @@ function main() {
         copied++;
     }
 
-    // 2. Copy Multi-targeted Binaries
+    // 2. Copy Multi-targeted Binaries (main: net6/8/9 + DeukPack.Protocol.Unity → netstandard2.0 under same bin/Release)
     const BIN_ROOT = path.join(ROOT, 'DeukPack.Protocol', 'bin', 'Release');
     if (fs.existsSync(BIN_ROOT)) {
         const frameworks = fs.readdirSync(BIN_ROOT).filter(f => fs.lstatSync(path.join(BIN_ROOT, f)).isDirectory());

@@ -5,7 +5,7 @@
  */
 const path = require('path');
 
-const genPath = path.join(__dirname, '..', '..', 'out', 'javascript', 'generated.js');
+const genPath = path.join(__dirname, '..', '..', 'out', 'js', 'generated_deuk.js');
 let gen;
 try {
   gen = require(genPath);

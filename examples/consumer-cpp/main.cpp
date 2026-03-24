@@ -1,4 +1,4 @@
-#include "sample_types.h"
+#include "sample_deuk.h"
 #include <iostream>
 
 int main() {

@@ -1,32 +1,48 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
+
     <RootNamespace>DeukPack.Protocol</RootNamespace>
+
     <AssemblyName>DeukPack.Protocol</AssemblyName>
+
     <TargetFrameworks>netstandard2.0;net6.0;net8.0;net9.0</TargetFrameworks>
+
     <LangVersion>9.0</LangVersion>
-    <Nullable>disable</Nullable>
+
+    <Nullable>enable</Nullable>
+
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
     <Description>DeukPack protocol library (DpProtocol, IDeukPack). T*/Thrift* compat for legacy code. Excel protocol in separate DeukPack.ExcelProtocol DLL.</Description>
+
   </PropertyGroup>
 
+
+
+  <!-- Unity / Excel add-in / netstandard2.0: shared sources use #nullable enable — suppress nullable noise for this TFM only (client pipeline). -->
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+
+    <Nullable>disable</Nullable>
+
+    <NoWarn>$(NoWarn);CS0414;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8618;CS8619;CS8620;CS8621;CS8622;CS8625;CS8629;CS8764;CS8765;CS8766;CS8767</NoWarn>
+
+  </PropertyGroup>
+
+
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+
     <PackageReference Include="System.Buffers" Version="4.5.1" />
+
     <PackageReference Include="System.Memory" Version="4.5.5" />
+
   </ItemGroup>
 
-  <!-- Source from codegen; protocol library 모듈화 (기존 DpProtocolLibrary.cs → 6개 파일) -->
-  <ItemGroup>
-    <Compile Include="..\src\codegen\DpProtocolCore.cs" Link="DpProtocolCore.cs" />
-    <Compile Include="..\src\codegen\DpBinaryProtocol.cs" Link="DpBinaryProtocol.cs" />
-    <Compile Include="..\src\codegen\DpJsonProtocol.cs" Link="DpJsonProtocol.cs" />
-    <Compile Include="..\src\codegen\DeukPackSerializer.cs" Link="DeukPackSerializer.cs" />
-    <Compile Include="..\src\codegen\DpProtocolUtil.cs" Link="DpProtocolUtil.cs" />
-    <Compile Include="..\src\codegen\TBinaryProtocol.cs" Link="TBinaryProtocol.cs" />
-    <Compile Include="..\src\codegen\DeukPackThriftCompat.cs" Link="DeukPackThriftCompat.cs" />
-  </ItemGroup>
-  <!-- Meta: file-per-category load from meta_packed directory -->
-  <ItemGroup>
-    <Compile Include="..\src\meta\IDeukMetaDecryptor.cs" Link="Meta\IDeukMetaDecryptor.cs" />
-    <Compile Include="..\src\meta\DeukTableManager.cs" Link="Meta\DeukTableManager.cs" />
-  </ItemGroup>
+
+
+  <Import Project="DeukPack.Protocol.SharedCompile.props" />
+
 </Project>
+

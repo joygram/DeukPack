@@ -17,11 +17,11 @@ Console.WriteLine($"[DemoUser] Id={u.Id} Name={u.Name} home=({u.Home.X},{u.Home.
 // 2) Round-trip Write/Read
 using (var ms = new MemoryStream())
 {
-    var oprot = new DpBinaryProtocol(ms);
+    var oprot = DeukPackSerializer.OpenBinaryPack(ms);
     u.Write(oprot);
     oprot.Dispose();
     ms.Position = 0;
-    var iprot = new DpBinaryProtocol(ms);
+    var iprot = DeukPackSerializer.OpenBinaryUnpack(ms);
     var u2 = new tutorial.DemoUser();
     u2.Read(iprot);
     Console.WriteLine($"[Round-trip] Id={u2.Id} Name={u2.Name}");
@@ -30,14 +30,14 @@ using (var ms = new MemoryStream())
 // 3) WriteWithOverrides (fan-out: same instance, different Name per "recipient")
 using (var ms = new MemoryStream())
 {
-    var oprot = new DpBinaryProtocol(ms);
+    var oprot = DeukPackSerializer.OpenBinaryPack(ms);
     u.WriteWithOverrides(oprot, new Dictionary<int, object>
     {
         { tutorial.DemoUser.FieldId.Name, "Alice" }
     });
     oprot.Dispose();
     ms.Position = 0;
-    var iprot = new DpBinaryProtocol(ms);
+    var iprot = DeukPackSerializer.OpenBinaryUnpack(ms);
     var u3 = new tutorial.DemoUser();
     u3.Read(iprot);
     Console.WriteLine($"[WriteWithOverrides] Name={u3.Name} (expected Alice)");
@@ -53,7 +53,7 @@ var full = new tutorial.UserRecord
 };
 using (var ms = new MemoryStream())
 {
-    var oprot = new DpBinaryProtocol(ms);
+    var oprot = DeukPackSerializer.OpenBinaryPack(ms);
     full.WriteFields(oprot, new[] {
         tutorial.UserRecord.FieldId.Id,
         tutorial.UserRecord.FieldId.DisplayName,
@@ -61,7 +61,7 @@ using (var ms = new MemoryStream())
     });
     oprot.Dispose();
     ms.Position = 0;
-    var iprot = new DpBinaryProtocol(ms);
+    var iprot = DeukPackSerializer.OpenBinaryUnpack(ms);
     var partial = new tutorial.UserRecord();
     partial.Read(iprot);
     Console.WriteLine($"[WriteFields] Id={partial.Id} DisplayName={partial.DisplayName} Level={partial.Level} AvatarUrl='{partial.AvatarUrl ?? ""}' (empty)");

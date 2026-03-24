@@ -8,4 +8,15 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.test.ts', '!src/**/__tests__/**'],
   coverageDirectory: 'coverage',
   verbose: true,
+  transform: {
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          noUnusedLocals: false,
+          noUnusedParameters: false,
+        },
+      },
+    ],
+  },
 };

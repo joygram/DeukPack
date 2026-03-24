@@ -22,8 +22,16 @@ DeukPack.Protocol/.build_plugins/
 examples/consumer-csharp/bin/
 examples/consumer-csharp/obj/
 
+# Example consumer C++ local CMake output (not synced from internal; ignore if present)
+examples/consumer-cpp/build/
+
+# Prepublish slice (do not commit)
+CHANGELOG.release.md
+CHANGELOG.release.ko.md
+
 # Pack artifacts
 *.tgz
+bundled/*.vsix
 
 # Debug / test artifacts
 debug_*.js

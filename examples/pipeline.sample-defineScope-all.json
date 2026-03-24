@@ -1,0 +1,16 @@
+{
+  "defineRoot": "_deuk_define",
+  "exclude": ["draft/", "experiments/**"],
+  "includePaths": [{ "path": "_deuk_define", "recursive": true }],
+  "jobs": [
+    {
+      "name": "main",
+      "defineScope": "all",
+      "exclude": [],
+      "csharp": true,
+      "cpp": false,
+      "ts": false,
+      "js": false
+    }
+  ]
+}

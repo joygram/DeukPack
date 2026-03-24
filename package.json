@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.1.1",
+  "version": "1.2.3",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,17 +9,21 @@
   },
   "scripts": {
     "setup": "node scripts/setup.js",
-    "prepublishOnly": "npm run build",
-    "build": "tsc && npm run build:cs && node scripts/dist_csharp.js",
+    "postinstall": "node scripts/npm-postinstall.js",
+    "prepublishOnly": "node scripts/changelog-release-slice.js && npm run build && npm run bundle:vscode",
+    "bundle:vscode": "node scripts/bundle-vscode-vsix.js",
+    "build": "tsc && node scripts/copy-codegen-templates.js && npm run build:cs && node scripts/dist_csharp.js",
     "build:native": "node-gyp rebuild",
     "build:all": "npm run build && npm run build:cpp && npm run build:cs",
     "build:cpp": "cd native/cpp && mkdir -p build && cd build && cmake .. && make",
-    "build:cs": "cd DeukPack.Protocol && dotnet build -c Release",
+    "build:cs": "cd DeukPack.Protocol && dotnet build DeukPack.Protocol.csproj -c Release",
     "test": "jest",
+    "test:cpp": "cmake -S native/cpp -B native/cpp/build && cmake --build native/cpp/build && ctest --test-dir native/cpp/build --output-on-failure",
     "benchmark": "node benchmarks/performance.js",
     "dev": "tsc --watch",
     "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",
-    "release:check": "node scripts/release-check.js && npm run build && npm test && npm pack --dry-run"
+    "release-notice:apply": "node scripts/apply-release-notice.js",
+    "release:check": "node scripts/release-check.js && npm run build && npm run bundle:vscode && npm test && npm pack --dry-run"
   },
   "keywords": [
     "deukpack",
@@ -36,18 +40,21 @@
   "author": "gplat-team",
   "license": "Apache-2.0",
   "dependencies": {
+    "nan": "^2.17.0",
     "node-addon-api": "^7.0.0",
-    "nan": "^2.17.0"
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
     "@types/jest": "^29.0.0",
-    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@vscode/vsce": "^3.2.2",
+    "cmake-js": "^7.0.0",
     "jest": "^29.0.0",
-    "ts-jest": "^29.0.0",
-    "rimraf": "^5.0.0",
     "node-gyp": "^10.0.0",
-    "cmake-js": "^7.0.0"
+    "protobufjs": "^7.5.4",
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -59,15 +66,28 @@
   "bugs": {
     "url": "https://github.com/joygram/DeukPack/issues"
   },
-  "homepage": "https://deukpack.app/",
+  "homepage": "https://deukpack.app/en/",
   "files": [
     "bin",
     "scripts/build_deukpack.js",
+    "scripts/build_unity_runtime_plugins.js",
+    "scripts/bootstrap.js",
+    "scripts/npm-postinstall.js",
+    "scripts/bundled-deuk-idl-vsix.js",
+    "scripts/sync_workspace_runtime.js",
+    "scripts/deukpack_init.js",
+    "scripts/init-ensure-deukpack-npm.js",
     "dist",
     "native/cpp",
     "binding.gyp",
     "LICENSE",
     "NOTICE",
+    "release-notice.json",
+    "CHANGELOG.md",
+    "CHANGELOG.ko.md",
+    "CHANGELOG.release.md",
+    "CHANGELOG.release.ko.md",
+    "bundled",
     "README.md",
     "README.ko.md",
     "RELEASING.md"
