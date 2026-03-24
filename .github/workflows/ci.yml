@@ -38,7 +38,7 @@ jobs:
         run: npm run build
 
       - name: Test
-        run: npm test
+        run: npx jest --forceExit --verbose
 
       - name: Pack (dry run for publish layout)
         run: npm pack --dry-run
@@ -52,7 +52,7 @@ jobs:
       - name: Example IDL codegen (C#/C++/JS smoke)
         run: node scripts/build_deukpack.js examples/sample_idl/sample.thrift examples/out --csharp --cpp --js --protocol tbinary --allow-multi-namespace
 
-  # main/master 푸시 시에만: npm pack 실제 생성 후 Artifact 업로드 → Releases 외에 "최신 빌드" 다운로드용
+  # main/master push only: create actual tarball and upload as artifact
   build-artifact:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')

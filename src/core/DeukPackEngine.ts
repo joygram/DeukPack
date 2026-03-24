@@ -33,7 +33,7 @@ async function canonicalIncludeFileKey(filePath: string): Promise<string> {
 }
 
 function normSourcePath(p: string): string {
-  return p.replace(/\\/g, '/');
+  return p.replace(/\\/g, '/').toLowerCase();
 }
 
 function sourcePathsEqual(a: string | undefined, b: string | undefined): boolean {
