@@ -3,7 +3,5 @@ docs/
 benchmarks/
 examples/
 vscode-extension/
-test_meta*.thrift
-simple_test.thrift
 jest.config.js
 *.tgz

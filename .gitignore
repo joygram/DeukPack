@@ -33,6 +33,11 @@ CHANGELOG.release.ko.md
 *.tgz
 bundled/*.vsix
 
+# Legacy root scratch (not shipped; use examples/)
+/simple_test.thrift
+/test_meta*.thrift
+/test_serialize.js
+
 # Debug / test artifacts
 debug_*.js
 *.log
