@@ -6,6 +6,23 @@
 
 ---
 
+## [1.2.8] — 2026-03-25
+
+### 변경
+
+- **와이어 프로토콜 네이밍**: **`tproto`** 를 **`protv2`** / **`protv3`** 로 변경(타입·직렬화·테스트·문서). `t-` 접두어는 Thrift 전용(`tbinary`/`tcompact`/`tjson`), `proto-` 접두어는 Protobuf 에디션(proto2/proto3) 구분.
+
+---
+
+## [1.2.7] — 2026-03-25
+
+### 변경
+
+- **C# (`DeukPack.Protocol`)**: **`DpFormat`** enum을 **`DpProtocolCore`** 에 통합 — `Binary`, `Json`, `DeukJson`, `DeukYaml`(별칭 `Yaml`). **`DpDeukYamlProtocol`** 추가.
+- **C++**: **`DpProtocol.h`** 템플릿 추가; primitive 코드젠 타입을 `deuk::*` 별칭으로 매핑.
+
+---
+
 ## [1.2.6] — 2026-03-28
 
 ### 변경

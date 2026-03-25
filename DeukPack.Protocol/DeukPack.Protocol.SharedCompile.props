@@ -6,6 +6,7 @@
     <Compile Include="..\src\codegen\DpBinaryProtocol.cs" Link="DpBinaryProtocol.cs" />
     <Compile Include="..\src\codegen\DpJsonProtocol.cs" Link="DpJsonProtocol.cs" />
     <Compile Include="..\src\codegen\DpDeukJsonProtocol.cs" Link="DpDeukJsonProtocol.cs" />
+    <Compile Include="..\src\codegen\DpDeukYamlProtocol.cs" Link="DpDeukYamlProtocol.cs" />
     <Compile Include="..\src\codegen\DeukPackSerializationWarnings.cs" Link="DeukPackSerializationWarnings.cs" />
     <Compile Include="..\src\codegen\DeukPackSerializer.cs" Link="DeukPackSerializer.cs" />
     <Compile Include="..\src\codegen\DpProtocolUtil.cs" Link="DpProtocolUtil.cs" />

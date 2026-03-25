@@ -6,6 +6,23 @@ Notable changes to the `deukpack` npm package by release.
 
 ---
 
+## [1.2.8] — 2026-03-25
+
+### Changed
+
+- **Wire protocol naming**: Renamed **`tproto`** to **`protv2`** / **`protv3`** across types, serialization, tests, and docs. The `t-` prefix is now exclusively Thrift (`tbinary` / `tcompact` / `tjson`); the `proto-` prefix identifies Protobuf edition (proto2 / proto3).
+
+---
+
+## [1.2.7] — 2026-03-25
+
+### Changed
+
+- **C# (`DeukPack.Protocol`)**: **`DpFormat`** enum consolidated in **`DpProtocolCore`** — `Binary`, `Json`, `DeukJson`, `DeukYaml` (alias `Yaml`). New **`DpDeukYamlProtocol`** for Deuk YAML output.
+- **C++**: **`DpProtocol.h`** template added; primitive codegen types mapped to `deuk::*` aliases.
+
+---
+
 ## [1.2.6] — 2026-03-28
 
 ### Changed

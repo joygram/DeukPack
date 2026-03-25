@@ -61,10 +61,10 @@ export type Endianness = 'LE' | 'BE';
 
 /**
  * 외부 스택과의 **바이트/의미 호환** (Apache Thrift Binary·Compact, Thrift JSON 래퍼, Google Protobuf).
- * 식별자: **`tbinary` / `tcompact` / `tjson` / `tproto`** 만 허용.
+ * Thrift 계열: **`tbinary` / `tcompact` / `tjson`**. Protobuf 계열: **`protv2` / `protv3`**.
  * JS `WireSerializer`는 `interopRootStruct`(및 중첩용 `interopStructDefs`)가 있을 때 동일 와이어로 직렬화한다.
  */
-export type InteropWireProtocol = 'tbinary' | 'tcompact' | 'tjson' | 'tproto';
+export type InteropWireProtocol = 'tbinary' | 'tcompact' | 'tjson' | 'protv2' | 'protv3';
 
 /**
  * **득팩 전용** 와이어: 태그 바이너리(`pack`), 값만 UTF-8 JSON/YAML (`json` / `yaml`).
@@ -77,7 +77,7 @@ export type WireProtocol = InteropWireProtocol | DeukNativeWireProtocol;
 export type WireProtocolFamily = 'interop' | 'deuk';
 
 export function wireProtocolFamily(protocol: WireProtocol): WireProtocolFamily {
-  if (protocol === 'tbinary' || protocol === 'tcompact' || protocol === 'tjson' || protocol === 'tproto') return 'interop';
+  if (protocol === 'tbinary' || protocol === 'tcompact' || protocol === 'tjson' || protocol === 'protv2' || protocol === 'protv3') return 'interop';
   return 'deuk';
 }
 
@@ -85,7 +85,7 @@ export function wireProtocolFamily(protocol: WireProtocol): WireProtocolFamily {
 export const DEUK_NATIVE_WIRE_PROTOCOLS: readonly DeukNativeWireProtocol[] = ['pack', 'json', 'yaml'];
 
 /** Thrift·Protobuf 등 외부 호환 와이어 목록. */
-export const INTEROP_WIRE_PROTOCOLS: readonly InteropWireProtocol[] = ['tbinary', 'tcompact', 'tjson', 'tproto'];
+export const INTEROP_WIRE_PROTOCOLS: readonly InteropWireProtocol[] = ['tbinary', 'tcompact', 'tjson', 'protv2', 'protv3'];
 
 export function isDeukNativeWireProtocol(p: WireProtocol): p is DeukNativeWireProtocol {
   return (DEUK_NATIVE_WIRE_PROTOCOLS as readonly string[]).includes(p);
@@ -138,7 +138,7 @@ export function assertSerializationWireOptions(options: SerializationOptions): v
   if (options.wireFamily !== inferred) {
     throw new Error(
       `[DeukPack] wireFamily "${options.wireFamily}" does not match protocol "${options.protocol}" (expected "${inferred}"). ` +
-        'Interop: tbinary | tcompact | tjson. Deuk native: pack | json | yaml.'
+        'Interop: tbinary | tcompact | tjson | protv2 | protv3. Deuk native: pack | json | yaml.'
     );
   }
 }

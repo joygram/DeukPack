@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.2.6",
+  "version": "1.2.8",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
   "scripts": {
     "setup": "node scripts/setup.js",
     "postinstall": "node scripts/npm-postinstall.js",
-    "prepublishOnly": "node scripts/sync-version-artifacts.js && npm run build && npm run bundle:vscode",
+    "prepublishOnly": "node scripts/sync-version-artifacts.js && npm run release-notice:apply && npm run build && npm run bundle:vscode",
     "version:sync": "node scripts/sync-version-artifacts.js",
     "postversion": "node scripts/sync-version-artifacts.js",
     "bundle:vscode": "node scripts/bundle-vscode-vsix.js",
