@@ -77,7 +77,7 @@ describe('serialize / deserialize (protocol + options)', () => {
   });
 
   /** Protobuf 바이너리 와이어(varint 태그·LEN 문자열). 공식 런타임과의 교차 검증은 별도(골든 바이트·protoc) 필요. */
-  test('interop tproto roundtrip (protobuf-style wire)', () => {
+  test('interop protv3 roundtrip (protobuf-style wire)', () => {
     const root: DeukPackStruct = {
       name: 'Box',
       fields: [
@@ -86,8 +86,8 @@ describe('serialize / deserialize (protocol + options)', () => {
       ]
     };
     const obj = { n: 7, s: 'hi' };
-    const bytes = serialize(obj, 'tproto', { interopRootStruct: root });
-    const back = deserialize<typeof obj>(bytes, 'tproto', { interopRootStruct: root });
+    const bytes = serialize(obj, 'protv3', { interopRootStruct: root });
+    const back = deserialize<typeof obj>(bytes, 'protv3', { interopRootStruct: root });
     expect(back).toEqual(obj);
   });
 });

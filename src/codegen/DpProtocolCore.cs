@@ -107,6 +107,24 @@ namespace DeukPack.Protocol
         U64 = Int64,
     }
 
+    /// <summary>
+    /// DeukPack.Protocol 런타임 직렬화 스트림 포맷. 레거시 JSON(<see cref="DpFormat.Json"/>)과 Deuk 값만 JSON·YAML(<see cref="DpFormat.DeukJson"/>, <see cref="DpFormat.DeukYaml"/>)은 스펙이 다르다.
+    /// <see cref="DeukPackSerializer"/>·프로토콜 구현체가 공통으로 참조한다.
+    /// </summary>
+    public enum DpFormat
+    {
+        /// <summary>득팩 태그 바이너리 팩 (<see cref="DpBinaryProtocol"/>).</summary>
+        Binary,
+        /// <summary>Thrift/레거시 호환 JSON — 필드 타입 래퍼(<see cref="DpJsonProtocol"/>).</summary>
+        Json,
+        /// <summary>Deuk 값만 JSON — 설정·OpenAPI 라운드트립 (<see cref="DpDeukJsonProtocol"/>).</summary>
+        DeukJson,
+        /// <summary>Deuk 값만 YAML — npm/TS <c>protocol: 'yaml'</c> 과 동일 계열 (<see cref="DpDeukYamlProtocol"/>).</summary>
+        DeukYaml,
+        /// <summary><see cref="DeukYaml"/> 과 동일 값(이전 이름).</summary>
+        Yaml = DeukYaml,
+    }
+
     public static class DpTypeNames
     {
         /// <summary>DpSchemaType → 득팩 표준 소문자 문자열 (스키마/메타용). ToString() 대신 사용.</summary>

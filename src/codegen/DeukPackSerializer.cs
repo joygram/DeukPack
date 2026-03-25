@@ -283,10 +283,7 @@ namespace DeukPack.Protocol
             return map;
         }
 
-        /// <summary>득팩 프로토콜 포맷</summary>
-        public enum DpFormat { Binary, Json, DeukJson }
-
-        /// <summary>득팩 객체 → byte[] (기본: Binary, pretty: JSON 프리티어 옵션)</summary>
+        /// <summary>득팩 객체 → byte[]. <paramref name="pretty"/> 는 JSON/Deuk JSON/Deuk YAML 에만 적용(바이너리는 무시).</summary>
         public static byte[] Serialize(IDpSerializable obj, DpFormat format = DpFormat.Binary, bool pretty = false)
         {
             var ms = new System.IO.MemoryStream();
@@ -295,7 +292,7 @@ namespace DeukPack.Protocol
             return ms.ToArray();
         }
 
-        /// <summary>byte[] → 득팩 객체 (기본: Binary)</summary>
+        /// <summary>byte[] → 득팩 객체. <see cref="DpFormat"/> 은 저장 시 사용한 프로토콜과 같아야 한다(자동 판별 없음).</summary>
         public static T Deserialize<T>(byte[] data, DpFormat format = DpFormat.Binary) where T : IDpSerializable, new()
         {
             var ms = new System.IO.MemoryStream(data);
@@ -320,6 +317,8 @@ namespace DeukPack.Protocol
                     return new DpJsonProtocol(stream, pretty);
                 case DpFormat.DeukJson:
                     return new DpDeukJsonProtocol(stream, pretty);
+                case DpFormat.DeukYaml:
+                    return new DpDeukYamlProtocol(stream, pretty);
                 case DpFormat.Binary:
                 default:
                     return OpenBinaryPack(stream);

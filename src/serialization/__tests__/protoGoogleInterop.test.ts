@@ -1,5 +1,5 @@
 /**
- * 교차 검증: Google Protobuf 참조 구현(protobufjs) ↔ DeukPack `tproto` 와이어.
+ * 교차 검증: Google Protobuf 참조 구현(protobufjs) ↔ DeukPack `protv3` 와이어.
  */
 import * as protobuf from 'protobufjs';
 
@@ -38,19 +38,19 @@ const flagsStruct: DeukPackStruct = {
   fields: [{ id: 1, name: 'b', type: 'bool', required: true }]
 };
 
-describe('tproto vs protobufjs (Google wire)', () => {
+describe('protv3 vs protobufjs (Google wire)', () => {
   test('protobufjs encode → DeukPack decode', () => {
     const payload = { n: 7, s: 'hi' };
     const err = Box.verify(payload);
     expect(err).toBeNull();
     const pbBytes = Box.encode(Box.create(payload)).finish();
-    const deuk = deserialize<Record<string, unknown>>(pbBytes, 'tproto', { interopRootStruct: boxStruct });
+    const deuk = deserialize<Record<string, unknown>>(pbBytes, 'protv3', { interopRootStruct: boxStruct });
     expect(deuk).toEqual({ n: 7, s: 'hi' });
   });
 
   test('DeukPack encode → protobufjs decode', () => {
     const payload = { n: -42, s: 'proto' };
-    const deukBytes = serialize(payload, 'tproto', { interopRootStruct: boxStruct });
+    const deukBytes = serialize(payload, 'protv3', { interopRootStruct: boxStruct });
     const msg = Box.decode(deukBytes);
     const obj = Box.toObject(msg, { defaults: true });
     expect(obj).toMatchObject({ n: -42, s: 'proto' });
@@ -59,16 +59,16 @@ describe('tproto vs protobufjs (Google wire)', () => {
   test('bytes match for scalar message (deterministic field order)', () => {
     const payload = { n: 1, s: 'a' };
     const pbBytes = Uint8Array.from(Box.encode(Box.create(payload)).finish());
-    const deukBytes = serialize(payload, 'tproto', { interopRootStruct: boxStruct });
+    const deukBytes = serialize(payload, 'protv3', { interopRootStruct: boxStruct });
     expect(Buffer.from(deukBytes).equals(Buffer.from(pbBytes))).toBe(true);
   });
 
   test('bool varint: protobufjs ↔ DeukPack bytes and decode', () => {
     const pbBytes = Uint8Array.from(Flags.encode(Flags.create({ b: true })).finish());
-    const deuk = deserialize<Record<string, unknown>>(pbBytes, 'tproto', { interopRootStruct: flagsStruct });
+    const deuk = deserialize<Record<string, unknown>>(pbBytes, 'protv3', { interopRootStruct: flagsStruct });
     expect(deuk).toEqual({ b: true });
 
-    const deukBytes = serialize({ b: true }, 'tproto', { interopRootStruct: flagsStruct });
+    const deukBytes = serialize({ b: true }, 'protv3', { interopRootStruct: flagsStruct });
     const msg = Flags.decode(deukBytes);
     expect(Flags.toObject(msg, { defaults: true })).toMatchObject({ b: true });
     expect(Buffer.from(deukBytes).equals(Buffer.from(pbBytes))).toBe(true);

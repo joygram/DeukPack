@@ -43,6 +43,12 @@ namespace DeukPack.Protocol
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
         public DpDeukJsonProtocol(Stream stream, bool pretty = false, bool includeDeukHeader = true, bool isReadMode = true)
+            : this(stream, pretty, includeDeukHeader, isReadMode, isReadMode ? ReadJsonRootFromStream(stream) : new Dictionary<string, object>())
+        {
+        }
+
+        /// <summary>서브클래스(YAML 등)가 동일 트리 빌더로 다른 텍스트 루트를 쓸 때 사용.</summary>
+        protected DpDeukJsonProtocol(Stream stream, bool pretty, bool includeDeukHeader, bool isReadMode, Dictionary<string, object> rootRead)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _pretty = pretty;
@@ -52,17 +58,16 @@ namespace DeukPack.Protocol
             _listWriteStack = new Stack<List<object>>();
             _mapWriteStack = new Stack<DeukMapState>();
             _readStack = new Stack<DeukReadFrame>();
-            if (isReadMode)
+            _rootRead = rootRead ?? new Dictionary<string, object>();
+        }
+
+        private static Dictionary<string, object> ReadJsonRootFromStream(Stream stream)
+        {
+            var utf8 = new UTF8Encoding(false);
+            using (var sr = new StreamReader(stream, utf8, false, 4096, true))
             {
-                using (var sr = new StreamReader(stream, _utf8, false, 4096, true))
-                {
-                    var json = sr.ReadToEnd();
-                    _rootRead = DeukJsonParse(json);
-                }
-            }
-            else
-            {
-                _rootRead = new Dictionary<string, object>();
+                var json = sr.ReadToEnd();
+                return DeukJsonParse(json);
             }
         }
 
@@ -136,17 +141,21 @@ namespace DeukPack.Protocol
                 _writeStack.Peek().Obj[_currentFieldKey] = top.Obj;
             else
             {
-                if (_includeDeukHeader && !top.Obj.ContainsKey(HeaderKeyDeuk))
-                {
-                    var withHeader = new Dictionary<string, object>(top.Obj) { [HeaderKeyDeuk] = DeukFormatVersion };
-                    top.Obj = withHeader;
-                }
-                var json = DeukJsonSerialize(top.Obj);
-                if (_pretty) json = FormatJson(json);
-                var bytes = _utf8.GetBytes(json);
-                _stream.Write(bytes, 0, bytes.Length);
-                _stream.Flush();
+                var doc = top.Obj;
+                if (_includeDeukHeader && !doc.ContainsKey(HeaderKeyDeuk))
+                    doc = new Dictionary<string, object>(doc) { [HeaderKeyDeuk] = DeukFormatVersion };
+                FlushRootDocument(_stream, doc, _pretty);
             }
+        }
+
+        /// <summary>루트 문서를 스트림에 기록(JSON 기본).</summary>
+        protected virtual void FlushRootDocument(Stream stream, Dictionary<string, object> document, bool pretty)
+        {
+            var json = DeukJsonSerialize(document);
+            if (pretty) json = FormatJson(json);
+            var bytes = _utf8.GetBytes(json);
+            stream.Write(bytes, 0, bytes.Length);
+            stream.Flush();
         }
 
         private static string FormatJson(string json)
@@ -316,8 +325,8 @@ namespace DeukPack.Protocol
         {
             if (v == null) return DpWireType.String;
             if (v is bool) return DpWireType.Bool;
-            if (v is int || v is long) return DpWireType.Int64;
-            if (v is double) return DpWireType.Double;
+            if (v is int || v is long || v is uint) return DpWireType.Int64;
+            if (v is double || v is float || v is decimal) return DpWireType.Double;
             if (v is string) return DpWireType.String;
             if (v is Dictionary<string, object>) return DpWireType.Struct;
             if (v is List<object>) return DpWireType.List;

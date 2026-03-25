@@ -1,5 +1,5 @@
 /**
- * Thrift 호환(tbinary / tcompact / tjson) 및 Protobuf(tproto) struct 직렬화:
+ * Thrift 호환(tbinary / tcompact / tjson) 및 Protobuf(protv2 / protv3) struct 직렬화:
  * IDL에서 얻은 DeukPackStruct + 값 객체.
  * DpTBinaryProtocol / DpTCompactProtocol / DpTJsonProtocol 과 동일한 필드 순서·타입 규칙을 따른다.
  */
@@ -60,7 +60,7 @@ function resolvePrimitiveTypeString(t: string): string {
   }
 }
 
-export type CanonicalInteropWireProtocol = 'tbinary' | 'tcompact' | 'tjson' | 'tproto';
+export type CanonicalInteropWireProtocol = 'tbinary' | 'tcompact' | 'tjson' | 'protv2' | 'protv3';
 
 export function canonicalInteropWireProtocol(protocol: WireProtocol): CanonicalInteropWireProtocol {
   switch (protocol) {
@@ -70,8 +70,10 @@ export function canonicalInteropWireProtocol(protocol: WireProtocol): CanonicalI
       return 'tcompact';
     case 'tjson':
       return 'tjson';
-    case 'tproto':
-      return 'tproto';
+    case 'protv2':
+      return 'protv2';
+    case 'protv3':
+      return 'protv3';
     default:
       throw new Error(`[DeukPack] Not an interop wire protocol: "${protocol}"`);
   }
@@ -524,7 +526,7 @@ export function serializeInteropStruct(
 ): Uint8Array {
   assertInteropStructOptions(options);
   const kind = canonicalInteropWireProtocol(options.protocol);
-  if (kind === 'tproto') {
+  if (kind === 'protv2' || kind === 'protv3') {
     return serializeProtoStruct(obj, options);
   }
   const le = options.endianness === 'LE';
@@ -548,7 +550,7 @@ export function deserializeInteropStruct(
 ): Record<string, unknown> {
   assertInteropStructOptions(options);
   const kind = canonicalInteropWireProtocol(options.protocol);
-  if (kind === 'tproto') {
+  if (kind === 'protv2' || kind === 'protv3') {
     return deserializeProtoStruct(data, options);
   }
   const le = options.endianness === 'LE';
