@@ -140,15 +140,15 @@ npm install ./deukpack-x.y.z.tgz
 
 ---
 
-## 프로젝트 구조
+## 저장소 구성 (이 클론)
 
 ```
 DeukPack/
-├── deukpack.app/     # 제품 소개 사이트 (서브모듈)
-├── docs/             # 기술 문서
 ├── src/              # TypeScript 소스
-├── native/           # C++/C# 네이티브
-└── dist/             # 빌드 결과물
+├── native/           # C++ 네이티브
+├── scripts/          # CLI·빌드 스크립트
+├── DeukPack.Protocol/# C# 런타임 소스
+└── dist/             # 빌드 결과물 (npm publish 시 포함)
 ```
 
 ---
