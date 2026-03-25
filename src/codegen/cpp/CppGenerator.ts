@@ -12,6 +12,7 @@ import {
   DeukPackEnum,
   DeukPackConstant,
   DeukPackType,
+  DeukPackTypedef,
 } from '../../types/DeukPackTypes';
 import { CodeGenerator } from '../CodeGenerator';
 import { DeukPackEngine } from '../../core/DeukPackEngine';
@@ -21,6 +22,7 @@ type TypeGroup = {
   enums: DeukPackEnum[];
   structs: DeukPackStruct[];
   constants: DeukPackConstant[];
+  typedefs: DeukPackTypedef[];
 };
 
 export class CppGenerator extends CodeGenerator {
@@ -39,11 +41,14 @@ export class CppGenerator extends CodeGenerator {
     const fileGroups = this.groupBySourceFile(ast);
     const out: { [filename: string]: string } = {};
 
+    // Generate DpProtocol runtime header
+    out['DpProtocol.h'] = this._tpl.load('DpProtocol.h.tpl');
+
     for (const [sourceFile, group] of Object.entries(fileGroups)) {
       const baseName = this.getBaseNameFromSource(sourceFile);
       if (!baseName || baseName === 'unknown') continue;
 
-      if (group.enums.length + group.structs.length + group.constants.length === 0) {
+      if (group.enums.length + group.structs.length + group.constants.length + group.typedefs.length === 0) {
         continue;
       }
 
@@ -56,6 +61,7 @@ export class CppGenerator extends CodeGenerator {
       for (const e of group.enums) namespaces.add(this.getEnumNamespace(e, ast));
       for (const s of group.structs) namespaces.add(this.getStructNamespace(s, ast));
       for (const c of group.constants) namespaces.add(this.getConstantNamespace(c, ast));
+      for (const t of group.typedefs) namespaces.add(this.getTypedefNamespace(t, ast));
 
       const cppContent = this.generateCppFile(baseName, Array.from(namespaces));
 
@@ -72,7 +78,7 @@ export class CppGenerator extends CodeGenerator {
       const group = fileGroups[sourceFile];
       const hasDefs =
         group &&
-        (group.enums.length + group.structs.length + group.constants.length > 0);
+        (group.enums.length + group.structs.length + group.constants.length + group.typedefs.length > 0);
       if (hasDefs) continue;
 
       if (!incList.length) continue;
@@ -142,7 +148,7 @@ export class CppGenerator extends CodeGenerator {
     const groups: { [sourceFile: string]: TypeGroup } = {};
     const ensure = (sourceFile: string) => {
       if (!groups[sourceFile]) {
-        groups[sourceFile] = { enums: [], structs: [], constants: [] };
+        groups[sourceFile] = { enums: [], structs: [], constants: [], typedefs: [] };
       }
     };
     for (const e of ast.enums) {
@@ -159,6 +165,11 @@ export class CppGenerator extends CodeGenerator {
       const sf = c.sourceFile || 'unknown';
       ensure(sf);
       groups[sf]!.constants.push(c);
+    }
+    for (const t of ast.typedefs ?? []) {
+      const sf = t.sourceFile || 'unknown';
+      ensure(sf);
+      groups[sf]!.typedefs.push(t);
     }
     return groups;
   }
@@ -254,7 +265,7 @@ export class CppGenerator extends CodeGenerator {
     // Group types in this sourceFile by their respective namespaces
     const nsMap: Record<string, TypeGroup> = {};
     const ensureNS = (ns: string) => {
-      if (!nsMap[ns]) nsMap[ns] = { enums: [], structs: [], constants: [] };
+      if (!nsMap[ns]) nsMap[ns] = { enums: [], structs: [], constants: [], typedefs: [] };
     };
 
     for (const en of group.enums) {
@@ -271,6 +282,11 @@ export class CppGenerator extends CodeGenerator {
       const ns = this.getConstantNamespace(ct, ast);
       ensureNS(ns);
       nsMap[ns]!.constants.push(ct);
+    }
+    for (const td of group.typedefs) {
+      const ns = this.getTypedefNamespace(td, ast);
+      ensureNS(ns);
+      nsMap[ns]!.typedefs.push(td);
     }
 
     const nsList = Object.keys(nsMap);
@@ -295,6 +311,13 @@ export class CppGenerator extends CodeGenerator {
       }
       for (const s of defs.structs) {
         lines.push(this.renderStructDecl(s, ast, ns).trimEnd());
+        lines.push('');
+        emittedDeclaration = true;
+      }
+      for (const td of defs.typedefs) {
+        const doc = td.docComment ? `  /** ${td.docComment.replace(/\n/g, ' ')} */\n` : '';
+        const cppType = this.getCppType(td.type, ast, ns);
+        lines.push(`${doc}  using ${td.name} = ${cppType};`);
         lines.push('');
         emittedDeclaration = true;
       }
@@ -353,6 +376,20 @@ export class CppGenerator extends CodeGenerator {
     const fromMap = this.lookupFileNamespace(c.sourceFile, ast);
     if (fromMap) return fromMap;
     const sf = c.sourceFile;
+    const ns = ast.namespaces.find(
+      (n) =>
+        (n.language === '*' || n.language === 'cpp') &&
+        n.sourceFile &&
+        sf &&
+        this.normPath(n.sourceFile) === this.normPath(sf)
+    );
+    return ns?.name ?? 'generated';
+  }
+
+  private getTypedefNamespace(t: DeukPackTypedef, ast: DeukPackAST): string {
+    const fromMap = this.lookupFileNamespace(t.sourceFile, ast);
+    if (fromMap) return fromMap;
+    const sf = t.sourceFile;
     const ns = ast.namespaces.find(
       (n) =>
         (n.language === '*' || n.language === 'cpp') &&

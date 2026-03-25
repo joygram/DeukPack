@@ -140,16 +140,18 @@ npm install ./deukpack-x.y.z.tgz
 
 ---
 
-## 저장소 구성 (이 클론)
+## 프로젝트 구조
 
 ```
 DeukPack/
 ├── src/              # TypeScript 소스
-├── native/           # C++ 네이티브
-├── scripts/          # CLI·빌드 스크립트
-├── DeukPack.Protocol/# C# 런타임 소스
-└── dist/             # 빌드 결과물 (npm publish 시 포함)
+├── native/           # C++/C# 네이티브
+├── docs/             # 기술 문서 원본 (npm·OSS tarball에는 없음; 안내는 deukpack.app URL)
+├── deukpack.app/     # 제품 소개 사이트 (선택 서브모듈; OSS 공개 미러에는 없음)
+└── dist/             # 빌드 결과물
 ```
+
+공개 미러 동기화에는 `deukpack.app`·`docs/`가 포함되지 않는다. GitHub/OSS용 README는 링크를 **deukpack.app** 도메인으로 치환한다.
 
 ---
 

@@ -77,6 +77,9 @@ function printManualVsixHelp(vsixPath) {
             '  code --install-extension "' +
             vsixPath +
             '"\n' +
+            '  cursor --install-extension "' +
+            vsixPath +
+            '"\n' +
             '  antigravity --install-extension "' +
             vsixPath +
             '"\n' +
