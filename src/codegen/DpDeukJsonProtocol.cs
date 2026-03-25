@@ -30,7 +30,7 @@ namespace DeukPack.Protocol
         private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
         private Dictionary<string, object> _rootRead;
-        private Stack<DeukReadCursor> _readStack;
+        private Stack<DeukReadFrame> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
         private List<object>? _readList;
         private int _readListIndex;
@@ -51,7 +51,7 @@ namespace DeukPack.Protocol
             _writeStack = new Stack<DeukStructState>();
             _listWriteStack = new Stack<List<object>>();
             _mapWriteStack = new Stack<DeukMapState>();
-            _readStack = new Stack<DeukReadCursor>();
+            _readStack = new Stack<DeukReadFrame>();
             if (isReadMode)
             {
                 using (var sr = new StreamReader(stream, _utf8, false, 4096, true))
@@ -77,7 +77,7 @@ namespace DeukPack.Protocol
             public bool IsMapValue;
         }
 
-        private struct DeukReadCursor
+        private struct DeukReadFrame
         {
             public Dictionary<string, object> Obj;
             public IEnumerator<KeyValuePair<string, object>>? Enumerator;
@@ -241,7 +241,7 @@ namespace DeukPack.Protocol
             if (_readStack.Count == 0)
             {
                 _readFieldSequenceId = 0;
-                _readStack.Push(new DeukReadCursor { Obj = _rootRead, Enumerator = _rootRead?.GetEnumerator() });
+                _readStack.Push(new DeukReadFrame { Obj = _rootRead, Enumerator = _rootRead?.GetEnumerator() });
             }
             else if (_readList != null && _readListIndex < _readList.Count)
             {
@@ -249,7 +249,7 @@ namespace DeukPack.Protocol
                 if (nextObj != null)
                 {
                     _readFieldSequenceId = 0;
-                    _readStack.Push(new DeukReadCursor { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
+                    _readStack.Push(new DeukReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
                 }
             }
             else if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
@@ -258,7 +258,7 @@ namespace DeukPack.Protocol
                 if (mapVal is Dictionary<string, object> mapStruct)
                 {
                     _readFieldSequenceId = 0;
-                    _readStack.Push(new DeukReadCursor { Obj = mapStruct, Enumerator = mapStruct.GetEnumerator() });
+                    _readStack.Push(new DeukReadFrame { Obj = mapStruct, Enumerator = mapStruct.GetEnumerator() });
                     _readMapIndex++;
                     _readMapReadingKey = true;
                 }
@@ -266,7 +266,7 @@ namespace DeukPack.Protocol
             else if (_currentReadField.HasValue && _currentReadField.Value.Value is Dictionary<string, object> nextObj)
             {
                 _readFieldSequenceId = 0;
-                _readStack.Push(new DeukReadCursor { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
+                _readStack.Push(new DeukReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
             }
             return new DpRecord("");
         }

@@ -26,7 +26,7 @@ namespace DeukPack.Protocol
         private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
         private Dictionary<string, object> _rootRead;
-        private Stack<JsonReadCursor> _readStack;
+        private Stack<JsonReadFrame> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
         private List<object>? _readList;
         private int _readListIndex;
@@ -46,7 +46,7 @@ namespace DeukPack.Protocol
             _writeStack = new Stack<JsonStructState>();
             _listWriteStack = new Stack<List<object>>();
             _mapWriteStack = new Stack<MapWriteState>();
-            _readStack = new Stack<JsonReadCursor>();
+            _readStack = new Stack<JsonReadFrame>();
             if (isReadMode)
             {
                 using (var sr = new StreamReader(stream, _utf8, false, 4096, true))
@@ -72,7 +72,7 @@ namespace DeukPack.Protocol
             public bool IsMapKey;
         }
 
-        private struct JsonReadCursor
+        private struct JsonReadFrame
         {
             public Dictionary<string, object> Obj;
             public IEnumerator<KeyValuePair<string, object>>? Enumerator;
@@ -230,25 +230,25 @@ namespace DeukPack.Protocol
         public DpRecord ReadStructBegin()
         {
             if (_readStack.Count == 0)
-                _readStack.Push(new JsonReadCursor { Obj = _rootRead, Enumerator = _rootRead?.GetEnumerator() });
+                _readStack.Push(new JsonReadFrame { Obj = _rootRead, Enumerator = _rootRead?.GetEnumerator() });
             else if (_readList != null && _readListIndex < _readList.Count)
             {
                 var nextObj = _readList[_readListIndex++] as Dictionary<string, object>;
                 if (nextObj != null)
-                    _readStack.Push(new JsonReadCursor { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
+                    _readStack.Push(new JsonReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
             }
             else if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
             {
                 var mapVal = _readMapDict[_readMapCurrentKey];
                 if (mapVal is Dictionary<string, object> mapStruct)
                 {
-                    _readStack.Push(new JsonReadCursor { Obj = mapStruct, Enumerator = mapStruct.GetEnumerator() });
+                    _readStack.Push(new JsonReadFrame { Obj = mapStruct, Enumerator = mapStruct.GetEnumerator() });
                     _readMapIndex++;
                     _readMapReadingKey = true;
                 }
             }
             else if (_currentReadField.HasValue && _currentReadField.Value.Value is Dictionary<string, object> nextObj)
-                _readStack.Push(new JsonReadCursor { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
+                _readStack.Push(new JsonReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
             return new DpRecord("");
         }
         public void ReadStructEnd() { if (_readStack.Count > 0) _readStack.Pop(); }
