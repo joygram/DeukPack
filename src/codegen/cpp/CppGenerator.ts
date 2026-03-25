@@ -41,7 +41,6 @@ export class CppGenerator extends CodeGenerator {
     const fileGroups = this.groupBySourceFile(ast);
     const out: { [filename: string]: string } = {};
 
-    // Generate DpProtocol runtime header
     out['DpProtocol.h'] = this._tpl.load('DpProtocol.h.tpl');
 
     for (const [sourceFile, group] of Object.entries(fileGroups)) {
@@ -233,11 +232,14 @@ export class CppGenerator extends CodeGenerator {
 
   private getCppTypePrimitive(typeStr: string): string | null {
     const map: { [k: string]: string } = {
-      bool: 'bool', byte: 'int8_t', i8: 'int8_t', int8: 'int8_t',
-      i16: 'int16_t', int16: 'int16_t', i32: 'int32_t', int32: 'int32_t',
-      i64: 'int64_t', int64: 'int64_t',
-      uint8: 'uint8_t', uint16: 'uint16_t', uint32: 'uint32_t', uint64: 'uint64_t',
-      float: 'float', double: 'double',
+      bool: 'bool',
+      byte: 'deuk::int8', i8: 'deuk::int8', int8: 'deuk::int8',
+      i16: 'deuk::int16', int16: 'deuk::int16',
+      i32: 'deuk::int32', int32: 'deuk::int32',
+      i64: 'deuk::int64', int64: 'deuk::int64',
+      uint8: 'deuk::uint8', uint16: 'deuk::uint16',
+      uint32: 'deuk::uint32', uint64: 'deuk::uint64',
+      float: 'deuk::float32', double: 'deuk::float64',
       string: 'std::string', binary: 'std::string',
     };
     return map[typeStr] ?? null;
