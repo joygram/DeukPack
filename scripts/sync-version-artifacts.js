@@ -20,7 +20,14 @@ function syncReleaseChangelogs() {
 function syncPackageLock() {
   const r = spawnSync(
     'npm',
-    ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'],
+    [
+      'install',
+      '--package-lock-only',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--loglevel=silent',
+    ],
     { cwd: root, stdio: 'inherit', shell: true }
   );
   if (r.status !== 0) {
