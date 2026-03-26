@@ -21,7 +21,11 @@ fs.writeFileSync(extPkgPath, JSON.stringify(extPkg, null, 2) + '\n');
 
 try {
   if (!fs.existsSync(bundledDir)) fs.mkdirSync(bundledDir, { recursive: true });
-  execSync('npm install', { cwd: extDir, stdio: 'inherit' });
+  execSync('npm install --no-audit --no-fund --loglevel=silent', {
+    cwd: extDir,
+    stdio: 'inherit',
+    shell: true,
+  });
   execSync('npm run compile', { cwd: extDir, stdio: 'inherit' });
   const vsceBin = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'vsce.cmd' : 'vsce');
   if (!fs.existsSync(vsceBin)) {

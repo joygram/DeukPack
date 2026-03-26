@@ -6,6 +6,21 @@ Notable changes to the `deukpack` npm package by release.
 
 ---
 
+## [1.2.10] — 2026-03-26
+
+### Fixed
+
+- **C++ native source encoding**: removed non-ASCII UTF-8 em-dash from `wire_engine.h` comment — eliminated MSVC **C4819** warning on Korean-locale Windows (`CP949`).
+- **MSVC compile flags**: added **`/utf-8`** to `binding.gyp` (`msvs_settings`) and `native/cpp/CMakeLists.txt` — ensures source and execution charset are UTF-8 regardless of system locale.
+
+### Changed
+
+- **`npm run sync:oss:apply` / `version:sync` / `bundle:vscode`**: internal `npm install`/`npm ci` calls now use **`--loglevel=silent`** — suppresses EBADENGINE (Jest 30 ↔ Node 23 engine-range mismatch) and deprecated-package noise from console output during automation.
+- **`package.json`**: added `npm` engine floor (`>=9.0.0`); added `.npmrc` to `files` so consumers inherit `fund=false` / `audit=false` defaults.
+- **`.npmrc`** (repo root): `fund=false`, `audit=false` — no fund/audit noise on `npm install` in this repo.
+
+---
+
 ## [1.2.9] — 2026-03-26
 
 **Workspace modes** (`.deukpack/workspace.json`): **Package install** sets `installKind: "package"` — Unity `Packages/manifest.json` is updated from the published npm version (git UPM URLs); no local DeukPack checkout. **Source / dev mode** sets `installKind: "src"` and `deukPackRoot` — `deukpack sync` and postinstall **`npm install`** rebuild **netstandard2.0** **`DeukPack.Core`**, **`DeukPack.Protocol`**, **`DeukPack.ExcelProtocol`** (each **`.dll`** + **`.pdb`**) and copy them into the UPM runtime **Plugins** folder; package mode skips that DLL path.

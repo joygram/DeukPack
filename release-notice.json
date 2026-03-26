@@ -1,5 +1,5 @@
 {
-  "version": "1.2.9",
+  "version": "1.2.10",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
   "announce": "<strong>득팩 코어 1.2.6</strong> — 스키마 표준 문자열·C# 코드젠·C++ CI·<code>npm run verify</code> —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/en/releases/\">EN</a>",

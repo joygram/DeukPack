@@ -187,7 +187,7 @@ namespace deukpack
         std::unique_ptr<Impl> impl_;
     };
 
-    // Utility functions (inline — no separate .cpp needed)
+    // Utility functions (inline -- no separate .cpp needed)
     inline std::string WireTypeToString(WireType type) {
         switch (type) {
             case WireType::Bool:   return "bool";

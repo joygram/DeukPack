@@ -6,6 +6,21 @@
 
 ---
 
+## [1.2.10] — 2026-03-26
+
+### 수정
+
+- **C++ 네이티브 소스 인코딩**: `wire_engine.h` 주석의 UTF-8 em-dash 제거 — 한국어 로케일 Windows(`CP949`)에서 발생하던 MSVC **C4819** 경고 해소.
+- **MSVC 컴파일 플래그**: `binding.gyp`(`msvs_settings`)와 `native/cpp/CMakeLists.txt`에 **`/utf-8`** 추가 — 시스템 로케일에 관계없이 소스·실행 문자 집합을 UTF-8로 고정.
+
+### 변경
+
+- **`npm run sync:oss:apply` / `version:sync` / `bundle:vscode`**: 내부 `npm install`/`npm ci` 호출에 **`--loglevel=silent`** 적용 — 자동화 실행 중 EBADENGINE(Jest 30 ↔ Node 23 엔진 범위 불일치) 및 deprecated 패키지 노이즈 출력 제거.
+- **`package.json`**: `npm` 엔진 하한 추가(`>=9.0.0`); `.npmrc`를 `files`에 포함해 소비자에게 `fund=false`/`audit=false` 기본값 전달.
+- **`.npmrc`**(저장소 루트): `fund=false`, `audit=false` 설정.
+
+---
+
 ## [1.2.9] — 2026-03-26
 
 **워크스페이스 모드** (`.deukpack/workspace.json`): **패키지 설치**는 `installKind: "package"` — 배포된 npm 버전 기준으로 Unity **`Packages/manifest.json`** 만 갱신(git UPM URL); 로컬 DeukPack 클론 불필요. **소스(개발) 모드**는 `installKind: "src"` 및 `deukPackRoot` — `deukpack sync`와 **`npm install` 후처리**에서 **netstandard2.0** **`DeukPack.Core`**, **`DeukPack.Protocol`**, **`DeukPack.ExcelProtocol`** 각 **`.dll`**·**`.pdb`** 를 빌드·복사해 UPM 런타임 **Plugins** 에 넣음; 패키지 모드에서는 이 DLL 경로는 실행하지 않음.
