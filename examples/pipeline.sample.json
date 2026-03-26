@@ -3,7 +3,7 @@
     {
       "name": "sample_tutorial",
       "thriftFile": "sample_idl/sample.thrift",
-      "outputDir": "out",
+      "outputDir": "generated",
       "csharp": true,
       "cpp": true,
       "js": true,

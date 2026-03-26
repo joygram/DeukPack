@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * DeukPack CLI (project-local npm / npx).
- * Subcommands: help, init, config, run, build (optional), bootstrap (= init --workspace-only), sync-runtime. Otherwise codegen driver (build_deukpack.js).
+ * Subcommands: help, init, config, run, build (optional), bootstrap (= init --workspace-only), sync. Otherwise codegen driver (build_deukpack.js).
  */
 const path = require('path');
 const fs = require('fs');
@@ -49,8 +49,17 @@ if (cmd === 'init' || cmd === 'config') {
         console.error(e);
         process.exit(1);
     });
-} else if (cmd === 'sync-runtime') {
+} else if (cmd === 'sync' || cmd === 'sync-runtime') {
     const { main } = require(path.join(__dirname, '..', 'scripts', 'sync_workspace_runtime.js'));
+    main(args.slice(1)).catch((e) => {
+        console.error(e);
+        process.exit(1);
+    });
+} else if (cmd === 'build-upm') {
+    const { main } = require(path.join(__dirname, '..', 'scripts', 'deukpack_build_upm.js'));
+    main(args.slice(1));
+} else if (cmd === 'add') {
+    const { main } = require(path.join(__dirname, '..', 'scripts', 'deukpack_add.js'));
     main(args.slice(1)).catch((e) => {
         console.error(e);
         process.exit(1);

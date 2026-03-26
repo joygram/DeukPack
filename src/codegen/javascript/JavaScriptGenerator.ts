@@ -54,7 +54,12 @@ export class JavaScriptGenerator extends CodeGenerator {
     const schemaLines: string[] = [];
     for (const struct of ast.structs || []) {
       const safeName = struct.name.replace(/\./g, '_');
-      schemaLines.push('_schemas["' + struct.name.replace(/"/g, '\\"') + '"] = _schema_' + safeName + ';');
+      const qn = this.qualifiedIdlName(struct.name, struct.sourceFile, ast);
+      const keys = new Set<string>([struct.name]);
+      if (qn !== struct.name) keys.add(qn);
+      for (const k of keys) {
+        schemaLines.push('_schemas["' + k.replace(/"/g, '\\"') + '"] = _schema_' + safeName + ';');
+      }
     }
     for (const profile of wireProfilesJs) {
       const profileLower = profile.toLowerCase();
@@ -70,7 +75,12 @@ export class JavaScriptGenerator extends CodeGenerator {
     const enumLines: string[] = [];
     for (const enumDef of ast.enums || []) {
       const safeName = enumDef.name.replace(/\./g, '_');
-      enumLines.push('_enums["' + enumDef.name.replace(/"/g, '\\"') + '"] = _schema_' + safeName + ';');
+      const qn = this.qualifiedIdlName(enumDef.name, enumDef.sourceFile, ast);
+      const keys = new Set<string>([enumDef.name]);
+      if (qn !== enumDef.name) keys.add(qn);
+      for (const k of keys) {
+        enumLines.push('_enums["' + k.replace(/"/g, '\\"') + '"] = _schema_' + safeName + ';');
+      }
     }
     lines.push(
       this._tpl.render('JsSchemasRegistration.js.tpl', {
@@ -134,6 +144,27 @@ export class JavaScriptGenerator extends CodeGenerator {
       SCHEMA_JSON: JSON.stringify(schemaObj),
       FIELD_ID_ENTRIES: fieldIdEntries.join(', '),
     });
+  }
+
+  private normPath(p: string): string {
+    return p.replace(/\\/g, '/');
+  }
+
+  private lookupFileNamespace(sourceFile: string | undefined, ast: DeukPackAST): string | undefined {
+    if (!sourceFile || !ast.fileNamespaceMap) return undefined;
+    const direct = ast.fileNamespaceMap[sourceFile];
+    if (direct) return direct;
+    const n = this.normPath(sourceFile);
+    const hit = Object.entries(ast.fileNamespaceMap).find(([k]) => this.normPath(k) === n);
+    return hit?.[1];
+  }
+
+  /** `Hero` + file NS → `deukkits.prologue.Hero`; already-qualified names unchanged. */
+  private qualifiedIdlName(shortName: string, sourceFile: string | undefined, ast: DeukPackAST): string {
+    if (!shortName) return shortName;
+    if (shortName.includes('.')) return shortName;
+    const ns = this.lookupFileNamespace(sourceFile, ast);
+    return ns ? `${ns}.${shortName}` : shortName;
   }
 
   private renderJsWireProfileStruct(

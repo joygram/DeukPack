@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>DeukPack.Core</RootNamespace>
+    <AssemblyName>DeukPack.Core</AssemblyName>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Description>DeukPack core library — table manager, meta decryptor, and base definitions.</Description>
+  </PropertyGroup>
+
+  <!-- Modern TFMs: full nullable support -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- netstandard2.0: Unity / server compat -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <Nullable>annotations</Nullable>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+  </ItemGroup>
+
+  <Import Project="DeukPack.Core.SharedCompile.props" />
+
+</Project>

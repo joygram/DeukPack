@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Shared sources for DeukPack.Core (all TFMs). Protocol-independent base types. -->
+  <ItemGroup>
+    <Compile Include="..\src\meta\IDeukMetaDecryptor.cs" Link="Meta\IDeukMetaDecryptor.cs" />
+  </ItemGroup>
+</Project>

@@ -9,5 +9,5 @@ npm run codegen
 npm run demo
 ```
 
-- **codegen**: generates `examples/out/js/generated_deuk.js` (meta/editor-oriented bundle).
+- **codegen**: generates `examples/generated/js/generated_deuk.js` (meta/editor-oriented bundle).
 - **demo**: runs WriteWithOverrides, toJsonWithFields, projectFields against generated code (requires codegen first).

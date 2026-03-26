@@ -6,6 +6,28 @@ Notable changes to the `deukpack` npm package by release.
 
 ---
 
+## [1.2.9] — 2026-03-26
+
+**Workspace modes** (`.deukpack/workspace.json`): **Package install** sets `installKind: "package"` — Unity `Packages/manifest.json` is updated from the published npm version (git UPM URLs); no local DeukPack checkout. **Source / dev mode** sets `installKind: "src"` and `deukPackRoot` — `deukpack sync` and postinstall **`npm install`** rebuild **netstandard2.0** **`DeukPack.Core`**, **`DeukPack.Protocol`**, **`DeukPack.ExcelProtocol`** (each **`.dll`** + **`.pdb`**) and copy them into the UPM runtime **Plugins** folder; package mode skips that DLL path.
+
+### Added
+
+- **`deukpack add`**: new CLI command installs family packages (`app.deukpack.navigation`, `app.deukpack.runtime`, etc.) into the workspace and updates Unity **`Packages/manifest.json`** for listed projects (both modes).
+- **UPM package layout**: build script and pipeline profile schema for Unity Package Manager output; `package.json` template and directory structure generated on **`deukpack init`** (normal init flow).
+- **`DeukPack.Core` assembly** (generated C#): split from `DeukPack.Protocol` — metadata and shared interfaces in a separate DLL. **Source / dev mode**: **`deukpack sync`** / Unity plugin build copies **`DeukPack.Core.dll`** (and **`.pdb`**) into **`app.deukpack.runtime`** **Plugins** together with **Protocol** and **ExcelProtocol**; codegen/game projects should reference **Core** where they only need shared meta, not the full protocol stack.
+
+### Changed
+
+- **`deukpack sync`** (alias `sync-runtime`): renamed for clarity. **Source / dev mode only** — runs when `installKind` is `"src"`; rebuilds **Core**, **Protocol**, and **ExcelProtocol** netstandard2.0 plugins and copies them to Unity **Plugins**. **Package install**: command exits after an informational skip (no local build).
+- **`deukpack init` / `deukpack add`**: Unity manifest dependency sync restored; serverkit shares `app.deukpack.runtime` alongside navigation.
+- **`deukpack init` end-of-run and `npm install` postinstall**: **Source / dev mode** — **Core** + **Protocol** + **ExcelProtocol** DLL build/copy, then manifest update; **package install** — manifest update only.
+
+### Fixed
+
+- **Security**: `picomatch` bumped to **2.3.2** (GHSA-c2c7-rcm5-vvqj, GHSA-3v7f-55p6-f55p).
+
+---
+
 ## [1.2.8] — 2026-03-25
 
 ### Changed

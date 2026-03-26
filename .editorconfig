@@ -1,0 +1,8 @@
+# Pairs with .gitattributes for *.md / *.mdc
+root = true
+
+[*.md]
+end_of_line = lf
+
+[*.mdc]
+end_of_line = lf

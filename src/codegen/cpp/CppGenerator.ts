@@ -36,6 +36,27 @@ export class CppGenerator extends CodeGenerator {
     return `${stem}_deuk.cpp`;
   }
 
+  /** IDL namespace `a.b.c` → C++ qualified scope `a::b::c` */
+  private cppQualifiedNs(ns: string): string {
+    return ns.split('.').filter(Boolean).join('::');
+  }
+
+  private renderCppNamespaceOpen(ns: string): string {
+    const parts = ns.split('.').filter(Boolean);
+    if (parts.length === 0) return '';
+    return parts.map((p) => `namespace ${p} {`).join('\n');
+  }
+
+  private renderCppNamespaceClose(ns: string): string {
+    const parts = ns.split('.').filter(Boolean);
+    if (parts.length === 0) return '';
+    return parts
+      .slice()
+      .reverse()
+      .map((p) => `} // namespace ${p}`)
+      .join('\n');
+  }
+
   async generate(ast: DeukPackAST, _options: GenerationOptions): Promise<{ [filename: string]: string }> {
     DeukPackEngine.resolveExtends(ast);
     const fileGroups = this.groupBySourceFile(ast);
@@ -214,12 +235,12 @@ export class CppGenerator extends CodeGenerator {
     const enumDef = ast.enums.find((e) => e.name === short || e.name === typeStr);
     if (enumDef) {
       const ns = this.lookupFileNamespace(enumDef.sourceFile, ast) ?? currentNs;
-      return ns === currentNs ? short : `${ns}::${short}`;
+      return ns === currentNs ? short : `${this.cppQualifiedNs(ns)}::${short}`;
     }
     const structDef = ast.structs.find((s) => s.name === short || s.name === typeStr);
     if (structDef) {
       const ns = this.lookupFileNamespace(structDef.sourceFile, ast) ?? currentNs;
-      return ns === currentNs ? short : `${ns}::${short}`;
+      return ns === currentNs ? short : `${this.cppQualifiedNs(ns)}::${short}`;
     }
     const typedefDef = ast.typedefs?.find((t) => t.name === short || t.name === typeStr);
     if (typedefDef) {
@@ -241,6 +262,10 @@ export class CppGenerator extends CodeGenerator {
       uint32: 'deuk::uint32', uint64: 'deuk::uint64',
       float: 'deuk::float32', double: 'deuk::float64',
       string: 'std::string', binary: 'std::string',
+      datetime: 'int64_t',
+      timestamp: 'int64_t',
+      date: 'int64_t',
+      time: 'int64_t',
     };
     return map[typeStr] ?? null;
   }
@@ -259,10 +284,77 @@ export class CppGenerator extends CodeGenerator {
     return hit?.[1];
   }
 
+  /**
+   * Headers for struct/enum definitions in other IDL stems (e.g. Party uses prologue Hero → #include "cpp_deuk.h").
+   */
+  private collectCrossSourceHeaderIncludes(baseName: string, group: TypeGroup, ast: DeukPackAST): string[] {
+    const headers = new Set<string>();
+
+    const addFromQualifiedType = (typeStr: string) => {
+      if (!typeStr || typeof typeStr !== 'string') return;
+      if (this.getCppTypePrimitive(typeStr)) return;
+      const parts = typeStr.split('.');
+      const short = parts[parts.length - 1] ?? typeStr;
+      const enumDef = ast.enums.find((e) => e.name === short || e.name === typeStr);
+      if (enumDef) {
+        const stem = enumDef.sourceFile ? this.getBaseNameFromSource(enumDef.sourceFile) : 'unknown';
+        if (stem && stem !== 'unknown' && stem !== baseName) headers.add(`${stem}_deuk.h`);
+        return;
+      }
+      const structDef = ast.structs.find((s) => s.name === short || s.name === typeStr);
+      if (structDef) {
+        const stem = structDef.sourceFile ? this.getBaseNameFromSource(structDef.sourceFile) : 'unknown';
+        if (stem && stem !== 'unknown' && stem !== baseName) headers.add(`${stem}_deuk.h`);
+        return;
+      }
+      const typedefDef = ast.typedefs?.find((t) => t.name === short || t.name === typeStr);
+      if (typedefDef) {
+        addFromType(typedefDef.type as DeukPackType);
+      }
+    };
+
+    const addFromType = (fieldType: DeukPackType) => {
+      if (typeof fieldType === 'string') {
+        addFromQualifiedType(fieldType);
+        return;
+      }
+      if (typeof fieldType === 'object' && fieldType !== null) {
+        const o = fieldType as { type?: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
+        if (o.type === 'list' || o.type === 'set') {
+          if (o.elementType) addFromType(o.elementType);
+        }
+        if (o.type === 'map') {
+          if (o.keyType) addFromType(o.keyType);
+          if (o.valueType) addFromType(o.valueType);
+        }
+      }
+    };
+
+    for (const s of group.structs) {
+      for (const f of s.fields || []) {
+        if (typeof f.type === 'string') addFromQualifiedType(f.type);
+        else addFromType(f.type as DeukPackType);
+      }
+    }
+    for (const td of group.typedefs) {
+      addFromType(td.type as DeukPackType);
+    }
+
+    return Array.from(headers).sort();
+  }
+
   private generateHeader(_baseName: string, group: TypeGroup, ast: DeukPackAST, options: GenerationOptions): string | null {
     const lines: string[] = [];
     lines.push(this._tpl.load('HeaderPreamble.h.tpl').trimEnd());
     lines.push('');
+
+    const crossHeaders = this.collectCrossSourceHeaderIncludes(_baseName, group, ast);
+    for (const h of crossHeaders) {
+      lines.push(`#include "${h}"`);
+    }
+    if (crossHeaders.length > 0) {
+      lines.push('');
+    }
 
     // Group types in this sourceFile by their respective namespaces
     const nsMap: Record<string, TypeGroup> = {};
@@ -302,7 +394,7 @@ export class CppGenerator extends CodeGenerator {
       if (braceLess) {
         lines.push(`// namespace ${ns} (braces omitted per --brace-less-namespace)`);
       } else {
-        lines.push(this._tpl.render('NamespaceOpen.h.tpl', { NAMESPACE: ns }).trimEnd());
+        lines.push(this.renderCppNamespaceOpen(ns));
       }
       lines.push('');
 
@@ -334,7 +426,7 @@ export class CppGenerator extends CodeGenerator {
       }
 
       if (!braceLess) {
-        lines.push(this._tpl.render('NamespaceClose.h.tpl', { NAMESPACE: ns }).trimEnd());
+        lines.push(this.renderCppNamespaceClose(ns));
         lines.push('');
       }
     }
@@ -454,9 +546,13 @@ export class CppGenerator extends CodeGenerator {
   }
 
   private generateCppFile(baseName: string, namespaces: string[]): string {
-    const nsBlocks = namespaces.map((ns) =>
-      `\nnamespace ${ns} {\n  // Types defined in header; add serialization implementation if needed.\n} // namespace ${ns}\n`
-    ).join('');
+    const nsBlocks = namespaces
+      .map((ns) => {
+        const open = this.renderCppNamespaceOpen(ns);
+        const close = this.renderCppNamespaceClose(ns);
+        return `\n${open}\n  // Types defined in header; add serialization implementation if needed.\n${close}\n`;
+      })
+      .join('');
     return this._tpl.render('TypesCppStub.cpp.tpl', {
       HEADER_FILE: this.cppHeaderFileName(baseName),
       NAMESPACE_BLOCKS: nsBlocks,

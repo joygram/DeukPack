@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
-  <!-- Shared sources for DeukPack.Protocol (main TFMs) and DeukPack.Protocol.Unity (netstandard2.0, Unity/plugins). -->
+  <!-- Shared sources for DeukPack.Protocol (main TFMs). Core/meta types live in DeukPack.Core. -->
   <ItemGroup>
     <Compile Include="..\src\codegen\DpProtocolCore.cs" Link="DpProtocolCore.cs" />
     <Compile Include="..\src\codegen\DpBinaryProtocol.cs" Link="DpBinaryProtocol.cs" />
@@ -14,7 +14,6 @@
     <Compile Include="..\src\codegen\DeukPackThriftCompat.cs" Link="DeukPackThriftCompat.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\src\meta\IDeukMetaDecryptor.cs" Link="Meta\IDeukMetaDecryptor.cs" />
     <Compile Include="..\src\meta\DeukTableManager.cs" Link="Meta\DeukTableManager.cs" />
   </ItemGroup>
 </Project>

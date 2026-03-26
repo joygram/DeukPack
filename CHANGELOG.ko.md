@@ -6,6 +6,28 @@
 
 ---
 
+## [1.2.9] — 2026-03-26
+
+**워크스페이스 모드** (`.deukpack/workspace.json`): **패키지 설치**는 `installKind: "package"` — 배포된 npm 버전 기준으로 Unity **`Packages/manifest.json`** 만 갱신(git UPM URL); 로컬 DeukPack 클론 불필요. **소스(개발) 모드**는 `installKind: "src"` 및 `deukPackRoot` — `deukpack sync`와 **`npm install` 후처리**에서 **netstandard2.0** **`DeukPack.Core`**, **`DeukPack.Protocol`**, **`DeukPack.ExcelProtocol`** 각 **`.dll`**·**`.pdb`** 를 빌드·복사해 UPM 런타임 **Plugins** 에 넣음; 패키지 모드에서는 이 DLL 경로는 실행하지 않음.
+
+### 추가
+
+- **`deukpack add`**: 패밀리 패키지(`app.deukpack.navigation`, `app.deukpack.runtime` 등) 설치 및 Unity **`Packages/manifest.json`** 자동 갱신(두 모드 공통).
+- **UPM 패키지 레이아웃**: Unity Package Manager 출력용 빌드 스크립트·파이프라인 프로필 스키마. **`deukpack init`** 시 `package.json` 템플릿·디렉터리 구조 생성.
+- **`DeukPack.Core` 어셈블리**(코드젠 C#): `DeukPack.Protocol`에서 분리 — 메타데이터·공유 인터페이스를 별도 DLL로 둠. **소스(개발) 모드**: **`deukpack sync`** / Unity 플러그인 빌드가 **`DeukPack.Core.dll`**(및 **`.pdb`**)을 **Protocol**·**ExcelProtocol** 과 함께 **`app.deukpack.runtime`** **Plugins** 로 복사; 코드젠·게임 프로젝트는 공용 메타만 필요할 때 **Core** 만 참조하면 됨.
+
+### 변경
+
+- **`deukpack sync`**(`sync-runtime` 별칭): 이름 정리. **소스(개발) 모드 전용** — `installKind`가 `"src"`일 때 **Core**·**Protocol**·**ExcelProtocol** netstandard2.0 플러그인을 빌드·Unity **Plugins** 로 복사. **패키지 설치**: 정보 메시지 후 스킵(로컬 빌드 없음).
+- **`deukpack init` / `deukpack add`**: Unity manifest 의존성 동기화 복구; serverkit이 navigation과 함께 `app.deukpack.runtime` 공유.
+- **`deukpack init` 마무리 및 `npm install` 후처리**: **소스(개발) 모드** — **Core**·**Protocol**·**ExcelProtocol** DLL 빌드·복사 후 manifest 갱신; **패키지 설치** — manifest 갱신만.
+
+### 수정
+
+- **보안**: `picomatch` **2.3.2** 업그레이드 (GHSA-c2c7-rcm5-vvqj, GHSA-3v7f-55p6-f55p).
+
+---
+
 ## [1.2.8] — 2026-03-25
 
 ### 변경
@@ -93,7 +115,7 @@
 
 ### 추가
 
-- **동봉 VS Code 확장**: npm tarball에 **`bundled/deuk-idl.vsix`** 포함. **postinstall**은 **`.deukpack/deuk-idl-vsix.json`**에 기록된 **`deukpack` npm 버전**과 달라지면 다시 **`code` / `cursor` / `antigravity --install-extension`** 시도. **대화형 `deukpack bootstrap`** 마지막에 VSIX 설치·갱신 확인. **`bundled/README.md`** 참고.
+- **동봉 VS Code 확장**: npm tarball에 **`bundled/deuk-idl.vsix`** 포함. **postinstall**은 **`.deukpack/deuk-idl-vsix.json`**에 기록된 **`deukpack` npm 버전**과 달라지면 다시 **`code` / `cursor` / `antigravity --install-extension`** 시도. **대화형 `deukpack bootstrap`** 마지막에 VSIX 설치·갱신 확인. **`bundled/README.ko.md`** 참고.
 - **Unity**: **[deukpack.app](https://deukpack.app/)** 에 **DeukPack.Protocol** 등을 UPM 스타일로 넣는 방법이 정리됨. 네이티브 플러그인은 게임/프로젝트 빌드로 만들며, npm **`deukpack`** tarball 안에는 포함되지 않음.
 - **npm 와이어 진입(단일 형태)**: **`serialize(값, 프로토콜?, extras?)`** / **`deserialize(데이터, 프로토콜?, extras?)`** —보내는 타입 **`WireExtras`** / **`WireDeserializeExtras`**(`pretty`, `interopRootStruct`, `interopStructDefs`, `targetType` 등). 세부 제어는 **`WireSerializer`/`WireDeserializer`** + **`SerializationOptions`** 유지.
 

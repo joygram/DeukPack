@@ -13,10 +13,26 @@ build/
 # Visual Studio
 .vs/
 
+# DeukPack.Core (C# runtime)
+DeukPack.Core/bin/
+DeukPack.Core/obj/
+
 # DeukPack.Protocol (C# runtime)
 DeukPack.Protocol/bin/
 DeukPack.Protocol/obj/
 DeukPack.Protocol/.build_plugins/
+
+# UPM runtime plugin DLLs (build artifacts)
+upm/Runtime/Plugins/*.dll
+upm/Runtime/Plugins/*.pdb
+
+# Unity .meta under upm/ (local editor only)
+upm/**/*.meta
+
+# Example codegen output (local smoke tests)
+examples/generated/
+
+*.bak
 
 # Example consumer C# build output
 examples/consumer-csharp/bin/

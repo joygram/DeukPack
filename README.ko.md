@@ -1,9 +1,11 @@
 # DeukPack
 
+> **이득을 묶어 전달하는 개발자용 제품 팩 — Pack the gains, ship the code.**
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://img.shields.io/npm/v/deukpack.svg)](https://www.npmjs.com/package/deukpack)
 
-**언어 / Languages:** [English](README.md) · [한국어](README.ko.md) — GitHub에서 README 전체를 바꿉니다.
+**언어 / Languages:** [English](README.ko.md) · [한국어](README.ko.md) — GitHub에서 README 전체를 바꿉니다.
 
 **하나의 IDL 줄기**에서 **C# · C++ · TypeScript · JavaScript** 타입, 직렬화, 레지스트리, 네트워크용 메시지 배치까지 한 파이프라인으로 뽑습니다.
 
@@ -28,7 +30,7 @@
 >
 > **버전**  
 > [`package.json`](package.json)의 `version`과 상단 npm 배지  
-> 릴리스별 차이: [CHANGELOG.md](CHANGELOG.md)
+> 릴리스별 차이: [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
 ---
 
@@ -98,7 +100,7 @@ npx deukpack run         # 기본: ./deukpack.pipeline.json
 
 의존성 전에 `package.json`만 먼저 만들고 싶다면(선택): `npm init -y` 후 `npm install deukpack`. 보통은 **`npm install deukpack`만 해도 됩니다** — npm이 필요하면 `package.json`을 만들거나 갱신합니다.
 
-**`npx deukpack init`**은 **`deukpack.pipeline.json`**을 쓴 뒤 **bootstrap**으로 **`.deukpack/workspace.json`**을 만들거나 갱신합니다(Unity·프로젝트 탐색; **`installKind`** 기본값은 **`package`**이며 **`--kind src`**와 **`--engine-root`**를 같이 줄 때만 엔진 연동). 마지막에 동봉 **`bundled/deuk-idl.vsix`**를 **질문 없이** 설치 시도합니다(**VS Code** `code` / **Cursor** `cursor` / **Antigravity** `antigravity`, `PATH` 필요; 생략은 **`--skip-vsix`**). VSIX 경로·수동 설치: [`bundled/README.md`](bundled/README.md).
+**`npx deukpack init`**은 **`deukpack.pipeline.json`**을 쓴 뒤 **bootstrap**으로 **`.deukpack/workspace.json`**을 만들거나 갱신합니다(Unity·프로젝트 탐색; **`installKind`** 기본값은 **`package`**이며 **`--kind src`**와 **`--engine-root`**를 같이 줄 때만 엔진 연동). 마지막에 동봉 **`bundled/deuk-idl.vsix`**를 **질문 없이** 설치 시도합니다(**VS Code** `code` / **Cursor** `cursor` / **Antigravity** `antigravity`, `PATH` 필요; 생략은 **`--skip-vsix`**). VSIX 경로·수동 설치: [`bundled/README.ko.md`](bundled/README.ko.md).
 
 GitHub Release tarball:
 
@@ -130,8 +132,8 @@ npm install ./deukpack-x.y.z.tgz
 | **[deukpack.app](https://deukpack.app/)** | 설치 · 튜토리얼 · 프로토콜<br>[API 레퍼런스](https://deukpack.app/reference/api/) |
 | **[kits.deukpack.app](https://kits.deukpack.app/)** | [콘솔 따라하기](https://kits.deukpack.app/starter-course/hands-on/)<br>[《시작의 폐허》](https://kits.deukpack.app/starter-course/) · [득팩 테일](https://kits.deukpack.app/journey/) |
 | **키트 저장소 안내** | [득팩 키트 라인업](https://deukpack.app/starter-kits/) |
-| **릴리즈** | [RELEASING.md](RELEASING.md) |
-| **문서 안내** | [deukpack.app — 문서 안내](https://deukpack.app/documentation-index/) |
+| **릴리즈** | [RELEASING.md](RELEASING.ko.md) |
+| **클론본 전체 문서 목차** | [docs/README.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/README.ko.md) (npm tarball에는 없음) |
 
 **문의**
 
@@ -187,7 +189,7 @@ npm test
 ## 기여
 
 1. 저장소 Fork → 기능 브랜치 → PR
-2. 릴리즈 체계: [RELEASING.md](RELEASING.md) 참고
+2. 릴리즈 체계: [RELEASING.md](RELEASING.ko.md) 참고
 
 ---
 

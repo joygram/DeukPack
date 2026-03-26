@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
   "scripts": {
     "setup": "node scripts/setup.js",
     "postinstall": "node scripts/npm-postinstall.js",
-    "prepublishOnly": "node scripts/sync-version-artifacts.js && npm run release-notice:apply && npm run build && npm run bundle:vscode",
+    "prepublishOnly": "node scripts/sync-version-artifacts.js && npm run release-notice:apply && npm run build && npm run bundle:vscode && node scripts/build_unity_runtime_plugins.js --out upm/Runtime/Plugins -c Release",
     "version:sync": "node scripts/sync-version-artifacts.js",
     "postversion": "node scripts/sync-version-artifacts.js",
     "bundle:vscode": "node scripts/bundle-vscode-vsix.js",
@@ -73,6 +73,7 @@
   "files": [
     "bin",
     "scripts/build_deukpack.js",
+    "scripts/schemas/pipeline.profile.schema.json",
     "scripts/build_unity_runtime_plugins.js",
     "scripts/bootstrap.js",
     "scripts/npm-postinstall.js",
@@ -80,6 +81,8 @@
     "scripts/sync_workspace_runtime.js",
     "scripts/deukpack_init.js",
     "scripts/init-ensure-deukpack-npm.js",
+    "scripts/lib/upm-helpers.js",
+    "upm",
     "dist",
     "native/cpp",
     "binding.gyp",

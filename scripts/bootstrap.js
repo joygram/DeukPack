@@ -321,7 +321,7 @@ Writes ./${MANIFEST_DIR}/${MANIFEST_NAME}. Interactive mode uses numbered choice
 Default install kind is package unless --kind src is passed (--engine-root alone does not select src).
 
 Options:
-  --kind package|src             default: package; src = engine checkout + sync-runtime (aliases: registry|npm → package)
+  --kind package|src             default: package; src = engine checkout + sync (aliases: registry|npm → package)
   --engine-root <path>           DeukPack engine repo (used only with --kind src)
   --deukpack-root <path>         Same as --engine-root
   -o, --manifest-out <dir>       Directory for ${MANIFEST_DIR}/ (default: cwd)
@@ -399,13 +399,12 @@ Options:
             : {}),
         unity: {
             projects: unityProjects.map((projectRoot) => ({
-                projectRoot: path.normalize(projectRoot),
-                runtimePluginsOut: 'Packages/app.deukpack.runtime/Runtime/Plugins',
-                embeddedRuntimePackage: 'Packages/app.deukpack.runtime'
-            }))
+                projectRoot: path.normalize(projectRoot)
+            })),
+            runtimePluginsOut: 'upm/Runtime/Plugins'
         },
         sync: {
-            cli: 'npx deukpack sync-runtime',
+            cli: 'npx deukpack sync',
             buildScript: 'scripts/build_unity_runtime_plugins.js'
         },
         bootstrap: {
@@ -425,7 +424,7 @@ Options:
 
     if (installKind === 'src') {
         console.log(
-            '[INFO] After engine changes: `npx deukpack sync-runtime` (or your game build script).'
+            '[INFO] After engine changes: `npx deukpack sync` (or your game build script).'
         );
     }
 }
