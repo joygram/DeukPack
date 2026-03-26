@@ -57,11 +57,11 @@ function printCliUsage(opts = {}) {
     line('  deukpack init | deukpack config   Pipeline + workspace bootstrap + VSIX install last (unless --skip-vsix); --non-interactive uses defaults + npm sync');
     line('  deukpack bootstrap               Same as: deukpack init --workspace-only');
     line('  deukpack run [pipeline.json]      Run --pipeline on ./deukpack.pipeline.json or a given file');
-    line('  deukpack <entry.deuk> <outDir> [flags]');
-    line('  deukpack build <entry.deuk> <outDir> [flags]   (same)');
+    line('  deukpack <entry.deuk> <outputDir> [flags]');
+    line('  deukpack build <entry.deuk> <outputDir> [flags]   (same)');
     line('  deukpack --pipeline <config.json>   (jobs: defineScope "all" = every .deuk under defineRoot minus exclude; else thriftFile entry)');
     line('  deukpack bootstrap [args]');
-    line('  deukpack sync-runtime [args]');
+    line('  deukpack sync [args]');
     line('');
     line('Includes (single-shot CLI):');
     line('  The entry file’s directory is always searched.');
@@ -97,8 +97,8 @@ function printCliUsage(opts = {}) {
     line('  --allow-multi-namespace  Permit multiple namespace blocks in a single IDL file');
     line('  --brace-less-namespace   Omit namespace { } braces in output for single-namespace files (indented)');
     line('  --cpp       Generate C++ code');
-    line('  --ts        Generate TypeScript under <out>/ts/ (1st-stage types; JS via app build or tsc). See docs/DEUKPACK_JS_BUILD_PIPELINE.md');
-    line('  --js        Generate JavaScript under <out>/js/ (Path B: direct JS for Node/tools). App bundle: use TS output + app build.');
+    line('  --ts        Generate TypeScript under <outputDir>/ts/ (1st-stage types; JS via app build or tsc). See docs/DEUKPACK_JS_BUILD_PIPELINE.md');
+    line('  --js        Generate JavaScript under <outputDir>/js/ (Path B: direct JS for Node/tools). App bundle: use TS output + app build.');
     line('  --protocol <protocol>  Wire hint: deuk pack|json|yaml (default pack); Thrift interop tbinary|tcompact|tjson — see docs/DEUKPACK_WIRE_INTEROP_VS_NATIVE.md');
     line('  --endianness <endian>  Endianness (little|big)');
     line('  --convert-to-deuk [subdir]  Emit .deuk from parsed .thrift (subdir default: deuk). Legacy→table migration.');

@@ -1,0 +1,10 @@
+* text=auto
+
+# Markdown & agent rules — LF in repo (Windows editor churn)
+*.md text eol=lf
+*.mdc text eol=lf
+
+# Windows scripts
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf

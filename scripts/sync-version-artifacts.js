@@ -44,6 +44,25 @@ function syncReleaseNoticeVersion(ver) {
   console.log('✓ release-notice.json version →', ver);
 }
 
+function syncUpmPackageVersions(ver, { dev = false } = {}) {
+  const upmVer = dev ? `${ver}-dev` : ver;
+  const upmPaths = [
+    path.join(root, 'upm', 'package.json'),
+  ];
+  for (const p of upmPaths) {
+    if (!fs.existsSync(p)) continue;
+    const raw = fs.readFileSync(p, 'utf8');
+    const pkg = JSON.parse(raw);
+    if (pkg.version === upmVer) {
+      console.log('✓ UPM', path.basename(path.dirname(p)), 'version', upmVer);
+      continue;
+    }
+    pkg.version = upmVer;
+    fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+    console.log('✓ UPM', path.basename(path.dirname(p)), 'version →', upmVer);
+  }
+}
+
 function main() {
   const pkg = readPkg();
   const ver = pkg.version;
@@ -56,6 +75,8 @@ function main() {
   syncReleaseChangelogs();
   syncPackageLock();
   syncReleaseNoticeVersion(ver);
+  const postRelease = process.argv.includes('--post-release');
+  syncUpmPackageVersions(ver, { dev: postRelease });
 
   const rc = spawnSync(process.execPath, ['scripts/release-check.js'], {
     cwd: root,

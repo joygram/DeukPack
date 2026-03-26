@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deukpack.local/schemas/pipeline.profile.json",
+  "title": "DeukPack pipeline profile",
+  "description": "Schema for build-deukpack.config.json — path routing and pipeline toggles consumed by the build script.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "clientDeukDefinePath": {
+      "type": "string",
+      "description": "Path under unityClientFolder for core generated C# (DTO/protocol). EF DbContext is excluded when unity.enableEfPersistence is true.",
+      "default": "Assets/DeukDefine"
+    },
+    "deukPackUnityRuntimePluginsPath": {
+      "type": "string",
+      "description": "UPM package-relative folder for DeukPack.Protocol / ExcelProtocol DLL sync."
+    },
+    "libRoot": {
+      "type": ["string", "null"],
+      "description": "IDL-adjacent tree for generated csharp/cpp/js (e.g. idls or libDeukDefine)."
+    },
+    "buildStagingRoot": {
+      "type": ["string", "null"],
+      "description": "Parent of DeukPack staging .build; default is libRoot."
+    },
+    "typescriptSubdir": {
+      "type": "string",
+      "description": "Under libRoot, folder name for TypeScript output (e.g. javascript)."
+    },
+    "generatedSubdir": {
+      "type": ["string", "null"],
+      "description": "Optional subfolder under each language root for generated files."
+    },
+    "csharpGeometrySource": {
+      "type": ["string", "null"],
+      "description": "Extra fixed C# sources copied into client DeukDefine with generated code."
+    },
+    "deukPackRepo": {
+      "type": ["string", "null"],
+      "description": "Path to DeukPack repo relative to project root; DEUKPACK_ROOT env overrides."
+    },
+    "deukNavigationRepo": {
+      "type": ["string", "null"],
+      "description": "DeukNavigation sibling path; empty string skips. DEUKNAVIGATION_ROOT overrides."
+    },
+    "unityClientFolder": {
+      "type": ["string", "null"],
+      "description": "Unity project folder under project root (e.g. unity_app). Default: {projectInitial}_client."
+    },
+    "unity": {
+      "type": "object",
+      "description": "Unity-facing pipeline toggles.",
+      "additionalProperties": true,
+      "properties": {
+        "enableEfPersistence": {
+          "type": "boolean",
+          "description": "When true, passes DeukPack --ef, keeps DeukPackDbContext.g.cs out of Assets/DeukDefine, and copies it to persistenceAdapterLibPath and optional persistenceAdapterClientPath.",
+          "default": false
+        }
+      }
+    },
+    "persistenceAdapterLibPath": {
+      "type": "string",
+      "description": "Relative to project root: dotnet/source-of-truth folder for generated EF adapter file(s).",
+      "default": "idls/csharp/ef-adapter"
+    },
+    "persistenceAdapterClientPath": {
+      "type": ["string", "null"],
+      "description": "Relative to project root: Unity server tree directory (folder) or explicit .cs path for DeukPackDbContext.g.cs copy."
+    }
+  }
+}

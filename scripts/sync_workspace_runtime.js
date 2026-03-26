@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Read `.deukpack/workspace.json` (walk up from cwd), rebuild DeukPack.Protocol+ExcelProtocol
- * when source DLL hash differs from each Unity Plugins output, then copy.
+ * Read `.deukpack/workspace.json` (walk up from cwd), rebuild DeukPack.Core + Protocol + ExcelProtocol
+ * (netstandard2.0) via build_unity_runtime_plugins.js, then copy artifacts into Unity Plugins.
  *
  *   npx deukpack sync-runtime
  *   npx deukpack sync-runtime -c Release
@@ -36,6 +36,8 @@ function findManifestDir(startDir) {
 }
 
 const PLUGIN_FILES = [
+    'DeukPack.Core.dll',
+    'DeukPack.Core.pdb',
     'DeukPack.Protocol.dll',
     'DeukPack.Protocol.pdb',
     'DeukPack.ExcelProtocol.dll',
@@ -100,14 +102,9 @@ Reads ${MANIFEST_REL} upward from cwd. Runs only when installKind is "src" (not 
         return;
     }
 
-    const outs = [];
-    for (const p of projects) {
-        const projectRoot = p.projectRoot;
-        const rel = p.runtimePluginsOut || 'Packages/app.deukpack.runtime/Runtime/Plugins';
-        if (!projectRoot) continue;
-        outs.push(path.join(projectRoot, ...rel.split(/[/\\]+/).filter(Boolean)));
-    }
-    if (outs.length === 0) return;
+    const globalRel = (manifest.unity && manifest.unity.runtimePluginsOut) || 'upm/Runtime/Plugins';
+    const primaryOut = path.join(deukPackRoot, ...globalRel.split(/[/\\]+/).filter(Boolean));
+    const outs = [primaryOut];
 
     const primary = outs[0];
     if (!runBuildAndCopy(deukPackRoot, primary, opts.configuration)) process.exit(1);

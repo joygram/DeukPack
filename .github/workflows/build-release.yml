@@ -30,8 +30,16 @@ jobs:
           npm run build
           npm test
 
+      - name: Build UPM package
+        run: node scripts/deukpack_build_upm.js
+
       - name: Create npm tarball
         run: npm pack
+
+      - name: Create UPM tarball
+        run: |
+          PKG_VER=$(node -p "require('./package.json').version")
+          tar -czf "app.deukpack.runtime-${PKG_VER}.tgz" -C upm .
 
       - name: Show package version
         run: node -p "require('./package.json').version"
@@ -40,5 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deukpack-release-${{ github.sha }}
-          path: deukpack-*.tgz
+          path: |
+            deukpack-*.tgz
+            app.deukpack.runtime-*.tgz
           retention-days: 90

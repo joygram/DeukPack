@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * DeukPack 내부: Unity UPM `app.deukpack.runtime/Runtime/Plugins` 용
- * DeukPack.Protocol / DeukPack.ExcelProtocol (netstandard2.0) 빌드 후 대상 디렉터리로 복사.
+ * DeukPack.Core / DeukPack.Protocol / DeukPack.ExcelProtocol (netstandard2.0) 빌드 후 대상 디렉터리로 복사.
  *
  * Usage:
  *   node scripts/build_unity_runtime_plugins.js --out <절대 또는 cwd 기준 상대 경로> [-c Debug|Release]
@@ -83,6 +83,41 @@ function main() {
         process.exit(1);
     }
 
+    // --- DeukPack.Core ---
+    const coreProjDir = path.join(ROOT, 'DeukPack.Core');
+    const coreProj = path.join(coreProjDir, 'DeukPack.Core.csproj');
+    if (!fs.existsSync(coreProj)) {
+        console.error('[ERROR] DeukPack.Core.csproj not found:', coreProj);
+        process.exit(1);
+    }
+
+    console.log('[DeukPack] Building DeukPack.Core (netstandard2.0)...');
+    runDotnet(coreProjDir, [
+        'build',
+        'DeukPack.Core.csproj',
+        '-f',
+        'netstandard2.0',
+        '-c',
+        configuration
+    ]);
+
+    const coreOut = path.join(coreProjDir, 'bin', configuration, 'netstandard2.0');
+    const coreDll = path.join(coreOut, 'DeukPack.Core.dll');
+    if (!fs.existsSync(coreDll)) {
+        console.error('[ERROR] DeukPack.Core.dll not found after build:', coreDll);
+        process.exit(1);
+    }
+
+    const okCore = copyArtifacts(
+        coreOut,
+        ['DeukPack.Core.dll', 'DeukPack.Core.pdb'],
+        outDir
+    );
+    if (okCore) {
+        console.log('[OK] DeukPack.Core →', outDir);
+    }
+
+    // --- DeukPack.Protocol ---
     const protocolProjDir = path.join(ROOT, 'DeukPack.Protocol');
     const protocolProj = path.join(protocolProjDir, 'DeukPack.Protocol.csproj');
     if (!fs.existsSync(protocolProj)) {
@@ -149,7 +184,7 @@ function main() {
         console.log('[OK] DeukPack.ExcelProtocol →', outDir);
     }
 
-    if (!okProto || !okExcel) {
+    if (!okCore || !okProto || !okExcel) {
         console.log('[INFO] Some plugin copies failed; Unity may be locking DLLs. See warnings above.');
     }
     process.exit(0);

@@ -1095,12 +1095,15 @@ export class CSharpGenerator extends CodeGenerator {
           if (this.isGeometryDeukStruct(type, ast, currentNamespace)) return false;
           return true;
         }
+        // typedef to primitive (e.g., typedef int64 _linktid_xxx) → value type
+        if (this.isPrimitiveType(type, ast, currentNamespace)) return false;
       }
       return true; // Assume reference type for unknown/structs
     }
     if (typeof type === 'object' && type.type) {
       const t = type.type;
       if (t === 'list' || t === 'set' || t === 'map') return true;
+      if (t === 'tablelink') return false; // tablelink maps to long (value type)
     }
     return true;
   }

@@ -12,6 +12,7 @@ const fsSync = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { ensureDeukpackNpmInstalled } = require('./init-ensure-deukpack-npm.js');
+const { runSyncAndUpmManifest } = require('./lib/upm-helpers.js');
 
 function normalizeRelToConfig(configDir, userPath) {
     const raw = String(userPath || '').trim();
@@ -42,7 +43,7 @@ async function promptYes(rl, text, defaultYes) {
     return a === 'y' || a === 'yes';
 }
 
-/** @returns {{ pipelineOut: string, force: boolean, nonInteractive: boolean, workspaceOnly: boolean, skipVsix: boolean, help: boolean, bootstrapForward: string[] }} */
+/** @returns {{ pipelineOut: string, force: boolean, nonInteractive: boolean, workspaceOnly: boolean, skipVsix: boolean, help: boolean, bootstrapForward: string[], useUnityEf: boolean }} */
 function parseInitArgs(argv) {
     const cwd = process.cwd();
     let pipelineOut = path.join(cwd, 'deukpack.pipeline.json');
@@ -51,6 +52,7 @@ function parseInitArgs(argv) {
     let workspaceOnly = false;
     let skipVsix = false;
     let help = false;
+    let useUnityEf = false;
     const bootstrapForward = [];
 
     for (let i = 0; i < argv.length; i++) {
@@ -59,6 +61,7 @@ function parseInitArgs(argv) {
         else if (a === '--non-interactive') nonInteractive = true;
         else if (a === '--workspace-only') workspaceOnly = true;
         else if (a === '--skip-vsix') skipVsix = true;
+        else if (a === '--use-unity-ef') useUnityEf = true;
         else if (a === '-f' || a === '--force') force = true;
         else if ((a === '-o' || a === '--output') && argv[i + 1]) pipelineOut = path.resolve(cwd, argv[++i]);
         else if (a === '--manifest-out' && argv[i + 1]) {
@@ -84,6 +87,7 @@ function parseInitArgs(argv) {
         skipVsix,
         help,
         bootstrapForward,
+        useUnityEf,
     };
 }
 
@@ -106,7 +110,47 @@ Bootstrap (forwarded):
   -y, --yes                Non-interactive submodule yes
   --no-unity               Skip Unity scan
 
+Game profile (optional, when scripts/build-deukpack.config.json exists under cwd):
+  --use-unity-ef           Sets unity.enableEfPersistence and default adapter paths; writes .deukpack/unity_ef_pipeline.json (recommended scripting define DEUKPACK_UNITY_EF for server asm).
+
 Local npm: if package.json exists, runs npm install and ensures deukpack is installed; fails if npm ls deukpack is invalid.`);
+}
+
+/** Merge Unity EF flags into game scripts/build-deukpack.config.json when present; write .deukpack/unity_ef_pipeline.json. */
+async function mergeGameBuildDeukpackProfile(cwd) {
+    const p = path.join(cwd, 'scripts', 'build-deukpack.config.json');
+    if (!fsSync.existsSync(p)) {
+        console.warn('[deukpack] --use-unity-ef: scripts/build-deukpack.config.json not found; nothing merged.');
+        return;
+    }
+    let obj;
+    try {
+        obj = JSON.parse(await fs.readFile(p, 'utf8'));
+    } catch (e) {
+        console.warn('[deukpack] --use-unity-ef: could not parse build-deukpack.config.json:', e.message);
+        return;
+    }
+    const prevUnity = typeof obj.unity === 'object' && obj.unity ? obj.unity : {};
+    obj.unity = { ...prevUnity, enableEfPersistence: true };
+    const dbEfDir = path.join(cwd, 'unity_app', 'Assets', 'DeukScripts', 'csServerLogic', 'db_ef');
+    if (!obj.persistenceAdapterClientPath && fsSync.existsSync(dbEfDir)) {
+        obj.persistenceAdapterClientPath = 'unity_app/Assets/DeukScripts/csServerLogic/db_ef';
+    }
+    await fs.writeFile(p, `${JSON.stringify(obj, null, 2)}\n`, 'utf8');
+    console.log(`[deukpack] Updated ${path.relative(cwd, p) || p} (unity.enableEfPersistence)`);
+
+    const manifestDir = path.join(cwd, '.deukpack');
+    await fs.mkdir(manifestDir, { recursive: true });
+    const marker = {
+        enableEfPersistence: true,
+        recommendedDefine: 'DEUKPACK_UNITY_EF',
+    };
+    await fs.writeFile(
+        path.join(manifestDir, 'unity_ef_pipeline.json'),
+        `${JSON.stringify(marker, null, 2)}\n`,
+        'utf8'
+    );
+    console.log('[deukpack] Wrote .deukpack/unity_ef_pipeline.json');
 }
 
 function hasDeukFileUnder(dirAbs) {
@@ -400,11 +444,13 @@ async function main(argv) {
     if (opts.workspaceOnly) {
         const defaultPipeline = path.join(cwd, 'deukpack.pipeline.json');
         await runBootstrapSection(cwd, { ...opts, skipVsix: true });
+        await runSyncAndUpmManifest(cwd);
         if (!opts.skipVsix) {
             const { applyBundledVsixInstall } = require('./bundled-deuk-idl-vsix.js');
             await applyBundledVsixInstall(cwd, { hasUnityProject: vsixUnityHint() });
         }
         printInitFollowUpOneLiner(cwd, defaultPipeline);
+        if (opts.useUnityEf) await mergeGameBuildDeukpackProfile(cwd);
         return;
     }
 
@@ -463,6 +509,7 @@ async function main(argv) {
             rl.close();
             rl = null;
             await runBootstrapSection(cwd, { ...opts, skipVsix: true });
+            await runSyncAndUpmManifest(cwd);
         } finally {
             if (rl) rl.close();
         }
@@ -474,8 +521,9 @@ async function main(argv) {
         return;
     }
 
-    /* non-interactive: workspace bootstrap, then VSIX install */
+    /* non-interactive: workspace bootstrap, then sync, then VSIX install */
     await runBootstrapSection(cwd, { ...opts, skipVsix: true });
+    await runSyncAndUpmManifest(cwd);
 
     if (!opts.skipVsix) {
         const { applyBundledVsixInstall } = require('./bundled-deuk-idl-vsix.js');
@@ -485,6 +533,7 @@ async function main(argv) {
     if (wrotePipeline || fsSync.existsSync(outPath)) {
         printInitFollowUpOneLiner(cwd, outPath);
     }
+    if (opts.useUnityEf) await mergeGameBuildDeukpackProfile(cwd);
 }
 
 /** Single closing line after bootstrap + VSIX (init / --workspace-only). */

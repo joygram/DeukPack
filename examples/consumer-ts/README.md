@@ -9,4 +9,4 @@ npm install
 npm run parse
 ```
 
-Does **not** require `examples/out`; demonstrates **AST parse** only. For generated TS types, use CLI `--js` output or future emit.
+Does **not** require `examples/generated`; demonstrates **AST parse** only. For generated TS types, use CLI `--js` output or future emit.
