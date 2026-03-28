@@ -2,10 +2,22 @@
   "version": "1.3.0",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce": "<strong>득팩 코어 1.2.6</strong> — 스키마 표준 문자열·C# 코드젠·C++ CI·<code>npm run verify</code> —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/en/releases/\">EN</a>",
-  "landing_ko": "**득팩 코어 1.2.6** — 임베디드 스키마 `type`을 득팩 표준(`struct`, `int32` 등)으로 통일; JSON 호환 와이어 키(`i32`, `tf` 등)는 유지. C# 코드젠 nullable 빌드 정리, CI에서 C++ 와이어 테스트, **`npm run verify`** 로 로컬 검증. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
-  "landing_en": "**DeukPack core 1.2.6** — embedded schema **`type`** strings use **DeukPack** spelling; **JSON compatibility wire** keys unchanged. C# codegen defaults for nullable builds, **C++** wire tests in **CI**, **`npm run verify`** mirrors the pipeline. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/en/releases/)",
+  "announce": "<strong>득팩 코어 1.3.0</strong> — 동적 릴리스 공지·마크다운 링크 수정·OSS 싱크 강화 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/en/releases/\">EN</a>",
+  "landing_ko": "**득팩 코어 1.3.0** — 득팩앱 빌드 타임 의존성 제거 및 브라우저 실시간 공지 렌더링 도입; 마크다운 내 깨진 링크 및 앵커 일괄 수정; OSS 미러링 시 불필요한 빌드 아티팩트 전역 제외 규칙 강화. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.3.0** — dynamic client-side release notice; fixed broken markdown links and anchors; enhanced OSS sync with global exclusion rules for build artifacts (`obj`, `bin`, etc.). [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/en/releases/)",
   "product_notices": [
+    {
+      "date": "2026-03-28",
+      "products": [
+        "core-engine",
+        "extension",
+        "pipeline-unity"
+      ],
+      "title_ko": "1.3.0 — 동적 공지·링크 수정·OSS 싱크 강화",
+      "title_en": "1.3.0 — dynamic notices, link fixes, OSS sync",
+      "body_ko": "- **득팩앱**: 빌드 타임 의존성 제거 및 브라우저 실시간 공지 렌더링 도입.\n- **문서**: 마크다운 내 깨진 링크 및 앵커 일괄 수정.\n- **도구**: OSS 미러링 시 불필요한 빌드 아티팩트(obj, bin 등) 전역 제외 규칙 강화.",
+      "body_en": "- **deukpack.app**: Dynamic client-side release notice rendering (removed build-time deps).\n- **Docs**: Fixed broken markdown links and anchors across all product pages.\n- **Tooling**: Enhanced OSS sync with global exclusion rules for build artifacts (`obj`, `bin`, etc.)."
+    },
     {
       "date": "2026-03-28",
       "products": [

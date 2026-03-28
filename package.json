@@ -68,10 +68,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/joygram/DeukPack.git"
+    "url": "https://github.com/joygram/DeukPackOSS.git"
   },
   "bugs": {
-    "url": "https://github.com/joygram/DeukPack/issues"
+    "url": "https://github.com/joygram/DeukPackOSS/issues"
   },
   "homepage": "https://deukpack.app/en/",
   "files": [
