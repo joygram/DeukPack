@@ -1,5 +1,5 @@
 /**
- * DeukPack AST → Thrift IDL text (minimal subset for generated / tooling).
+ * DeukPack AST → Thrift IDL text (minimal subset for bench / tooling).
  */
 
 import { DeukPackAST, DeukPackStruct, DeukPackType, DeukPackEnum } from '../types/DeukPackTypes';
@@ -99,7 +99,7 @@ function emitStruct(s: DeukPackStruct, ast: DeukPackAST): string[] {
  * Emit a single .thrift document for all structs and enums in the AST.
  */
 export function generateThriftSchemaFromAst(ast: DeukPackAST): string {
-  const ns = ast.namespaces?.[0]?.name ?? 'generated';
+  const ns = ast.namespaces?.[0]?.name ?? 'bench';
   const lines: string[] = [];
   lines.push(`namespace * ${ns}`);
   lines.push('');

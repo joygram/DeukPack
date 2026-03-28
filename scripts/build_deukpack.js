@@ -41,7 +41,8 @@ function hasCodegenOrEmit(options) {
         (typeof options.json === 'string' && options.json.trim()) ||
         (options.excel && String(options.excel).trim()) ||
         (options.protoSchema && String(options.protoSchema).trim()) ||
-        (options.thriftSchema && String(options.thriftSchema).trim())
+        (options.thriftSchema && String(options.thriftSchema).trim()) ||
+        options.mcp
     );
 }
 
@@ -78,6 +79,7 @@ function printCliUsage(opts = {}) {
     line('  --proto-schema <file>   emit Protocol Buffers v3 schema from AST');
     line('  --thrift-schema <file>  emit Thrift IDL schema from AST');
     line('  --convert-to-deuk [subdir]   emit .deuk from legacy .thrift (full tree only)');
+    line('  --mcp              Generate MCP (Model Context Protocol) server');
     line('  --csv/--psv/--json/--excel <file>   emit table schema from first struct');
     line('');
     line('Typical (Unity/game IDL):');
@@ -106,6 +108,7 @@ function printCliUsage(opts = {}) {
     line('  --protocol <protocol>  Wire hint: deuk pack|json|yaml (default pack); Thrift interop tbinary|tcompact|tjson — see docs/DEUKPACK_WIRE_INTEROP_VS_NATIVE.md');
     line('  --endianness <endian>  Endianness (little|big)');
     line('  --convert-to-deuk [subdir]  Emit .deuk from parsed .thrift (subdir default: deuk). Legacy→table migration.');
+    line('  --mcp           Generate MCP server (Node.js/TypeScript) for AI agents');
     line('  --ef    Enable Entity Framework support ( [Table]/[Key]/[Column] + DeukPackDbContext.g.cs ).');
     line('  --wire-profile <name>  Repeat or comma-separated: emit C# (and --js) subset types per profile (annotation wireProfiles on fields).');
     line('  --import-openapi <file>  Merge OpenAPI 3.x components/schemas into AST.');
@@ -309,6 +312,7 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
     if (options.cpp) generationPromises.push(generateCpp(engine, ast, outputDir, options));
     if (options.ts) generationPromises.push(generateTypeScript(engine, ast, outputDir, options));
     if (options.js) generationPromises.push(generateJavaScript(engine, ast, outputDir, options));
+    if (options.mcp) generationPromises.push(generateMcp(engine, ast, outputDir, options));
     await Promise.all(generationPromises);
 
     if (options.convertToDeuk) {
@@ -601,6 +605,7 @@ const DEFAULT_LANG_OUTPUT_SUBDIRS = Object.freeze({
     cpp: 'cpp',
     ts: 'ts',
     js: 'js',
+    mcp: 'mcp',
 });
 
 /**
@@ -626,9 +631,10 @@ function mergeLangOutputSubdirs(partial) {
         cpp: DEFAULT_LANG_OUTPUT_SUBDIRS.cpp,
         ts: DEFAULT_LANG_OUTPUT_SUBDIRS.ts,
         js: DEFAULT_LANG_OUTPUT_SUBDIRS.js,
+        mcp: DEFAULT_LANG_OUTPUT_SUBDIRS.mcp,
     };
     if (!partial || typeof partial !== 'object') return out;
-    for (const k of ['csharp', 'cpp', 'ts', 'js']) {
+    for (const k of ['csharp', 'cpp', 'ts', 'js', 'mcp']) {
         if (partial[k] != null && String(partial[k]).trim() !== '') {
             out[k] = assertLangOutputSubdirSegment(String(partial[k]), k);
         }
@@ -701,6 +707,7 @@ async function runPipeline(configPath) {
             cpp: !!job.cpp,
             ts: !!job.ts,
             js: !!job.js,
+            mcp: !!job.mcp,
             json: !!job.json,
             importOpenApi: job.importOpenApi || undefined,
             openapi: job.openapi || undefined,
@@ -803,6 +810,7 @@ function parseOptions(args) {
         cpp: false,
         ts: false,
         js: false,
+        mcp: false,
         json: false,
         protocol: 'pack',
         endianness: 'little',
@@ -862,6 +870,9 @@ function parseOptions(args) {
                 break;
             case '--js':
                 options.js = true;
+                break;
+            case '--mcp':
+                options.mcp = true;
                 break;
             case '--ef':
                 options.ef = true;
@@ -1165,6 +1176,27 @@ async function generateJavaScript(engine, ast, outputDir, options = {}) {
 
     const generateTime = Date.now() - startTime;
     console.log(`✅ JavaScript generated (${ast.structs.length} structs, ${ast.enums.length} enums) in ${generateTime}ms`);
+}
+
+async function generateMcp(engine, ast, outputDir, options = {}) {
+    console.log('🔧 Generating MCP server code...');
+    const startTime = Date.now();
+
+    const mcpDir = path.join(outputDir, options.langOutputSubdirs.mcp);
+    await fs.mkdir(mcpDir, { recursive: true });
+
+    const { McpGenerator } = require('../dist/codegen/mcp/McpGenerator');
+    const generator = new McpGenerator();
+    const mcpFiles = await generator.generate(ast, {});
+
+    for (const [filename, content] of Object.entries(mcpFiles)) {
+        const filePath = path.join(mcpDir, filename);
+        await fs.writeFile(filePath, content, 'utf8');
+        console.log(`   📄 Generated: ${filename}`);
+    }
+
+    const generateTime = Date.now() - startTime;
+    console.log(`✅ MCP generated in ${generateTime}ms`);
 }
 
 // Run the main function

@@ -1,5 +1,6 @@
 scripts/
 docs/
+benchmarks/
 examples/
 vscode-extension/
 jest.config.js

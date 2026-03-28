@@ -53,7 +53,7 @@ function expectSameFieldShape(
 }
 
 const sampleAst = (): DeukPackAST => ({
-  namespaces: [{ language: '*', name: 'rt.generated', sourceFile: 'rt.deuk' }],
+  namespaces: [{ language: '*', name: 'rt.bench', sourceFile: 'rt.deuk' }],
   structs: [
     {
       name: 'Row',
@@ -134,7 +134,7 @@ describe('schema format round-trip', () => {
   });
 
   test('Deuk: parse .deuk → OpenAPI → parseOpenApi → Row fields', () => {
-    const deuk = `namespace rt.generated
+    const deuk = `namespace rt.bench
 
 record Row {
     1> int32 id
