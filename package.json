@@ -1,7 +1,7 @@
 {
   "name": "deukpack",
-  "version": "1.3.0",
-  "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
+  "version": "1.4.0",
+  "description": "DeukPack AI-Ready Interface Hub — Mixed-IDL hybrid serializer (.deuk, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). AI Semantic Mapping & MCP Server generation. v1.4: MCP Protobuf expansion, MCP Server generator, Core IDL pipeline, high-performance C#/C++/JS codegen.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -23,16 +23,21 @@
     "export:ai-context": "node scripts/export-ai-context.js"
   },
   "keywords": [
-    "deukpack",
-    "deuk",
+    "ai-agent",
+    "mcp",
+    "mcp-server",
+    "cursor-rules",
     "protocol-buffers",
     "protobuf",
     "thrift",
-    "typescript",
-    "performance",
+    "mixed-idl",
+    "deukpack",
     "serialization",
-    "binary",
-    "cross-platform",
+    "high-performance",
+    "high-performance-codecs",
+    "multi-format",
+    "ai-native",
+    "handoff",
     "deuk-family",
     "deukpack-ecosystem"
   ],
@@ -47,6 +52,7 @@
     "deuk-ui": "^2.0.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.0",
     "@vscode/vsce": "^3.7.1",
@@ -60,7 +66,9 @@
     "rimraf": "^6.0.0",
     "thrift": "^0.22.0",
     "ts-jest": "^29.4.6",
-    "typescript": "^5.9.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.0",
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -73,7 +81,7 @@
   "bugs": {
     "url": "https://github.com/joygram/DeukPackOSS/issues"
   },
-  "homepage": "https://deukpack.app/en/",
+  "homepage": "https://deukpack.app/",
   "files": [
     "bin",
     "scripts/build_deukpack.js",

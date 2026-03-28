@@ -4,6 +4,16 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.4.0] — 2026-03-29
+
+### Core: MCP Protobuf Expansion & Server Generation Support
+
+- **Protobuf IDL Advancement**: Significantly expanded the Protobuf parser to support complex structures including nested messages, services, and RPC definitions.
+- **MCP Server Generator**: Added an end-to-end round-trip feature to generate Model Context Protocol (MCP) server code directly from Protobuf or Deuk IDLs.
+
+### Fixed
+
+
 ## [1.3.0] — 2026-03-28
 
 ### Core: Official Transition to AI-Ready Interface Hub

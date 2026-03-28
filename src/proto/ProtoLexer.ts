@@ -23,6 +23,9 @@ export class ProtoLexer {
     ['required', ProtoTokenType.REQUIRED],
     ['oneof', ProtoTokenType.ONEOF],
     ['map', ProtoTokenType.MAP],
+    ['service', ProtoTokenType.SERVICE],
+    ['rpc', ProtoTokenType.RPC],
+    ['returns', ProtoTokenType.RETURNS],
     ['int32', ProtoTokenType.IDENTIFIER],
     ['int64', ProtoTokenType.IDENTIFIER],
     ['uint32', ProtoTokenType.IDENTIFIER],
@@ -51,7 +54,7 @@ export class ProtoLexer {
       this.skipWhitespace();
       if (this.position >= this.input.length) break;
       const token = this.nextToken();
-      if (token && token.type !== ProtoTokenType.LINE_COMMENT && token.type !== ProtoTokenType.BLOCK_COMMENT) {
+      if (token) {
         this.tokens.push(token);
       }
     }
@@ -154,12 +157,7 @@ export class ProtoLexer {
       this.advance();
     }
     const keywordType = this.keywords.get(value);
-    if (keywordType === ProtoTokenType.MESSAGE || keywordType === ProtoTokenType.ENUM ||
-        keywordType === ProtoTokenType.PACKAGE || keywordType === ProtoTokenType.SYNTAX ||
-        keywordType === ProtoTokenType.IMPORT || keywordType === ProtoTokenType.OPTION ||
-        keywordType === ProtoTokenType.OPTIONAL || keywordType === ProtoTokenType.REPEATED ||
-        keywordType === ProtoTokenType.REQUIRED || keywordType === ProtoTokenType.ONEOF ||
-        keywordType === ProtoTokenType.MAP) {
+    if (keywordType && keywordType !== ProtoTokenType.IDENTIFIER) {
       return this.createToken(keywordType, value, startPos, startLine, startColumn);
     }
     return this.createToken(ProtoTokenType.IDENTIFIER, value, startPos, startLine, startColumn);
