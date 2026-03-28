@@ -4,6 +4,16 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
+## [1.4.0] — 2026-03-29
+
+### 핵심: MCP Protobuf 확장 및 서버 생성 지원
+
+- **Protobuf IDL 고도화**: 중첩된 메시지(`nested messages`), 서비스(`services`), RPC 정의를 지원하도록 Protobuf 파서를 대폭 확장했습니다.
+- **MCP Server 생성기**: Protobuf 및 Deuk IDL에서 직접 Model Context Protocol(MCP) 서버 코드를 생성하는 라운드트립 기능을 추가했습니다.
+
+### 수정
+
+
 ## [1.3.0] — 2026-03-28
 
 ### 핵심: AI-Ready Interface Hub 정식 전환

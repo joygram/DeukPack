@@ -8,10 +8,10 @@
 |------|-----------|
 | **버전 일치** | `package.json` · `package-lock.json` 동일 (예: 1.0.5). `npm run release:check` 실행 |
 | **CHANGELOG** | 릴리스마다 루트 [CHANGELOG.md](CHANGELOG.ko.md)·[CHANGELOG.ko.md](CHANGELOG.ko.md)에 **그 버전**에서 바뀐 점을 적는다(추가·수정·호환 참고). [DEUKPACK_V1_RELEASE_SCOPE.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_V1_RELEASE_SCOPE.ko.md) §0 표와 내용이 어긋나지 않게 한다 |
-| **deukpack.app · 키츠 노티** | 배너·홈 랜딩·**제품군 노티 집계** 정본은 루트 [release-notice.json](release-notice.json)(`version` = `package.json`, `product_notices` 배열). `npm run release-notice:apply` 또는 deukpack.app CI(`--product-notices`)가 `_includes` 스니펫·배너를 갱신. [릴리스·뉴스](deukpack.app/docs/releases.ko.md)는 날짜 역순 집계, 각 제품 페이지는 해당 `products` 태그만 표시 |
+| **deukpack.app · 키츠 노티** | 배너·홈 랜딩·**제품군 노티 집계** 정본은 루트 [release-notice.json](release-notice.json)(`version` = `package.json`, `product_notices` 배열). `npm run release-notice:apply` 또는 deukpack.app CI(`--product-notices`)가 `_includes` 스니펫·배너를 갱신. [릴리스·뉴스](https://deukpack.app/ko/releases/)는 날짜 역순 집계, 각 제품 페이지는 해당 `products` 태그만 표시 |
 | **빌드·테스트** | `npm ci && npm run build && npm test` 성공 |
 | **패키지 목록** | `npm pack --dry-run` 으로 포함 파일 확인 (internal 제외) |
-| **저장소·사이트 URL** | `repository` / `bugs` → 공개 GitHub URL. **`homepage` → 제품 사이트 `https://deukpack.app/en/`** (npm·영문 진입; 한국어는 README.ko·루트 `https://deukpack.app/`) (상세 문서는 저장소 README가 아님) |
+| **저장소·사이트 URL** | `repository` / `bugs` → 공개 GitHub URL. **`homepage` → 제품 사이트 `https://deukpack.app/`** (npm·영문 진입; 한국어는 README.ko·루트 `https://deukpack.app/ko/`) (상세 문서는 저장소 README가 아님) |
 | **태그와 버전** | 배포할 커밋에 `package.json` 버전이 반영된 뒤, 태그 `vX.Y.Z` 를 그 커밋에 붙임 |
 
 **한 번에 검사**: `npm run release:check` (버전 검사 + 빌드 + 테스트 + pack --dry-run).
@@ -25,7 +25,7 @@
 ## 사전 확인
 
 1. **`package.json`의 `repository` / `bugs` / `homepage`**  
-   `repository`·`bugs` → 공개 GitHub. **`homepage` → `https://deukpack.app/en/`** (npm·레지스트리 “Homepage”; 한국어 안내는 README.ko).
+   `repository`·`bugs` → 공개 GitHub. **`homepage` → `https://deukpack.app/`** (npm·레지스트리 “Homepage”; 한국어 안내는 README.ko).
 
 2. **빌드·테스트 (로컬)**
 

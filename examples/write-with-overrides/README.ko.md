@@ -71,4 +71,4 @@ user.apply_overrides(o);
 
 - [DEUKPACK_WRITE_WITH_OVERRIDES_API.md](../../docs/DEUKPACK_WRITE_WITH_OVERRIDES_API.md)
 - [DEUKPACK_WIRE_PROFILE_SUBSET.md](../../docs/DEUKPACK_WIRE_PROFILE_SUBSET.md) (와이어 프로파일 서브셋은 별도 기능)
-- [deukpack.app — Write with overrides](https://deukpack.app/en/tutorial/write-with-overrides/)
+- [deukpack.app — Write with overrides](https://deukpack.app/ko/tutorial/write-with-overrides/)

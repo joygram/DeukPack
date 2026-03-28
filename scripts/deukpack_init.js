@@ -627,6 +627,21 @@ function printInitFollowUpOneLiner(cwd, pipelineOutPath) {
     console.log(
         `[deukpack] When updating, run npx deukpack init; edit ${pipeDisp} or .deukpack/workspace.json for details; then npx deukpack run.`
     );
+    printStarRequest();
+}
+
+function printStarRequest() {
+    const yellow = '\x1b[33m';
+    const cyan = '\x1b[36m';
+    const reset = '\x1b[0m';
+    const bold = '\x1b[1m';
+    const underline = '\x1b[4m';
+
+    console.log(`\n${cyan}┌──────────────────────────────────────────────────────────┐${reset}`);
+    console.log(`${cyan}│${reset}  ${yellow}${bold}Enjoying DeukPack? Help us grow!${reset}                    ${cyan}│${reset}`);
+    console.log(`${cyan}│${reset}  Give us a ⭐ Star on GitHub:                             ${cyan}│${reset}`);
+    console.log(`${cyan}│${reset}  ${underline}https://github.com/joygram/DeukPack${reset}              ${cyan}│${reset}`);
+    console.log(`${cyan}└──────────────────────────────────────────────────────────┘${reset}\n`);
 }
 
 if (require.main === module) {
