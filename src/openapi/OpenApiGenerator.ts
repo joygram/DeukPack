@@ -41,12 +41,16 @@ function fieldTypeToOpenApiSchema(
     }
   }
   if (typeof type === 'object' && type !== null) {
-    if (type.type === 'list' || type.type === 'set') {
+    if (type.type === 'list' || type.type === 'array' || type.type === 'set') {
       const items = fieldTypeToOpenApiSchema(type.elementType, ast, currentNs);
-      return {
+      const base: OpenApiSchemaObject = {
         type: 'array',
         items: '$ref' in items ? items : items,
       } as OpenApiSchemaObject;
+      if (type.type === 'array' && 'size' in type && typeof (type as { size?: number }).size === 'number') {
+        (base as OpenApiSchemaObject & { maxItems?: number }).maxItems = (type as { size: number }).size;
+      }
+      return base;
     }
     if (type.type === 'map') {
       const valueSchema = fieldTypeToOpenApiSchema(type.valueType, ast, currentNs);

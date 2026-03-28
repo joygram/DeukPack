@@ -1,13 +1,13 @@
-# DeukPack
+# DeukPack: AI-Ready Interface Hub
 
-> **Pack the gains, ship the code.**
+> **Mixed-IDL Hybrid Serializer for the AI Era.**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://img.shields.io/npm/v/deukpack.svg)](https://www.npmjs.com/package/deukpack)
 
-**Languages / 언어:** [English](README.md) · [한국어](README.ko.md) — switch README language here on GitHub.
+**Languages / 언어:** [English](README.md) · [한국어](README.ko.md)
 
-**In one sentence:** Turn **one IDL story** (`.deuk` first; **Protobuf, OpenAPI, JSON Schema, CSV**, and **legacy `.thrift`** in the **same build**) into **C#, C++, TypeScript, and JavaScript** types, serializers, registries, and **network-ready message layouts**.
+**The AI Breakthrough:** Turn **Mixed-IDL definitions** (Protobuf, OpenAPI, JSON Schema, CSV, and legacy `.thrift`) into **deterministic, type-safe C#, C++, TypeScript, and JavaScript** with **AI Semantic Mapping** and **MCP-based Guardrails**.
 
 **Start here — pick one path**
 
@@ -23,27 +23,22 @@
 
 ---
 
-## Why DeukPack
+## Why DeukPack: The AI-Ready Advantage
 
-### One IDL spine, many stacks
-**`.deuk` first** with `.proto`, `.thrift`, OpenAPI, JSON Schema, CSV, and legacy inputs in the **same build** → **C#, C++, TypeScript, JavaScript** types, serializers, registries, and network layouts in **one pipeline**. *(v1 npm scope: full table/Excel workflow is out of scope — see [DEUKPACK_V1_RELEASE_SCOPE.md](https://deukpack.app/en/positioning/).)*
+### 1. Unified Interface Management (Thrift + Protobuf)
+Modern enterprise systems often struggle with a mix of legacy (Thrift) and modern (gRPC/Protobuf) services, making it difficult for AI to grasp the full context. 
+- **DeukPack Solution:** It parses Profit, Protobuf, and OpenAPI definitions simultaneously at a higher IDL layer, mapping types into one unified binary spec. This eliminates the "guessing game" for AI agents.
 
-### Speed & runtime
-Large IDL trees: **parse + multi-language emit** stays **orders of magnitude faster** than typical compiler-style IDL flows; runtime serialize/deserialize targets **~10×** leaner paths vs naive hand-rolled stacks. Figures: **[Performance](#performance-vs-classic-idl-style-flows)** below; broader methodology on **[deukpack.app](https://deukpack.app/en/)**.
+### 2. IDL-to-AI Semantic Mapping
+Go beyond simple data types. DeukPack extracts metadata from IDL comments (`/** ... */`) and field structures into a **'Semantic Context'** that AI can instantly grasp.
+- **Breakthrough:** Instead of just writing code, engineers evolve into high-level designers defining **data lineage** via IDL.
 
-### Wire & compatibility
-- **`interop`**: Thrift **Binary** / **Compact** / **`thrift_json`**
-- **`deuk`**: **`pack`**, UTF-8 **`json`**, UTF-8 **`yaml`**
+### 3. MCP-Based AI Guardrails
+Standard MCP (Model Context Protocol) often struggles with strict type-checking.
+- **DeukPack Solution:** DeukPack acts as an **MCP server**, providing strongly-typed data. If an AI generates an invalid type, the DeukPack engine blocks it at the serialization level, preventing runtime failures in CI/CD pipelines.
 
-TS `WireSerializer` is **deuk-only**; use generated **C#/C++** for legacy/interop wires. Match **`wireFamily`** on `SerializationOptions` to `protocol`. Details: [DEUKPACK_WIRE_INTEROP_VS_NATIVE.md](https://deukpack.app/en/reference/wire-protocols/). `.deuk.json`/`.deuk.yaml` support config/OpenAPI; **`DpJsonProtocol`** is legacy JSON on the wire. **Schema-drift warnings** (C#, JS, TS) on unknown or missing fields.
-
-### DeukPack runtime & types
-`GetSchema`, SQLite, msgId / `ProtocolRegistry`, and IDL-driven **message wiring** are first-class. **Struct inheritance (`extends`)**, rich scalars and containers (**tablelink**, datetime, decimal), **SQLite DDL**, EF-ready codegen — one spine. Full type list: [API reference](https://deukpack.app/en/reference/api/).
-
-### Automation & agents
-Specs in (`.deuk`, `.proto`, `.thrift`, OpenAPI) → **deterministic** typed code out. Workflow: **[deukpack.app](https://deukpack.app/en/)** · [DEUKPACK_AI_PIPELINE_INTEGRATION.md](https://deukpack.app/en/ai-pipeline-integration/). **CLI** for CI and scripts *(v1: prefer CLI for production emit; library `generateCode` not fully wired)*.
-
-**Platforms:** Windows, macOS, Linux; C++ native module; buffer pooling for memory-conscious runtimes.
+### 4. Speed & Runtime Performance
+Large IDL trees: **parse + multi-language emit** stays **orders of magnitude faster** than typical compiler-style IDL flows. Figures: **[Performance](#performance-vs-classic-idl-style-flows)** below.
 
 ---
 
@@ -84,6 +79,7 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 | | |
 |--|--|
 | **This README** | Clone-time summary |
+| **Feature overview (clone)** | [DEUKPACK_FEATURES.md](docs/DEUKPACK_FEATURES.md) · [KO](docs/DEUKPACK_FEATURES.ko.md) |
 | **[deukpack.app](https://deukpack.app/en/)** | Install, tutorials, protocol, [API reference](https://deukpack.app/en/reference/api/) |
 | **[kits.deukpack.app](https://kits.deukpack.app/en/)** | [Hands-on](https://kits.deukpack.app/en/starter-course/hands-on/) · [*Ruins*](https://kits.deukpack.app/en/starter-course/) · [DeukPack Tale](https://kits.deukpack.app/en/journey/) · [Wire topics](https://kits.deukpack.app/en/topics/serialization/) |
 | **Kits lineup** | [deukpack.app/starter-kits](https://deukpack.app/en/starter-kits/) |
@@ -95,6 +91,8 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 
 ---
 
+The table below is **illustrative**: it assumes a **quiet, dedicated machine** and a **fixed** toolchain. **Do not** treat it as a guarantee on **cloud burstable** VMs or across **different CPUs** — see **** (environment, AWS/CI variance, what is **not** in the table: full private game IDL, codegen-only timing, streaming I/O, and **Apache Thrift `thrift` / `protoc` CLI** — those need local installs and manual runs).
+
 | Area | Typical IDL compiler-style flow | DeukPack | Gain |
 |------|-------------------------------|----------|------|
 | Parse 160 files | 15–25s | 0.5–1s | **~25–50×** |
@@ -102,6 +100,8 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 | Serialize | 0.5ms | 0.05ms | **~10×** |
 | Deserialize | 0.8ms | 0.08ms | **~10×** |
 | Memory | ~100MB | ~20MB | **~5×** |
+
+**
 
 ---
 
@@ -111,6 +111,7 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 npm ci
 npm run build
 npm test
+npm run test:idl-convert-smoke    # optional: Thrift → .deuk conversion smoke (tiny fixture)
 ```
 
 ---
@@ -129,6 +130,21 @@ If DeukPack **saves you CI minutes**, **replaces brittle hand-rolled serializers
 This is **not** a tax-deductible charity donation unless you have a separate registered nonprofit; treat it as **support for the maintainer’s OSS work**.
 
 Not in a position to donate? **Star the repo**, **open clear issues**, **send PRs**, or **tell a team** that’s juggling Protobuf + Thrift + OpenAPI — that helps too.
+
+---
+
+## Works well with (Deuk Family)
+
+**Want agents to do more with your specs?** Use **DeukPack** — IDL in, deterministic types and serializers out. **Want agents to behave predictably in your repo?** Use **[DeukAgentRules](https://github.com/joygram/DeukAgentRules)** — versioned `AGENTS.md` and rule templates via the [`deuk-agent-rule`](https://www.npmjs.com/package/deuk-agent-rule) npm package.
+
+**Same repository as DeukPack** (optional dev dependency):
+
+```bash
+npm install -D deuk-agent-rule
+npx deuk-agent-rule init --non-interactive
+```
+
+That adds shared handoff conventions and stack-aware rules alongside your pipeline — without changing how `deukpack` builds.
 
 ---
 

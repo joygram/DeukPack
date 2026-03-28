@@ -171,7 +171,9 @@ export class TypeScriptGenerator extends CodeGenerator {
     }
     if (typeof type === 'object' && type?.type) {
       switch (type.type) {
-        case 'list': case 'set':
+        case 'list':
+        case 'array':
+        case 'set':
           return `${this.getTsType(type.elementType, ast, currentNs)}[]`;
         case 'map':
           return `Record<${this.getTsType(type.keyType, ast, currentNs)}, ${this.getTsType(type.valueType, ast, currentNs)}>`;

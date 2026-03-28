@@ -1,15 +1,13 @@
-# DeukPack
+# DeukPack: AI-Ready 인터페이스 허브
 
-> **이득을 묶어 전달하는 개발자용 제품 팩 — Pack the gains, ship the code.**
+> **AI 시대를 위한 Mixed-IDL 하이브리드 시리얼라이저.**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://img.shields.io/npm/v/deukpack.svg)](https://www.npmjs.com/package/deukpack)
 
-**언어 / Languages:** [English](README.ko.md) · [한국어](README.ko.md) — GitHub에서 README 전체를 바꿉니다.
+**언어 / Languages:** [English](README.md) · [한국어](README.ko.md)
 
-**하나의 IDL 줄기**에서 **C# · C++ · TypeScript · JavaScript** 타입, 직렬화, 레지스트리, 네트워크용 메시지 배치까지 한 파이프라인으로 뽑습니다.
-
-`.deuk` 우선이며, Protobuf · OpenAPI · JSON Schema · CSV · 레거시 `.thrift`를 같은 빌드에 넣을 수 있습니다.
+**AI 시대의 돌파구:** 여러 IDL 정의(Protobuf, OpenAPI, JSON Schema, CSV, 레거시 `.thrift`)를 **결정론적이고 타입 안전한 C#, C++, TypeScript, JavaScript** 코드로 변환하며, **AI 시맨틱 매핑**과 **MCP 기반 가드레일**을 제공합니다.
 
 **여기서 시작 — 목적 하나만 고르기**
 
@@ -34,51 +32,24 @@
 
 ---
 
-## 왜 DeukPack인가?
+## 왜 DeukPack인가? (AI-Ready 강점)
 
-### 속도
+### 1. 통합 인터페이스 관리 (Thrift + Protobuf)
+현대 기업용 시스템은 구형 레거시(Thrift 기반)와 신규 서비스(gRPC/Protobuf)가 섞여 있어 AI가 전체 맥락을 파악하기 매우 어렵습니다.
+- **득팩의 솔루션:** 상위 IDL 레이어에서 Thrift, Protobuf, OpenAPI 정의를 동시에 파싱하고 타입을 통합 매핑합니다. AI 에이전트에게 100% 명확한 바이너리 스펙을 제공하여 추측성 동작(Hallucination)을 원천 차단합니다.
 
-대량 IDL 파싱·코드젠은 통상 컴파일러류 워크플로 대비 수십 배 빠른 사례가 있습니다.
+### 2. IDL-to-AI 시맨틱 매핑
+단순한 데이터 타입을 넘어, IDL 주석(`/** ... */`)이나 필드 구조에서 추출된 메타데이터를 AI가 즉시 이해할 수 있는 **'의미론적 맥락(Semantic Context)'**으로 전환합니다.
+- **돌파구:** 엔지니어는 단순 코딩 대신, 득팩에서 **데이터의 계보(Lineage)**를 설계하는 고차원 설계자로 진화합니다.
 
-런타임 직렬화·역직렬화는 약 10배 수준의 이득을 목표로 합니다. 수치는 아래 [성능](#성능) 표를 참고하세요.
+### 3. MCP 기반 AI 가드레일
+기존 MCP(Model Context Protocol)는 JSON 기반이라 엄격한 타입 체크가 어렵습니다.
+- **득팩의 솔루션:** 득팩은 스스로 **MCP 서버**가 되어 강력한 타입이 보장된 데이터를 공급합니다. AI가 잘못된 타입을 생성하려 하면 시리얼라이즈 단계에서 거부(Blocking)하여 런타임 오류를 방지합니다.
 
-### 와이어 호환
+### 4. 고성능 런타임
+대량 IDL 파싱 및 다언어 코드젠 속도는 기존 컴파일러 대비 **수십 배 빠르며**, 직렬화/역직렬화 역시 **~10배** 수준의 성능 이득을 제공합니다. 수치는 아래 [성능](#성능) 표를 참고하세요.
 
-| 계열 | 프로토콜 |
-|------|----------|
-| **interop** | Thrift Binary · Compact · `thrift_json` |
-| **deuk** | `pack` · UTF-8 `json` · UTF-8 `yaml` |
-
-- TS `WireSerializer`는 **deuk 전용**입니다. 레거시·호환 와이어는 생성된 C#/C++을 씁니다.
-- `SerializationOptions`의 `wireFamily`로 `protocol`과 계열을 맞출 수 있습니다.
-- `.deuk.json` / `.deuk.yaml`은 설정·OpenAPI용입니다. 레거시 JSON 와이어는 `DpJsonProtocol`입니다.
-- 역직렬화 시 컬럼 누락·알 수 없는 필드에 대해 C# · JS · TS에서 경고를 보내 스키마 drift를 일찍 잡습니다.
-- 상세: [DEUKPACK_WIRE_INTEROP_VS_NATIVE.md](https://deukpack.app/reference/wire-protocols/)
-
-### 런타임·타입
-
-GetSchema, SQLite, msgId · ProtocolRegistry 등 IDL에서 이어지는 런타임이 본체입니다.
-
-- 구조체 상속(`extends`)
-- 스칼라: int8–int64, uint, float/double, bool, string/binary, datetime, decimal
-- 컨테이너: list, set, map, tablelink
-- SQLite DDL · EF 연동 코드 생성
-
-타입 전체·의미는 [API 레퍼런스](https://deukpack.app/reference/api/)를 보세요.
-
-### 자동화·에이전트
-
-`.deuk` · `.proto` · `.thrift` · OpenAPI 입력에서 결정론적인 코드·직렬화를 뽑습니다.
-
-워크플로: [deukpack.app](https://deukpack.app/)
-
-에이전트·자동화 참고: [DEUKPACK_AI_PIPELINE_INTEGRATION.md](https://deukpack.app/ai-pipeline-integration/)
-
-### 플랫폼
-
-Windows · macOS · Linux를 지원합니다.
-
-C++ 네이티브 모듈과 버퍼 풀링 등, 메모리 사용을 염두에 둔 런타임입니다.
+---
 
 ---
 
@@ -114,6 +85,8 @@ npm install ./deukpack-x.y.z.tgz
 
 ---
 
+아래 표는 **참고용**이며, **유휴가 많은 전용 머신·고정 툴체인**을 가정한다. **버스트형 클라우드 VM**이나 **서로 다른 CPU**에서의 절대 ms는 **보장되지 않는다.** README에 **실제 게임용 대형 `idls`(테이블 포함) 공개 수치**를 넣지 않는 이유, **코드젠만의 시간·스트림 I/O**, **`thrift` / `protoc` CLI** 비교는 에 정리했다.
+
 | 항목 | 일반 IDL 컴파일러류 | DeukPack | 개선 |
 |------|---------------------|----------|------|
 | 160파일 파싱 | 15–25초 | 0.5–1초 | **~25–50×** |
@@ -122,6 +95,8 @@ npm install ./deukpack-x.y.z.tgz
 | 역직렬화 | 0.8ms | 0.08ms | **~10×** |
 | 메모리 | ~100MB | ~20MB | **~5×** |
 
+**
+
 ---
 
 ## 문서
@@ -129,6 +104,7 @@ npm install ./deukpack-x.y.z.tgz
 | | |
 |--|--|
 | **이 README** | 클론 직후 요약 |
+| **기능 개요(클론)** | [DEUKPACK_FEATURES.ko.md](docs/DEUKPACK_FEATURES.ko.md) · [EN](docs/DEUKPACK_FEATURES.md) |
 | **[deukpack.app](https://deukpack.app/)** | 설치 · 튜토리얼 · 프로토콜<br>[API 레퍼런스](https://deukpack.app/reference/api/) |
 | **[kits.deukpack.app](https://kits.deukpack.app/)** | [콘솔 따라하기](https://kits.deukpack.app/starter-course/hands-on/)<br>[《시작의 폐허》](https://kits.deukpack.app/starter-course/) · [득팩 테일](https://kits.deukpack.app/journey/) |
 | **키트 저장소 안내** | [득팩 키트 라인업](https://deukpack.app/starter-kits/) |
@@ -163,6 +139,7 @@ DeukPack/
 npm ci
 npm run build
 npm test
+npm run test:idl-convert-smoke        # 선택: Thrift→.deuk 변환 스모크(작은 fixture)
 ```
 
 ---
@@ -183,6 +160,21 @@ npm test
 기부금 영수증(세액공제) 성격이 아닙니다. 개인 OSS 활동 지원(팁)으로 이해해 주세요.
 
 후원이 어렵다면 **저장소 Star**, **재현 가능한 이슈**, **PR**, 또는 **득팩이 맞는 팀에 소개**만으로도 큰 힘이 됩니다.
+
+---
+
+## 함께 쓰면 좋은 도구 (Deuk Family)
+
+**에이전트가 스펙으로 할 수 있는 일을 넓히고 싶다면** **DeukPack**을 쓰세요 — IDL에서 결정론적인 타입·직렬화까지 한 파이프라인입니다. **에이전트가 저장소 안에서 어떻게 움직일지 통제하고 싶다면** **[DeukAgentRules](https://github.com/joygram/DeukAgentRules)**를 쓰세요 — [`deuk-agent-rule`](https://www.npmjs.com/package/deuk-agent-rule) npm 패키지로 `AGENTS.md`와 규칙 템플릿을 버전 관리합니다.
+
+**DeukPack과 같은 레포에서** (선택, dev 의존성):
+
+```bash
+npm install -D deuk-agent-rule
+npx deuk-agent-rule init --non-interactive
+```
+
+핸드오프 관례와 스택에 맞는 규칙을 파이프라인 옆에 두면서, `deukpack` 빌드 방식은 그대로 둘 수 있습니다.
 
 ---
 

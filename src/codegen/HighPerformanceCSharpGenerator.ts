@@ -239,6 +239,7 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
     } else if (typeof field.type === 'object' && 'type' in field.type) {
       switch (field.type.type) {
         case 'list':
+        case 'array':
           lines.push(...this.generateHighPerformanceWriteList(field));
           break;
         case 'set':
@@ -311,6 +312,7 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
     } else if (typeof field.type === 'object' && 'type' in field.type) {
       switch (field.type.type) {
         case 'list':
+        case 'array':
           lines.push(...this.generateHighPerformanceReadList(field));
           break;
         case 'set':
@@ -333,7 +335,11 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
     const lines: string[] = [];
     const fieldName = this.capitalize(field.name);
     
-    if (typeof field.type === 'object' && 'type' in field.type && field.type.type === 'list') {
+    if (
+      typeof field.type === 'object' &&
+      'type' in field.type &&
+      (field.type.type === 'list' || field.type.type === 'array')
+    ) {
       lines.push(`      BitConverter.TryWriteBytes(buffer.Slice(offset), ${fieldName}.Count);`);
       lines.push(`      offset += 4;`);
       lines.push(`      foreach (var item in ${fieldName})`);
@@ -350,7 +356,11 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
     const lines: string[] = [];
     const fieldName = this.capitalize(field.name);
     
-    if (typeof field.type === 'object' && 'type' in field.type && field.type.type === 'list') {
+    if (
+      typeof field.type === 'object' &&
+      'type' in field.type &&
+      (field.type.type === 'list' || field.type.type === 'array')
+    ) {
       lines.push(`      var ${fieldName}Count = BitConverter.ToInt32(buffer.Slice(offset));`);
       lines.push(`      offset += 4;`);
       lines.push(`      ${fieldName} = new ${this.getCSharpType(field.type)}();`);
@@ -431,6 +441,7 @@ export class HighPerformanceCSharpGenerator extends CodeGenerator {
     if (typeof type === 'object' && 'type' in type) {
       switch (type.type) {
         case 'list':
+        case 'array':
           return `List<${this.getCSharpType(type.elementType)}>`;
         case 'set':
           return `HashSet<${this.getCSharpType(type.elementType)}>`;

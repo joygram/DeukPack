@@ -1,0 +1,162 @@
+/* ============================================
+   타이포그래피 스타일
+   ============================================ */
+
+/* === Heading Styles === */
+h1 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 800;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+h2 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+h3 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+h4 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+h5 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+h6 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+/* === Body Text Styles === */
+.text-xs {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.text-xs-bold {
+  font-weight: 700;
+}
+
+.text-sm {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.text-sm-bold {
+  font-weight: 700;
+}
+
+.text-base {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.text-base-bold {
+  font-weight: 700;
+}
+
+.text-lg {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.text-lg-bold {
+  font-weight: 700;
+}
+
+.text-xl {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.text-xl-bold {
+  font-weight: 700;
+}
+
+.text-2xl {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.5;
+}
+
+.text-2xl-bold {
+  font-weight: 700;
+}
+
+/* === 페이지 제목 === */
+.page-title {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+
+.page-title-large {
+  font-size: 32px;
+}
+
+.page-title-small {
+  font-size: 18px;
+}
+
+/* === 섹션 타이틀 === */
+.section-title {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0;
+  padding: 0;
+}
+

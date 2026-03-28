@@ -1,0 +1,63 @@
+/* ============================================
+   색상 팔레트 정의
+   ============================================ */
+
+:root {
+  /* === Grayscale === */
+  --palette-gray-900: #000000;
+  --palette-gray-800: #151515;
+  --palette-gray-700: #222222;
+  --palette-gray-600: #323232;
+  --palette-gray-500: #575757;
+  --palette-gray-400: #727272;
+  --palette-gray-300: #939393;
+  --palette-gray-200: #A0A0AD;
+  --palette-gray-100: #A6A6A6;
+  --palette-gray-50: #ABABAB;
+  --palette-gray-0: #FFFFFF;
+
+  /* === Accent Colors === */
+  --palette-accent-yellowgreen: #DEEE7C;
+  --palette-accent-purple: #919AF8;
+  --palette-accent-pink: #F5C0F5;
+  --palette-accent-green: #7EED95;
+
+  /* === Functional Colors (Success/Warning/Error/Info) === */
+  --palette-functional-success: #10b981;
+  --palette-functional-success-light: #22c55e;
+  --palette-functional-success-dark: #15803d;
+  --palette-functional-warning: #f59e0b;
+  --palette-functional-warning-light: #fbbf24;
+  --palette-functional-warning-dark: #d97706;
+  --palette-functional-error: #ef4444;
+  --palette-functional-error-light: #f87171;
+  --palette-functional-error-dark: #dc2626;
+  --palette-functional-info: #3b82f6;
+  --palette-functional-info-light: #60a5fa;
+  --palette-functional-info-dark: #2563eb;
+
+  /* === Brand Colors === */
+  --palette-brand-primary: var(--palette-white);
+  --palette-brand-secondary: rgba(255, 255, 255, 0.9);
+  --palette-brand-accent: rgba(255, 255, 255, 0.8);
+  --palette-brand-tertiary: rgba(255, 255, 255, 0.6);
+
+  /* === Transparent White === */
+  --palette-white-75: rgba(255, 255, 255, 0.75);
+  --palette-white-50: rgba(255, 255, 255, 0.5);
+  --palette-white-35: rgba(255, 255, 255, 0.35);
+  --palette-white-20: rgba(255, 255, 255, 0.2);
+  --palette-white-10: rgba(255, 255, 255, 0.1);
+
+  /* === Transparent Black === */
+  --palette-black-75: rgba(0, 0, 0, 0.75);
+  --palette-black-50: rgba(0, 0, 0, 0.5);
+  --palette-black-30: rgba(0, 0, 0, 0.3);
+  --palette-black-20: rgba(0, 0, 0, 0.2);
+  --palette-black-10: rgba(0, 0, 0, 0.1);
+
+  /* === Legacy Support (기존 코드 호환성) === */
+  --palette-black: var(--palette-gray-900);
+  --palette-white: var(--palette-gray-0);
+}
+

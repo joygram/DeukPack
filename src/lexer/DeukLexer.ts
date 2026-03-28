@@ -41,6 +41,7 @@ export class DeukLexer {
     ['string', TokenType.STRING],
     ['binary', TokenType.BINARY],
     ['list', TokenType.LIST],
+    ['array', TokenType.ARRAY],
     ['set', TokenType.SET],
     ['map', TokenType.MAP],
     ['tablelink', TokenType.TABLELINK],
