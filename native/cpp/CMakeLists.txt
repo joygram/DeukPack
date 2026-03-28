@@ -36,7 +36,9 @@ target_include_directories(deukpack_wire_core PUBLIC "${DEUKPACK_CPP_ROOT}/inclu
 add_executable(wire_roundtrip_test "${DEUKPACK_CPP_ROOT}/tests/wire_roundtrip_test.cpp")
 target_link_libraries(wire_roundtrip_test PRIVATE deukpack_wire_core)
 
+# wire_micro_bench target removed for OSS
 
 enable_testing()
 add_test(NAME wire_roundtrip COMMAND wire_roundtrip_test)
 
+# isomorphic_wire_native_bench section removed for OSS

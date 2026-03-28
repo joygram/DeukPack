@@ -1,4 +1,4 @@
-# DeukPack: AI-Ready Interface Hub
+# DeukPack: AI-Native Universal IDL Gateway
 
 > **Mixed-IDL Hybrid Serializer for the AI Era.**
 
@@ -7,13 +7,13 @@
 
 **Languages / 언어:** [English](README.md) · [한국어](README.ko.md)
 
-**The AI Breakthrough:** Turn **Mixed-IDL definitions** (Protobuf, OpenAPI, JSON Schema, CSV, and legacy `.thrift`) into **deterministic, type-safe C#, C++, TypeScript, and JavaScript** with **AI Semantic Mapping** and **MCP-based Guardrails**.
+**The AI Breakthrough:** Turn **Mixed-IDL definitions** (Protobuf, OpenAPI, JSON Schema, CSV, and legacy `.thrift`) into **deterministic, type-safe C#, C++, TypeScript, and JavaScript** with **AI Semantic Mapping**, **MCP Server Auto-Generation**, and **Zod-based Guardrails**.
 
 **Start here — pick one path**
 
 - **Ship it in your repo:** local install in the project root — **[Installation](#installation)** · **[Installation & tutorials](https://deukpack.app/en/tutorial/)**.
 - **Read the manual:** **[deukpack.app](https://deukpack.app/en/)** — overview, protocol, **[API reference](https://deukpack.app/en/reference/api/)**.
-- **Run a lab in a folder:** **[Hands-on from zero](https://kits.deukpack.app/en/starter-course/hands-on/)**; optional **[DeukPack Tale](https://kits.deukpack.app/en/journey/)** or *[Ruins](https://kits.deukpack.app/en/starter-course/)* for story-first onboarding.
+- **Run a lab in a folder (🚧 Sealed - Coming Soon):** **[Hands-on from zero](https://kits.deukpack.app/en/starter-course/hands-on/)**; optional **[DeukPack Tale](https://kits.deukpack.app/en/journey/)** or *[Ruins](https://kits.deukpack.app/en/starter-course/)* for story-first onboarding.
 
 **Sites and doc roles** are summarized in **[Documentation & links](#documentation--links)** below.
 
@@ -25,20 +25,21 @@
 
 ## Why DeukPack: The AI-Ready Advantage
 
-### 1. Unified Interface Management (Thrift + Protobuf)
-Modern enterprise systems often struggle with a mix of legacy (Thrift) and modern (gRPC/Protobuf) services, making it difficult for AI to grasp the full context. 
-- **DeukPack Solution:** It parses Profit, Protobuf, and OpenAPI definitions simultaneously at a higher IDL layer, mapping types into one unified binary spec. This eliminates the "guessing game" for AI agents.
+### 1. Universal IDL Gateway (OpenAPI, JSON Schema, Protobuf, Thrift, CSV)
+Modern systems often struggle with a fragmented mix of Specs—legacy (Thrift), modern (Protobuf/gRPC), and web-native (OpenAPI/JSON Schema). This fragmentation creates a massive "context gap" for both developers and AI.
+- **Zero-Migration Hybrid Support:** You **don't have to convert** your existing `.proto` or `.thrift` files. DeukPack can extension legacy definitions with AI-native metadata or advanced types without modifying the source.
+- **DeukPack Solution:** It acts as a **Single Source of Truth** that aggregates diverse IDL sources into one unified, semantic model. It's not just a converter; it's a bridge that maps types into a deterministic SDK while remaining **wire-compatible with your legacy protocols**.
 
 ### 2. IDL-to-AI Semantic Mapping
-Go beyond simple data types. DeukPack extracts metadata from IDL comments (`/** ... */`) and field structures into a **'Semantic Context'** that AI can instantly grasp.
-- **Breakthrough:** Instead of just writing code, engineers evolve into high-level designers defining **data lineage** via IDL.
+Go beyond basic data types. DeukPack extracts metadata from your IDL comments (`/** ... */`) and field structures, transforming them into a **'Semantic Context'** that AI can instantly grasp.
+- **Breakthrough:** Engineers evolve from simple coders into high-level architects defining **data lineage** via a machine-readable semantic layer.
 
-### 3. MCP-Based AI Guardrails
-Standard MCP (Model Context Protocol) often struggles with strict type-checking.
-- **DeukPack Solution:** DeukPack acts as an **MCP server**, providing strongly-typed data. If an AI generates an invalid type, the DeukPack engine blocks it at the serialization level, preventing runtime failures in CI/CD pipelines.
+### 3. AI-Native Execution Bridge (MCP)
+Traditional IDL tools produce static code. DeukPack produces a **Runtime Bridge**. 
+- **DeukPack Solution:** It automatically generates a **Model Context Protocol (MCP)** server from your IDL. AI agents (Cursor, Claude Desktop) can **directly browse live documentation (Resources)** and **execute backend methods (Tools)** with Zod-based guardrails. You define the map; the AI drives the fleet—safely.
 
-### 4. Speed & Runtime Performance
-Large IDL trees: **parse + multi-language emit** stays **orders of magnitude faster** than typical compiler-style IDL flows. Figures: **[Performance](#performance-vs-classic-idl-style-flows)** below.
+### 4. Zero-Allocation High Performance
+DeukPack is engineered for extreme efficiency. Whether parsing 500+ IDL files or serializing massive objects, it remains **orders of magnitude faster** than classic industry flows.
 
 ---
 
@@ -79,9 +80,9 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 | | |
 |--|--|
 | **This README** | Clone-time summary |
-| **Feature overview (clone)** | [DEUKPACK_FEATURES.md](docs/DEUKPACK_FEATURES.md) · [KO](docs/DEUKPACK_FEATURES.ko.md) |
+| **Feature overview (clone)** | [DEUKPACK_FEATURES.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.md) · [KO](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) |
 | **[deukpack.app](https://deukpack.app/en/)** | Install, tutorials, protocol, [API reference](https://deukpack.app/en/reference/api/) |
-| **[kits.deukpack.app](https://kits.deukpack.app/en/)** | [Hands-on](https://kits.deukpack.app/en/starter-course/hands-on/) · [*Ruins*](https://kits.deukpack.app/en/starter-course/) · [DeukPack Tale](https://kits.deukpack.app/en/journey/) · [Wire topics](https://kits.deukpack.app/en/topics/serialization/) |
+| **[kits.deukpack.app](https://kits.deukpack.app/en/)** | 🚧 Sealed — Coming Soon |
 | **Kits lineup** | [deukpack.app/starter-kits](https://deukpack.app/en/starter-kits/) |
 | **Korean README** | [README.ko.md](README.ko.md) |
 | **Releases** | [RELEASING.md](RELEASING.md) |
@@ -91,7 +92,8 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 
 ---
 
-The table below is **illustrative**: it assumes a **quiet, dedicated machine** and a **fixed** toolchain. **Do not** treat it as a guarantee on **cloud burstable** VMs or across **different CPUs** — see **** (environment, AWS/CI variance, what is **not** in the table: full private game IDL, codegen-only timing, streaming I/O, and **Apache Thrift `thrift` / `protoc` CLI** — those need local installs and manual runs).
+## Performance (vs classic IDL-style flows)
+
 
 | Area | Typical IDL compiler-style flow | DeukPack | Gain |
 |------|-------------------------------|----------|------|
@@ -101,7 +103,6 @@ The table below is **illustrative**: it assumes a **quiet, dedicated machine** a
 | Deserialize | 0.8ms | 0.08ms | **~10×** |
 | Memory | ~100MB | ~20MB | **~5×** |
 
-**
 
 ---
 

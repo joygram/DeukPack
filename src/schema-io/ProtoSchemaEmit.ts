@@ -1,5 +1,5 @@
 /**
- * DeukPack AST → Protocol Buffers v3 schema text (minimal subset for generated / tooling).
+ * DeukPack AST → Protocol Buffers v3 schema text (minimal subset for bench / tooling).
  * Unsupported complex types are emitted as string with a leading comment on the field.
  */
 
@@ -12,7 +12,7 @@ import {
 } from '../types/DeukPackTypes';
 
 function sanitizePackage(ns: string): string {
-  return ns.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^_|_$/g, '') || 'generated';
+  return ns.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^_|_$/g, '') || 'bench';
 }
 
 function fieldTypeToProto(
@@ -103,7 +103,7 @@ function emitMessage(s: DeukPackStruct, ast: DeukPackAST): string[] {
  * Emit a single .proto document for all structs and enums in the AST.
  */
 export function generateProtoSchemaFromAst(ast: DeukPackAST): string {
-  const pkgRaw = ast.namespaces?.[0]?.name ?? 'generated';
+  const pkgRaw = ast.namespaces?.[0]?.name ?? 'bench';
   const pkg = sanitizePackage(pkgRaw);
   const lines: string[] = [];
   lines.push('syntax = "proto3";');

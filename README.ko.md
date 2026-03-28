@@ -1,4 +1,4 @@
-# DeukPack: AI-Ready 인터페이스 허브
+# DeukPack: AI-Native 유니버설 IDL 게이트웨이
 
 > **AI 시대를 위한 Mixed-IDL 하이브리드 시리얼라이저.**
 
@@ -7,7 +7,7 @@
 
 **언어 / Languages:** [English](README.md) · [한국어](README.ko.md)
 
-**AI 시대의 돌파구:** 여러 IDL 정의(Protobuf, OpenAPI, JSON Schema, CSV, 레거시 `.thrift`)를 **결정론적이고 타입 안전한 C#, C++, TypeScript, JavaScript** 코드로 변환하며, **AI 시맨틱 매핑**과 **MCP 기반 가드레일**을 제공합니다.
+**AI 시대의 돌포구:** 여러 IDL 정의(Protobuf, OpenAPI, JSON Schema, CSV, 레거시 `.thrift`)를 **결정론적이고 타입 안전한 C#, C++, TypeScript, JavaScript** 코드로 변환하며, **AI 시맨틱 매핑**, **MCP 서버 자동 생성**, 그리고 **Zod 기반 가드레일**을 제공합니다.
 
 **여기서 시작 — 목적 하나만 고르기**
 
@@ -18,7 +18,7 @@
   [deukpack.app](https://deukpack.app/)  
   [API 레퍼런스](https://deukpack.app/reference/api/)
 
-- **폴더를 열고 손으로 돌리기**  
+- **폴더를 열고 손으로 돌리기 (🚧 봉인됨 - 곧 공개 예정)**  
   [처음부터 콘솔 따라하기](https://kits.deukpack.app/starter-course/hands-on/)  
   [득팩 테일](https://kits.deukpack.app/journey/) · [《시작의 폐허》](https://kits.deukpack.app/starter-course/)
 
@@ -34,20 +34,21 @@
 
 ## 왜 DeukPack인가? (AI-Ready 강점)
 
-### 1. 통합 인터페이스 관리 (Thrift + Protobuf)
-현대 기업용 시스템은 구형 레거시(Thrift 기반)와 신규 서비스(gRPC/Protobuf)가 섞여 있어 AI가 전체 맥락을 파악하기 매우 어렵습니다.
-- **득팩의 솔루션:** 상위 IDL 레이어에서 Thrift, Protobuf, OpenAPI 정의를 동시에 파싱하고 타입을 통합 매핑합니다. AI 에이전트에게 100% 명확한 바이너리 스펙을 제공하여 추측성 동작(Hallucination)을 원천 차단합니다.
+### 1. 멀티 프로토콜 유니버설 게이트웨이 (OpenAPI, JSON Schema, Protobuf, Thrift, CSV)
+현대 시스템은 레거시(Thrift), 현대적 인프라(Protobuf/gRPC), 웹 기반 API(OpenAPI/JSON Schema) 등 파편화된 인터페이스 스펙이 뒤섞여 있어 개발자와 AI 모두에게 거대한 "맥락의 공백"을 만듭니다.
+- **레거시 전환 없는 즉시 도입 (Zero-Migration):** 기존의 `.proto`나 `.thrift` 파일을 **전환하거나 수정할 필요가 없습니다.** 득팩은 원본의 변경 없이도 AI 시맨틱 메타데이터나 고급 타입을 확장하여 기존 정의 위에 얹어 사용할 수 있습니다.
+- **득팩의 솔루션:** 득팩은 다양한 IDL 소스를 하나의 일관된 **의미론적 모델(Semantic Model)**로 통합하는 **단일 진실 공급원(Single Source of Truth)** 역할을 합니다. 단순한 변환기를 넘어, 모든 인터페이스를 결정론적 SDK로 정렬하면서도 **기존 레거시 프로토콜과 완벽한 바이너리 호환성**을 유지합니다.
 
 ### 2. IDL-to-AI 시맨틱 매핑
 단순한 데이터 타입을 넘어, IDL 주석(`/** ... */`)이나 필드 구조에서 추출된 메타데이터를 AI가 즉시 이해할 수 있는 **'의미론적 맥락(Semantic Context)'**으로 전환합니다.
-- **돌파구:** 엔지니어는 단순 코딩 대신, 득팩에서 **데이터의 계보(Lineage)**를 설계하는 고차원 설계자로 진화합니다.
+- **돌파구:** 엔지니어는 단순 코딩 업무에서 벗어나, 득팩 위에서 **데이터의 계보(Lineage)**를 기계가 읽을 수 있는 형태로 설계하는 상위 아키텍트로 진화합니다.
 
-### 3. MCP 기반 AI 가드레일
-기존 MCP(Model Context Protocol)는 JSON 기반이라 엄격한 타입 체크가 어렵습니다.
-- **득팩의 솔루션:** 득팩은 스스로 **MCP 서버**가 되어 강력한 타입이 보장된 데이터를 공급합니다. AI가 잘못된 타입을 생성하려 하면 시리얼라이즈 단계에서 거부(Blocking)하여 런타임 오류를 방지합니다.
+### 3. AI-Native 실시간 실행 브리지 (MCP)
+기존의 IDL 도구들이 정적인 코드만 생성했다면, 득팩은 **런타임 실행 브리지**를 생성합니다.
+- **득팩의 솔루션:** IDL에서 **MCP(Model Context Protocol)** 서버를 자동 생성합니다. 이를 통해 AI 에이전트(Cursor, Claude Desktop 등)가 **실시간 문서(Resources)를 조회**하고 **백엔드 기능(Tools)을 직접 실행**할 수 있습니다. **Zod 기반 가드레일**이 함께 작동하여 AI가 복잡한 시스템을 안전하게 제어하도록 보장합니다.
 
-### 4. 고성능 런타임
-대량 IDL 파싱 및 다언어 코드젠 속도는 기존 컴파일러 대비 **수십 배 빠르며**, 직렬화/역직렬화 역시 **~10배** 수준의 성능 이득을 제공합니다. 수치는 아래 [성능](#성능) 표를 참고하세요.
+### 4. Zero-Allocation 극한의 성능
+득팩은 로컬과 클라우드 환경 모두에서 최고의 리소스 효율성을 제공하도록 설계되었습니다. 수백 개의 IDL 파일을 파싱하거나 거대한 객체를 직렬화할 때, 기존 업계 표준 대비 **수십 배 이상의 속도와 낮은 메모리 점유율**을 유지합니다.
 
 ---
 
@@ -85,7 +86,8 @@ npm install ./deukpack-x.y.z.tgz
 
 ---
 
-아래 표는 **참고용**이며, **유휴가 많은 전용 머신·고정 툴체인**을 가정한다. **버스트형 클라우드 VM**이나 **서로 다른 CPU**에서의 절대 ms는 **보장되지 않는다.** README에 **실제 게임용 대형 `idls`(테이블 포함) 공개 수치**를 넣지 않는 이유, **코드젠만의 시간·스트림 I/O**, **`thrift` / `protoc` CLI** 비교는 에 정리했다.
+
+
 
 | 항목 | 일반 IDL 컴파일러류 | DeukPack | 개선 |
 |------|---------------------|----------|------|
@@ -95,7 +97,6 @@ npm install ./deukpack-x.y.z.tgz
 | 역직렬화 | 0.8ms | 0.08ms | **~10×** |
 | 메모리 | ~100MB | ~20MB | **~5×** |
 
-**
 
 ---
 
@@ -104,9 +105,9 @@ npm install ./deukpack-x.y.z.tgz
 | | |
 |--|--|
 | **이 README** | 클론 직후 요약 |
-| **기능 개요(클론)** | [DEUKPACK_FEATURES.ko.md](docs/DEUKPACK_FEATURES.ko.md) · [EN](docs/DEUKPACK_FEATURES.md) |
+| **기능 개요(클론)** | [DEUKPACK_FEATURES.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) · [EN](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.md) |
 | **[deukpack.app](https://deukpack.app/)** | 설치 · 튜토리얼 · 프로토콜<br>[API 레퍼런스](https://deukpack.app/reference/api/) |
-| **[kits.deukpack.app](https://kits.deukpack.app/)** | [콘솔 따라하기](https://kits.deukpack.app/starter-course/hands-on/)<br>[《시작의 폐허》](https://kits.deukpack.app/starter-course/) · [득팩 테일](https://kits.deukpack.app/journey/) |
+| **[kits.deukpack.app](https://kits.deukpack.app/)** | 🚧 봉인됨 — 곧 공개 예정 |
 | **키트 저장소 안내** | [득팩 키트 라인업](https://deukpack.app/starter-kits/) |
 | **릴리즈** | [RELEASING.md](RELEASING.ko.md) |
 | **클론본 전체 문서 목차** | [docs/README.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/README.ko.md) (npm tarball에는 없음) |

@@ -34,7 +34,10 @@ if (process.env.CMAKE_TOOLCHAIN_FILE) {
   const tcEsc = tc.replace(/"/g, isWin ? '""' : '\\"');
   configure += ` -DCMAKE_TOOLCHAIN_FILE="${tcEsc}"`;
 }
+if (process.env.VCPKG_MANIFEST_FEATURES) {
+  configure += ` -DVCPKG_MANIFEST_FEATURES=${process.env.VCPKG_MANIFEST_FEATURES}`;
 }
+if (isoBench === '1' || isoBench === 'on' || isoBench === 'true' || isoBench === 'yes') {
 }
 
 execSync(configure, { stdio: 'inherit', shell: isWin });
