@@ -380,6 +380,8 @@ export class CSharpGenerator extends CodeGenerator {
     if (typeof type === 'string') return type;
     if (typeof type === 'object') {
       if (type.type === 'list') return `list<${this.canonicalTypeStringForFingerprint(type.elementType)}>`;
+      if (type.type === 'array')
+        return `array<${this.canonicalTypeStringForFingerprint(type.elementType)},${type.size}>`;
       if (type.type === 'set') return `set<${this.canonicalTypeStringForFingerprint(type.elementType)}>`;
       if (type.type === 'map') return `map<${this.canonicalTypeStringForFingerprint(type.keyType)},${this.canonicalTypeStringForFingerprint(type.valueType)}>`;
       if (type.type === 'tablelink') return `tablelink<${type.tableCategory},${type.keyField}>`;
@@ -957,7 +959,7 @@ export class CSharpGenerator extends CodeGenerator {
       return { type: 'DpSchemaType.Struct', typeName: type };
     }
     if (typeof type === 'object' && type !== null) {
-      if (type.type === 'list') {
+      if (type.type === 'list' || type.type === 'array') {
         const elemInfo = this.getSchemaTypeInfo(type.elementType, ast, currentNamespace);
         return { type: 'DpSchemaType.List', typeName: elemInfo.typeName };
       }
@@ -1102,7 +1104,7 @@ export class CSharpGenerator extends CodeGenerator {
     }
     if (typeof type === 'object' && type.type) {
       const t = type.type;
-      if (t === 'list' || t === 'set' || t === 'map') return true;
+      if (t === 'list' || t === 'array' || t === 'set' || t === 'map') return true;
       if (t === 'tablelink') return false; // tablelink maps to long (value type)
     }
     return true;
@@ -1181,7 +1183,7 @@ export class CSharpGenerator extends CodeGenerator {
   private resolveTypeToASTDefinition(type: any, currentNamespace: string | undefined, ast: DeukPackAST | undefined, visitedTypedefs: Set<string> = new Set()): { kind: 'primitive' } | { kind: 'record'; def: DeukPackStruct } | { kind: 'enum'; def: DeukPackEnum } | null {
     if (!ast) return null;
     if (typeof type === 'object' && type !== null && 'type' in type) {
-      if (type.type === 'list' || type.type === 'set' || type.type === 'map') return null;
+      if (type.type === 'list' || type.type === 'array' || type.type === 'set' || type.type === 'map') return null;
     }
     if (typeof type !== 'string') return null;
     const fullName = this.resolveTypeToFullName(type, currentNamespace, ast);
@@ -1513,6 +1515,7 @@ export class CSharpGenerator extends CodeGenerator {
     if (typeof type === 'object' && type.type) {
       switch (type.type) {
         case 'list':
+        case 'array':
           return `List<${this.getCSharpType(type.elementType, ast, currentNamespace)}>`;
         case 'set':
           return `HashSet<${this.getCSharpType(type.elementType, ast, currentNamespace)}>`;
@@ -1605,6 +1608,7 @@ export class CSharpGenerator extends CodeGenerator {
       if (typeof type === 'object' && type !== null && type.type) {
         switch (type.type) {
           case 'list':
+          case 'array':
             const listElemType2 = this.getCSharpType(type.elementType, ast, currentNamespace);
             return `new List<${listElemType2}>()`;
           case 'set':
@@ -1708,7 +1712,9 @@ export class CSharpGenerator extends CodeGenerator {
     
     if (typeof type === 'object' && type.type) {
       switch (type.type) {
-        case 'list': return 'DpWireType.List';
+        case 'list':
+        case 'array':
+          return 'DpWireType.List';
         case 'set': return 'DpWireType.Set';
         case 'map': return 'DpWireType.Map';
         case 'tablelink': return 'DpWireType.Int64';
@@ -1762,7 +1768,9 @@ export class CSharpGenerator extends CodeGenerator {
     
     if (typeof field.type === 'object' && 'type' in field.type) {
       switch (field.type.type) {
-        case 'list': return this.generateReadList(field, ast, currentNamespace);
+        case 'list':
+        case 'array':
+          return this.generateReadList(field, ast, currentNamespace);
         case 'set': return this.generateReadSet(field, ast, currentNamespace);
         case 'map': return this.generateReadMap(field, ast, currentNamespace);
         default: {
@@ -1953,7 +1961,8 @@ export class CSharpGenerator extends CodeGenerator {
 
     if (typeof field.type === 'object' && 'type' in field.type) {
       switch (field.type.type) {
-        case 'list': {
+        case 'list':
+        case 'array': {
           const et = this.getTType(field.type.elementType, ast, currentNamespace);
           const ect = this.getCSharpType(field.type.elementType, ast, currentNamespace);
           return `DeukPackSerializer.WriteList<${ect}>(oprot, ${et}, ${varName});`;
@@ -1982,7 +1991,11 @@ export class CSharpGenerator extends CodeGenerator {
 
   private generateReadList(field: DeukPackField, ast?: DeukPackAST, currentNamespace?: string): string {
     const fieldName = this.capitalize(field.name);
-    if (typeof field.type === 'object' && 'type' in field.type && field.type.type === 'list') {
+    if (
+      typeof field.type === 'object' &&
+      'type' in field.type &&
+      (field.type.type === 'list' || field.type.type === 'array')
+    ) {
       const elementType = this.getTType(field.type.elementType, ast, currentNamespace);
       const csharpElementType = this.getCSharpType(field.type.elementType, ast, currentNamespace);
       return `this.${fieldName} = DeukPackSerializer.ReadList<${csharpElementType}>(iprot, ${elementType});`;
@@ -2346,7 +2359,8 @@ export class CSharpGenerator extends CodeGenerator {
     }
     if (typeof field.type === 'object' && field.type !== null && 'type' in field.type) {
       switch ((field.type as any).type) {
-        case 'list': {
+        case 'list':
+        case 'array': {
           const elem = this.getCSharpType((field.type as any).elementType, ast, _currentNamespace);
           return `new List<${elem}>()`;
         }
@@ -2411,6 +2425,7 @@ export class CSharpGenerator extends CodeGenerator {
     if (typeof field.type === 'object' && 'type' in field.type) {
       switch (field.type.type) {
         case 'list':
+        case 'array':
           return wrapOpt(`this.${fieldName}.Select(item => ${this.generateCloneElement(field.type.elementType, ast, 'item', currentNamespace)}).ToList()`);
         case 'set':
           return wrapOpt(`this.${fieldName}.Select(item => ${this.generateCloneElement(field.type.elementType, ast, 'item', currentNamespace)}).ToHashSet()`);
@@ -2436,6 +2451,7 @@ export class CSharpGenerator extends CodeGenerator {
           case 'tablelink':
             return varName;
           case 'list':
+          case 'array':
             return `${varName}.Select(item => ${this.generateCloneElement(elementType.elementType, ast, 'item', currentNamespace)}).ToList()`;
           case 'set':
             return `${varName}.Select(item => ${this.generateCloneElement(elementType.elementType, ast, 'item', currentNamespace)}).ToHashSet()`;
@@ -2527,6 +2543,7 @@ export class CSharpGenerator extends CodeGenerator {
         case 'tablelink':
           return `sb.Append(ci).Append("${field.name}: ").Append(this.${fieldName}.ToString()).AppendLine(",");`;
         case 'list':
+        case 'array':
           return `sb.Append(ci).Append("${field.name}: [").Append(this.${fieldName}?.Count ?? 0).AppendLine(" items],");`;
         case 'set':
           return `sb.Append(ci).Append("${field.name}: {").Append(this.${fieldName}?.Count ?? 0).AppendLine(" items},");`;
@@ -2634,7 +2651,10 @@ export class CSharpGenerator extends CodeGenerator {
     const isReferenceType =
       (typeof constant.type === 'object' &&
         constant.type !== null &&
-        (constant.type.type === 'map' || constant.type.type === 'list' || constant.type.type === 'set')) ||
+        (constant.type.type === 'map' ||
+          constant.type.type === 'list' ||
+          constant.type.type === 'array' ||
+          constant.type.type === 'set')) ||
       (typeof csharpType === 'string' &&
         (csharpType.startsWith('Dictionary') || csharpType.startsWith('List') || csharpType.startsWith('HashSet')));
     const line = isReferenceType

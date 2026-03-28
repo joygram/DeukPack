@@ -7,7 +7,7 @@
 | 항목 | 확인 방법 |
 |------|-----------|
 | **버전 일치** | `package.json` · `package-lock.json` 동일 (예: 1.0.5). `npm run release:check` 실행 |
-| **CHANGELOG** | 릴리스마다 루트 [CHANGELOG.md](CHANGELOG.ko.md)·[CHANGELOG.ko.md](CHANGELOG.ko.md)에 **그 버전**에서 바뀐 점을 적는다(추가·수정·호환 참고). [DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.ko.md) §0 표와 내용이 어긋나지 않게 한다 |
+| **CHANGELOG** | 릴리스마다 루트 [CHANGELOG.md](CHANGELOG.ko.md)·[CHANGELOG.ko.md](CHANGELOG.ko.md)에 **그 버전**에서 바뀐 점을 적는다(추가·수정·호환 참고). [DEUKPACK_V1_RELEASE_SCOPE.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_V1_RELEASE_SCOPE.ko.md) §0 표와 내용이 어긋나지 않게 한다 |
 | **deukpack.app · 키츠 노티** | 배너·홈 랜딩·**제품군 노티 집계** 정본은 루트 [release-notice.json](release-notice.json)(`version` = `package.json`, `product_notices` 배열). `npm run release-notice:apply` 또는 deukpack.app CI(`--product-notices`)가 `_includes` 스니펫·배너를 갱신. [릴리스·뉴스](deukpack.app/docs/releases.ko.md)는 날짜 역순 집계, 각 제품 페이지는 해당 `products` 태그만 표시 |
 | **빌드·테스트** | `npm ci && npm run build && npm test` 성공 |
 | **패키지 목록** | `npm pack --dry-run` 으로 포함 파일 확인 (internal 제외) |
@@ -20,8 +20,7 @@
 
 ## v1.0.0 공개 스펙
 
-**1.0.0 태그·npm 공개 시 “지원한다”고 말할 수 있는 범위**는 [docs/DEUKPACK_V1_RELEASE_SCOPE.md](docs/DEUKPACK_V1_RELEASE_SCOPE.ko.md)에 고정한다.  
-(테이블·Excel 연동은 v1 공약에서 제외; **Excel 프로토콜·Excel 애드인은 별도 배포** — [docs/internal/DEUKPACK_EXCEL_SEPARATE_DISTRIBUTION.md](docs/internal/DEUKPACK_EXCEL_SEPARATE_DISTRIBUTION.ko.md).)
+**1.0.0 태그·npm 공개 시 “지원한다”고 말할 수 있는 범위**는 [docs/DEUKPACK_V1_RELEASE_SCOPE.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_V1_RELEASE_SCOPE.ko.md)에 고정한다.  
 
 ## 사전 확인
 
@@ -92,13 +91,12 @@
 - **push to main/master**: 동일 워크플로에서 `build-artifact` job이 `npm pack` 실행 후 **Artifact**로 `.tgz` 업로드 (90일 보관). GitHub 저장소 **Actions** → 해당 워크플로 run 선택 → **Artifacts**에서 `deukpack-npm-tarball-<sha>` 다운로드 후 `npm install ./deukpack-*.tgz` 로 사용 가능.
 - **배포본 수동 생성(태그 없이)**: **Actions** → **Build release package** → **Run workflow**. 빌드·테스트 후 `deukpack-*.tgz` 가 Artifact로 올라감 (90일). 태그 푸시 없이 배포본만 필요할 때 사용.
 - **릴리스 CI 실패 시**: (1) **버전 불일치** — 태그 `v1.0.5` 이면 해당 커밋의 `package.json` 이 `"1.0.5"` 여야 함. `npm version patch` 후 푸시·태그 푸시. (2) **빌드/테스트 실패** — Actions 로그에서 실패 단계 확인. 위 **Build release package** 로 같은 빌드·테스트를 수동 실행해 보면 원인 파악에 도움 됨.
-- 소비자 파이프라인·샘플: [docs/DEUKPACK_CI_CD_AND_DEV_PIPELINE.md](docs/DEUKPACK_CI_CD_AND_DEV_PIPELINE.md).
+- 소비자 파이프라인·샘플: [docs/DEUKPACK_CI_CD_AND_DEV_PIPELINE.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_CI_CD_AND_DEV_PIPELINE.md).
 
 ## npm 반영 및 버전 변경 (OSS 릴리스와 함께)
 
 **관련 수정(네이티브 Wire 전환, 문서 등)이 npm·GitHub Release에 반영되려면 버전을 올린 뒤 OSS에 동기화하고, OSS에서 태그 푸시해야 한다.**
 
-**정본 전용 — 키트 라인업 회귀·내부 배포 순서:** [docs/internal/DEUKPACK_RELEASE_VERIFICATION.md](docs/internal/DEUKPACK_RELEASE_VERIFICATION.ko.md) (`docs/internal/`은 공개 미러·npm 패키지에 포함되지 않음.)
 
 ### 권장 순서 (버전 올린 뒤 npm/Release 반영)
 
@@ -106,10 +104,9 @@
    - `npm version patch` (또는 `minor` — 아래 버전 정책 참고)  
    - `npm install` → `package-lock.json` 갱신 후 커밋  
    - (선택) `npm version`이 만든 로컬 태그는 릴리스용이 아니므로 `git tag -d vX.Y.Z` 로 삭제해 두거나, DeukPack 원격에는 태그를 푸시하지 않는다.  
-   - `npm run sync:oss:apply` → OSS 디렉터리까지 동기화 (갱신된 `package.json` 포함)
 2. **DeukPackOSS**에서  
    - `git add -A` · `git status` 확인  
-   - `git commit -m "release: vX.Y.Z"` (또는 [OSS_SYNC_COMMIT_MESSAGES.md](docs/OSS_SYNC_COMMIT_MESSAGES.ko.md) 형식)  
+   - `git commit -m "release: vX.Y.Z"` (또는 [OSS_SYNC_COMMIT_MESSAGES.md](https://github.com/joygram/DeukPack/blob/main/docs/OSS_SYNC_COMMIT_MESSAGES.ko.md) 형식)  
    - `git push origin main`
 3. **같은 버전으로 태그 푸시** (DeukPackOSS에서)  
    - `git tag vX.Y.Z` (이미 푸시한 커밋에 붙일 경우 `git tag vX.Y.Z` 만, 새 커밋이면 그 커밋에서)  
@@ -146,21 +143,16 @@
 
 공개용 저장소(DeukPackOSS)에 배포할 때는 **동기화 스크립트**로 내부 전용 경로를 제외한 뒤 복사한다.
 
-1. `npm run sync:oss` — dry-run으로 변경 목록 확인  
-2. `npm run sync:oss:apply` — **`npm run build`**·**`bundle:vscode`**(동봉 **`bundled/deuk-idl.vsix`**) 후 `../DeukPackOSS` 로 동기화; 적용 후 OSS 쪽에서도 **`npm run build`**·**`bundle:vscode`** 가 다시 실행됨 (**버전 올린 뒤** 실행 권장)  
 3. `cd ../DeukPackOSS` → `git add` · `git commit` · `git push`  
 4. npm/Release 반영 시: 위 **npm 반영 및 버전 변경** 절의 순서대로 태그 푸시.
 
-상세·제외 규칙·커밋 메시지: [docs/OSS_PUBLISH_SCOPE.md](docs/OSS_PUBLISH_SCOPE.ko.md) §로컬 DeukPackOSS · [OSS_SYNC_COMMIT_MESSAGES.md](docs/OSS_SYNC_COMMIT_MESSAGES.ko.md).
+상세·제외 규칙·커밋 메시지: [docs/OSS_PUBLISH_SCOPE.md](https://github.com/joygram/DeukPack/blob/main/docs/OSS_PUBLISH_SCOPE.ko.md) §로컬 DeukPackOSS · [OSS_SYNC_COMMIT_MESSAGES.md](https://github.com/joygram/DeukPack/blob/main/docs/OSS_SYNC_COMMIT_MESSAGES.ko.md).
 
 ## 공개(OSS) vs 내부 (GitLab 정본)
 
 | 구분 | 경로 | npm / 공개 GitHub |
 |------|------|-------------------|
-| **레거시 Thrift→.deuk** | `scripts/internal/legacy-migration/` | **제외** (`.npmignore`) |
-| **GPLAT 문건** | `docs/internal/` | **제외** |
 | **코어 CLI·코드젠** | `bin/`, `scripts/build_deukpack.js`, `dist/` | **포함** |
 
-GitHub 미러 동기화 시 `scripts/internal/`, `docs/internal/` 는 **올리지 않는다.**
 
-**형제 클론**: `i/DeukPack` · `i/DeukPackOSS` 구조일 때 동기화 → [docs/OSS_PUBLISH_SCOPE.md](docs/OSS_PUBLISH_SCOPE.ko.md) §로컬 DeukPackOSS.
+**형제 클론**: `i/DeukPack` · `i/DeukPackOSS` 구조일 때 동기화 → [docs/OSS_PUBLISH_SCOPE.md](https://github.com/joygram/DeukPack/blob/main/docs/OSS_PUBLISH_SCOPE.ko.md) §로컬 DeukPackOSS.

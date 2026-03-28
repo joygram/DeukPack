@@ -39,7 +39,9 @@ function hasCodegenOrEmit(options) {
         (options.csv && String(options.csv).trim()) ||
         (options.psv && String(options.psv).trim()) ||
         (typeof options.json === 'string' && options.json.trim()) ||
-        (options.excel && String(options.excel).trim())
+        (options.excel && String(options.excel).trim()) ||
+        (options.protoSchema && String(options.protoSchema).trim()) ||
+        (options.thriftSchema && String(options.thriftSchema).trim())
     );
 }
 
@@ -73,6 +75,8 @@ function printCliUsage(opts = {}) {
     line('Pick at least one output mode, e.g.:');
     line('  --csharp   C# (+ .csproj by default)   --ts   TypeScript   --js   JavaScript   --cpp   C++');
     line('  --openapi <file>   emit OpenAPI from AST');
+    line('  --proto-schema <file>   emit Protocol Buffers v3 schema from AST');
+    line('  --thrift-schema <file>  emit Thrift IDL schema from AST');
     line('  --convert-to-deuk [subdir]   emit .deuk from legacy .thrift (full tree only)');
     line('  --csv/--psv/--json/--excel <file>   emit table schema from first struct');
     line('');
@@ -327,19 +331,35 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
         const outPath = path.resolve(options.openapi);
         const ext = path.extname(outPath).toLowerCase();
         if (ext === '.yaml' || ext === '.yml') {
+            let body;
             try {
                 const yaml = require('js-yaml');
-                await fs.writeFile(outPath, yaml.dump(spec, { lineWidth: -1 }), 'utf8');
+                body = yaml.dump(spec, { lineWidth: -1 });
             } catch (e) {
                 if (e.code === 'MODULE_NOT_FOUND') {
-                    throw new Error('YAML output requires js-yaml. Run: npm install js-yaml');
+                    const YAML = require('yaml');
+                    body = YAML.stringify(spec);
+                } else {
+                    throw e;
                 }
-                throw e;
             }
+            await fs.writeFile(outPath, body, 'utf8');
         } else {
             await fs.writeFile(outPath, JSON.stringify(spec, null, 2), 'utf8');
         }
         console.log(`   📄 OpenAPI emitted: ${options.openapi}`);
+    }
+    if (options.protoSchema) {
+        const { generateProtoSchemaFromAst } = require('../dist/schema-io/ProtoSchemaEmit');
+        const outPath = path.resolve(options.protoSchema);
+        await fs.writeFile(outPath, generateProtoSchemaFromAst(ast), 'utf8');
+        console.log(`   📄 Proto schema emitted: ${options.protoSchema}`);
+    }
+    if (options.thriftSchema) {
+        const { generateThriftSchemaFromAst } = require('../dist/schema-io/ThriftSchemaEmit');
+        const outPath = path.resolve(options.thriftSchema);
+        await fs.writeFile(outPath, generateThriftSchemaFromAst(ast), 'utf8');
+        console.log(`   📄 Thrift schema emitted: ${options.thriftSchema}`);
     }
     const firstStruct = ast.structs && ast.structs.length > 0 ? ast.structs[0] : null;
     if (options.csv && firstStruct) {
@@ -684,6 +704,8 @@ async function runPipeline(configPath) {
             json: !!job.json,
             importOpenApi: job.importOpenApi || undefined,
             openapi: job.openapi || undefined,
+            protoSchema: job.protoSchema || undefined,
+            thriftSchema: job.thriftSchema || undefined,
             ef: !!job.ef,
             defineRoot,
             convertToDeuk: !!job.convertToDeuk,
@@ -928,6 +950,16 @@ function parseOptions(args) {
             case '--excel':
                 if (i + 1 < args.length) {
                     options.excel = args[++i];
+                }
+                break;
+            case '--proto-schema':
+                if (i + 1 < args.length) {
+                    options.protoSchema = args[++i];
+                }
+                break;
+            case '--thrift-schema':
+                if (i + 1 < args.length) {
+                    options.thriftSchema = args[++i];
                 }
                 break;
         }

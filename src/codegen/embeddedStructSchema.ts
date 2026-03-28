@@ -74,6 +74,11 @@ export function getEmbeddedSchemaTypeInfo(
       const elem = getEmbeddedSchemaTypeInfo(o.elementType, ast);
       return { type: 'list', typeName: `list<${elem.typeName}>` };
     }
+    if (o.type === 'array') {
+      const arr = fieldType as { elementType: DeukPackType; size: number };
+      const elem = getEmbeddedSchemaTypeInfo(arr.elementType, ast);
+      return { type: 'array', typeName: `array<${elem.typeName},${arr.size}>` };
+    }
     if (o.type === 'set') {
       const elem = getEmbeddedSchemaTypeInfo(o.elementType, ast);
       return { type: 'set', typeName: `set<${elem.typeName}>` };

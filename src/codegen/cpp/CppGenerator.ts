@@ -211,7 +211,7 @@ export class CppGenerator extends CodeGenerator {
       return this.resolveTypeName(fieldType, currentNs, ast);
     }
     if (typeof fieldType === 'object' && fieldType !== null) {
-      if (fieldType.type === 'list') {
+      if (fieldType.type === 'list' || fieldType.type === 'array') {
         const elem = this.getCppType((fieldType as { elementType: DeukPackType }).elementType, ast, currentNs);
         return `std::vector<${elem}>`;
       }
@@ -320,7 +320,7 @@ export class CppGenerator extends CodeGenerator {
       }
       if (typeof fieldType === 'object' && fieldType !== null) {
         const o = fieldType as { type?: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
-        if (o.type === 'list' || o.type === 'set') {
+        if (o.type === 'list' || o.type === 'array' || o.type === 'set') {
           if (o.elementType) addFromType(o.elementType);
         }
         if (o.type === 'map') {

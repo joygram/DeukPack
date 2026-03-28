@@ -1,0 +1,239 @@
+/* ============================================
+   테마 변수 정의 - CSS 커스텀 속성
+   ============================================ */
+
+:root {
+  /* === 기본 색상 === */
+  --theme-primary: var(--palette-white);
+  --theme-secondary: color-mix(in srgb, var(--palette-white) 90%, transparent);
+  --theme-accent: color-mix(in srgb, var(--palette-white) 80%, transparent);
+  --theme-background: var(--palette-black);
+  --theme-panel: var(--palette-black);
+  --theme-surface: var(--palette-semantic-bg-surface);
+  --theme-text-primary: var(--palette-white);
+  --theme-text-secondary: color-mix(in srgb, var(--palette-white) 80%, transparent);
+  --theme-border: var(--palette-semantic-border-default);
+  
+  /* === 캠페인 페이지 전용 색상 변수 === */
+  --primary-color: #FFFFFF;
+  --secondary-color: rgba(255, 255, 255, 0.8);
+  --accent-color: rgba(255, 255, 255, 0.7);
+  --background-color: #000000;
+  --border-color: rgba(255, 255, 255, 0.2);
+  --error-color: #ef4444;
+  --success-color: #10b981;
+  /* 컨테이너 바깥쪽 배경색 (모바일 프레임 외부 영역) */
+  --theme-container-outer-background: var(--palette-gray-800);
+
+  /* === 레이아웃 === */
+  --theme-border-radius: 12px;
+  --theme-spacing: 12px;
+  --theme-spacing-xs: 4px;
+  --theme-spacing-sm: 8px;
+  --theme-spacing-md: 16px;
+  --theme-spacing-lg: 20px;
+  --theme-item-spacing-default: 8px;
+  --theme-padding-default: 16px;
+  --theme-max-width: 1200px;
+  --theme-padding: 24px;
+  --theme-mobile-width: 375px;
+  --theme-top-nav-height: 72px;
+  
+  /* === 정렬 (기준: shop) === */
+  --theme-align-primary-axis-default: CENTER;
+  --theme-align-counter-axis-default: CENTER;
+  --theme-text-align-default: left;
+  --theme-layout-mode-default: HORIZONTAL;
+  
+  /* === 정렬 유틸리티 === */
+  --theme-align-primary-min: MIN;
+  --theme-align-primary-center: CENTER;
+  --theme-align-primary-max: MAX;
+  --theme-align-primary-space-between: SPACE_BETWEEN;
+  --theme-align-counter-min: MIN;
+  --theme-align-counter-center: CENTER;
+  --theme-align-counter-max: MAX;
+  --theme-align-counter-stretch: STRETCH;
+  --theme-text-align-left: left;
+  --theme-text-align-center: center;
+  --theme-text-align-right: right;
+  --theme-text-align-justify: justify;
+
+  /* === 타이포그래피 === */
+  --theme-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --theme-font-size: 16px;
+  --theme-font-size-xs: 10px;
+  --theme-font-size-sm: 14px;
+  --theme-font-size-lg: 18px;
+  --theme-font-size-xl: 20px;
+  --theme-font-size-2xl: 24px;
+  --theme-font-size-3xl: 30px;
+  --theme-line-height: 1.5;
+  --theme-font-weight-normal: 400;
+  --theme-font-weight-medium: 500;
+  --theme-font-weight-semibold: 600;
+  --theme-font-weight-bold: 700;
+  --theme-font-weight-black: 900;
+
+  /* === 복합 타이포그래피 변수 (크기 + 두께) === */
+  /* xs */
+  --theme-typography-xs-font-size: var(--theme-font-size-xs);
+  --theme-typography-xs-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-xs-bold-font-size: var(--theme-font-size-xs);
+  --theme-typography-xs-bold-font-weight: var(--theme-font-weight-black);
+  
+  /* sm */
+  --theme-typography-sm-font-size: var(--theme-font-size-sm);
+  --theme-typography-sm-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-sm-bold-font-size: var(--theme-font-size-sm);
+  --theme-typography-sm-bold-font-weight: var(--theme-font-weight-black);
+  
+  /* base */
+  --theme-typography-base-font-size: var(--theme-font-size);
+  --theme-typography-base-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-base-bold-font-size: var(--theme-font-size);
+  --theme-typography-base-bold-font-weight: var(--theme-font-weight-black);
+  
+  /* lg */
+  --theme-typography-lg-font-size: var(--theme-font-size-lg);
+  --theme-typography-lg-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-lg-bold-font-size: var(--theme-font-size-lg);
+  --theme-typography-lg-bold-font-weight: var(--theme-font-weight-black);
+  
+  /* xl */
+  --theme-typography-xl-font-size: var(--theme-font-size-xl);
+  --theme-typography-xl-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-xl-bold-font-size: var(--theme-font-size-xl);
+  --theme-typography-xl-bold-font-weight: var(--theme-font-weight-black);
+  
+  /* 2xl */
+  --theme-typography-2xl-font-size: var(--theme-font-size-2xl);
+  --theme-typography-2xl-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-2xl-bold-font-size: var(--theme-font-size-2xl);
+  --theme-typography-2xl-bold-font-weight: var(--theme-font-weight-black);
+  
+  /* 3xl */
+  --theme-typography-3xl-font-size: var(--theme-font-size-3xl);
+  --theme-typography-3xl-font-weight: var(--theme-font-weight-medium);
+  --theme-typography-3xl-bold-font-size: var(--theme-font-size-3xl);
+  --theme-typography-3xl-bold-font-weight: var(--theme-font-weight-black);
+
+  /* === 효과 === */
+  --theme-blur: blur(20px);
+  --theme-shadow: 0 8px 25px color-mix(in srgb, var(--palette-black) 50%, transparent);
+  --theme-glass-opacity: 0.08;
+  --theme-transition: var(--theme-transition-all);
+  --theme-particle-effect: color-mix(in srgb, var(--palette-white) 10%, transparent);
+  --theme-glow-effect: 0 0 20px color-mix(in srgb, var(--palette-white) 30%, transparent);
+  --theme-gradient-effect: linear-gradient(135deg, var(--palette-semantic-bg-surface) 0%, var(--palette-semantic-bg-surface) 100%);
+
+  /* === 특수 효과 === */
+  --theme-emoji-pulse: emoji-pulse 2s ease-in-out infinite;
+  --theme-fire-flicker: pulse 2s ease-in-out infinite;
+  --theme-click-hint: clickHint 1.5s ease-in-out infinite;
+  --theme-join-pulse: joinPulse 2s ease-in-out infinite;
+  --theme-join-shine: joinShine 3s ease-in-out infinite;
+  --theme-particle-burst: particle-burst 1s ease-out forwards;
+  --theme-particle-shimmer: particle-shimmer 1.5s ease-in-out infinite;
+
+  /* === 애니메이션 === */
+  --theme-animation-duration-fast: 0.15s;
+  --theme-animation-duration-normal: 0.3s;
+  --theme-animation-duration-slow: 0.5s;
+  --theme-animation-duration-very-slow: 2s;
+  --theme-animation-easing: ease;
+  --theme-animation-easing-in: ease-in;
+  --theme-animation-easing-out: ease-out;
+  --theme-animation-easing-in-out: ease-in-out;
+  --theme-animation-cubic-bezier: cubic-bezier(0.4, 0, 0.6, 1);
+  --theme-animation-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  /* === 컴포넌트별 스타일 === */
+  --theme-button-padding: 12px 24px;
+  --theme-button-border-radius: 8px;
+  --theme-button-font-weight: 600;
+  --theme-button-transition: var(--theme-transition-all);
+
+  --theme-card-padding: 24px;
+  --theme-card-border-radius: 16px;
+  --theme-card-transition: var(--theme-transition-all);
+
+  --theme-input-padding: 12px 16px;
+  --theme-input-border-radius: 8px;
+  --theme-input-font-size: 14px;
+  --theme-input-transition: var(--theme-transition-all);
+
+  /* === 페이지별 오버라이드 === */
+  --theme-page-login-background: var(--theme-background);
+  --theme-page-login-color: var(--theme-text-primary);
+  --theme-page-dashboard-background: var(--theme-background);
+  --theme-page-dashboard-color: var(--theme-text-primary);
+  --theme-page-profile-background: var(--theme-background);
+  --theme-page-profile-color: var(--theme-text-primary);
+  --theme-page-campaigns-background: var(--theme-background);
+  --theme-page-campaigns-color: var(--theme-text-primary);
+  --theme-page-media-background: var(--theme-background);
+  --theme-page-media-color: var(--theme-text-primary);
+  --theme-page-shop-background: var(--theme-background);
+  --theme-page-shop-color: var(--theme-text-primary);
+
+  /* === 프로그레스 바 === */
+  --theme-progress-width: 0%;
+  --theme-progress-gradient: linear-gradient(90deg, var(--theme-primary), var(--theme-accent));
+
+  /* === 애니메이션 === */
+  --theme-animation-delay: 0s;
+
+  /* === 글로우 효과 === */
+  --theme-glow-primary: 0 0 12px color-mix(in srgb, var(--palette-white) 20%, transparent), 0 0 24px color-mix(in srgb, var(--palette-white) 10%, transparent);
+  --theme-glow-primary-hover: 0 0 12px color-mix(in srgb, var(--palette-white) 40%, transparent), 0 0 24px color-mix(in srgb, var(--palette-white) 20%, transparent);
+  --theme-glow-secondary: 0 0 8px color-mix(in srgb, var(--palette-white) 20%, transparent), 0 0 16px color-mix(in srgb, var(--palette-white) 10%, transparent);
+
+  /* === 그라디언트 배경 === */
+  --theme-gradient-bg-primary: linear-gradient(135deg, var(--palette-semantic-bg-surface) 0%, var(--palette-semantic-bg-surface) 100%);
+  --theme-gradient-bg-secondary: linear-gradient(135deg, color-mix(in srgb, var(--palette-white) 8%, transparent) 0%, color-mix(in srgb, var(--palette-white) 3%, transparent) 100%);
+}
+
+/* === 다크 테마 (기본) === */
+[data-theme="dark"] {
+  --theme-primary: var(--palette-white) !important;
+  --theme-secondary: color-mix(in srgb, var(--palette-white) 90%, transparent) !important;
+  --theme-accent: color-mix(in srgb, var(--palette-white) 80%, transparent) !important;
+  --theme-background: var(--palette-black) !important;
+  --theme-panel: var(--palette-black) !important;
+  --theme-surface: var(--palette-semantic-bg-surface) !important;
+  --theme-text-primary: var(--palette-white) !important;
+  --theme-text-secondary: color-mix(in srgb, var(--palette-white) 80%, transparent) !important;
+  --theme-border: var(--palette-semantic-border-default) !important;
+  --primary-color: #FFFFFF !important;
+  --secondary-color: rgba(255, 255, 255, 0.8) !important;
+  --accent-color: rgba(255, 255, 255, 0.7) !important;
+  --background-color: #000000 !important;
+  --border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* === 테마 전환 애니메이션 === */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* === 다크/라이트모드 자동 감지 === */
+@media (prefers-color-scheme: dark), (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --theme-primary: var(--palette-white) !important;
+    --theme-secondary: color-mix(in srgb, var(--palette-white) 90%, transparent) !important;
+    --theme-accent: color-mix(in srgb, var(--palette-white) 80%, transparent) !important;
+    --theme-background: var(--palette-black) !important;
+    --theme-panel: var(--palette-black) !important;
+    --theme-surface: var(--palette-semantic-bg-surface) !important;
+    --theme-text-primary: var(--palette-white) !important;
+    --theme-text-secondary: color-mix(in srgb, var(--palette-white) 80%, transparent) !important;
+    --theme-border: var(--palette-semantic-border-default) !important;
+    --primary-color: var(--palette-white) !important;
+    --secondary-color: color-mix(in srgb, var(--palette-white) 80%, transparent) !important;
+    --accent-color: color-mix(in srgb, var(--palette-white) 70%, transparent) !important;
+    --background-color: var(--palette-black) !important;
+    --border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+}
+

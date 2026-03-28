@@ -37,6 +37,7 @@ export type DeukPackType =
   | 'record'   // 득팩 표준 (struct와 동일 의미)
   | 'enum'
   | DeukPackListType
+  | DeukPackArrayType
   | DeukPackSetType
   | DeukPackMapType
   | DeukPackTableLinkType;
@@ -44,6 +45,13 @@ export type DeukPackType =
 export interface DeukPackListType {
   type: 'list';
   elementType: DeukPackType;
+}
+
+/** 고정 길이 배열 — 와이어는 가변 list와 동일(Thrift list 등). */
+export interface DeukPackArrayType {
+  type: 'array';
+  elementType: DeukPackType;
+  size: number;
 }
 
 export interface DeukPackSetType {
@@ -331,6 +339,7 @@ export enum TokenType {
   STRING = 'STRING',
   BINARY = 'BINARY',
   LIST = 'LIST',
+  ARRAY = 'ARRAY',
   SET = 'SET',
   MAP = 'MAP',
 

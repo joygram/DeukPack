@@ -45,4 +45,3 @@ Then VS Code: **Extensions** → **...** → **Install from VSIX** → pick the 
 
 ## Links
 
-- [DeukPack IDL design](../docs/internal/DEUKPACK_IDL_DESIGN.ko.md) (C++ style, `[id] type name;`, `import`)
