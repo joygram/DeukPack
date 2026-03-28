@@ -195,7 +195,11 @@ export class DeukPackEngine {
 
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      const ast = this.parser.parse(content, filePath);
+      const ext = path.extname(filePath).toLowerCase();
+      const ast =
+        ext === '.deuk'
+          ? this.deukParser.parse(content, filePath)
+          : this.parser.parse(content, filePath);
 
       this.performanceMetrics.parseTime = Date.now() - startTime;
       this.performanceMetrics.fileCount = 1;

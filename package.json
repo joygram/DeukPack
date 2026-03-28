@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.2.10",
+  "version": "1.3.0",
   "description": "DeukPack — multi-format IDL pipeline (.deuk native, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). Protobuf-aligned wire; fast C#/C++/JS codegen, CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,23 +10,17 @@
   "scripts": {
     "setup": "node scripts/setup.js",
     "postinstall": "node scripts/npm-postinstall.js",
-    "prepublishOnly": "node scripts/sync-version-artifacts.js && npm run release-notice:apply && npm run build && npm run bundle:vscode && node scripts/build_unity_runtime_plugins.js --out upm/Runtime/Plugins -c Release",
-    "version:sync": "node scripts/sync-version-artifacts.js",
-    "postversion": "node scripts/sync-version-artifacts.js",
-    "bundle:vscode": "node scripts/bundle-vscode-vsix.js",
-    "build": "tsc && node scripts/copy-codegen-templates.js && npm run build:cs && node scripts/dist_csharp.js",
+    "build": "node ./node_modules/typescript/lib/tsc.js && node scripts/copy-codegen-templates.js && npm run build:cs && node scripts/dist_csharp.js",
     "build:native": "node-gyp rebuild",
     "build:all": "npm run build && npm run build:cpp && npm run build:cs",
     "build:cpp": "cd native/cpp && mkdir -p build && cd build && cmake .. && make",
     "build:cs": "cd DeukPack.Protocol && dotnet build DeukPack.Protocol.csproj -c Release",
     "test": "jest",
-    "test:cpp": "cmake -S native/cpp -B native/cpp/build && cmake --build native/cpp/build && ctest --test-dir native/cpp/build --output-on-failure",
+    "test:cpp": "node scripts/run-cpp-native-tests.js",
+    "test:idl-convert-smoke": "node scripts/idl-convert/smoke-thrift-to-deuk.js",
     "dev": "node ./node_modules/typescript/lib/tsc.js --watch",
     "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",
-    "release-notice:apply": "node scripts/apply-release-notice.js",
-    "release:check": "node scripts/release-check.js && npm run build && npm run bundle:vscode && npm test && npm pack --dry-run",
-    "verify": "node scripts/verify-build.js",
-    "verify:quick": "node scripts/verify-build.js --skip-test --skip-codegen"
+    "export:ai-context": "node scripts/export-ai-context.js"
   },
   "keywords": [
     "deukpack",
@@ -38,7 +32,9 @@
     "performance",
     "serialization",
     "binary",
-    "cross-platform"
+    "cross-platform",
+    "deuk-family",
+    "deukpack-ecosystem"
   ],
   "author": "deukpack-dev-team",
   "license": "Apache-2.0",
@@ -47,15 +43,22 @@
     "node-addon-api": "^8.6.0",
     "yaml": "^2.8.3"
   },
+  "optionalDependencies": {
+    "deuk-ui": "^2.0.0"
+  },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.19.0",
     "@vscode/vsce": "^3.7.1",
     "cmake-js": "^8.0.0",
-    "jest": "^30.3.0",
+    "csv-parse": "^6.2.1",
+    "google-protobuf": "^4.0.2",
+    "grpc-tools": "^1.13.1",
+    "jest": "^29.7.0",
     "node-gyp": "^12.2.0",
     "protobufjs": "^8.0.0",
     "rimraf": "^6.0.0",
+    "thrift": "^0.22.0",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.0"
   },

@@ -3,14 +3,26 @@
  * deukpack init | config — pipeline (deukpack.pipeline.json), workspace/Unity bootstrap (always), VSIX install last.
  * Accepts bootstrap flags: --kind, --engine-root, --manifest-out, -y, --no-unity (see deukpack bootstrap --help).
  *
+ * DeukUI orchestration flags are documented in docs/internal/DEUKPACK_DEUK_UI_INIT.md (hidden from public init --help until go-live).
+ *
  * --non-interactive: TTY not required; default pipeline + discovery; runs npm install sync + bootstrap --non-interactive (workspace always).
  * --workspace-only: skip pipeline file (same as legacy `deukpack bootstrap` entry).
  */
+
+/** After `deuk-ui` is on the public npm registry: set true and add the matching section back to README.md / README.ko.md. */
+const PUBLIC_DEUK_UI_INIT_HELP = false;
+
+function showDeukUiInitHelp() {
+    if (PUBLIC_DEUK_UI_INIT_HELP) return true;
+    const v = process.env.DEUKPACK_DEUK_UI_HELP;
+    return v === '1' || String(v).toLowerCase() === 'true';
+}
 
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const readline = require('readline');
+const { spawnSync } = require('child_process');
 const { ensureDeukpackNpmInstalled } = require('./init-ensure-deukpack-npm.js');
 const { runSyncAndUpmManifest } = require('./lib/upm-helpers.js');
 
@@ -43,7 +55,7 @@ async function promptYes(rl, text, defaultYes) {
     return a === 'y' || a === 'yes';
 }
 
-/** @returns {{ pipelineOut: string, force: boolean, nonInteractive: boolean, workspaceOnly: boolean, skipVsix: boolean, help: boolean, bootstrapForward: string[], useUnityEf: boolean }} */
+/** @returns {{ pipelineOut: string, force: boolean, nonInteractive: boolean, workspaceOnly: boolean, skipVsix: boolean, help: boolean, bootstrapForward: string[], useUnityEf: boolean, deukUiKind: string|null, deukUiForward: string[] }} */
 function parseInitArgs(argv) {
     const cwd = process.cwd();
     let pipelineOut = path.join(cwd, 'deukpack.pipeline.json');
@@ -53,7 +65,10 @@ function parseInitArgs(argv) {
     let skipVsix = false;
     let help = false;
     let useUnityEf = false;
+    /** @type {string|null} */
+    let deukUiKind = null;
     const bootstrapForward = [];
+    const deukUiForward = [];
 
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
@@ -73,10 +88,28 @@ function parseInitArgs(argv) {
             bootstrapForward.push('--engine-root', argv[++i]);
         } else if (a === '-y' || a === '--yes') bootstrapForward.push(a);
         else if (a === '--no-unity') bootstrapForward.push(a);
-        else {
+        else if (a === '--deuk-ui-kind' && argv[i + 1]) {
+            const v = String(argv[++i]).toLowerCase();
+            if (v !== 'registry' && v !== 'src') {
+                console.error(`[deukpack] --deuk-ui-kind must be registry or src (got "${v}")`);
+                process.exit(1);
+            }
+            deukUiKind = v;
+        } else if (a === '--app-dir' && argv[i + 1]) {
+            deukUiForward.push(a, argv[++i]);
+        } else if (a === '--styles-dir' && argv[i + 1]) {
+            deukUiForward.push(a, argv[++i]);
+        } else {
             console.error(`Unknown init option: ${a}`);
             process.exit(1);
         }
+    }
+
+    if (deukUiForward.length > 0 && deukUiKind == null) {
+        console.warn(
+            '[deukpack] --app-dir / --styles-dir apply only with --deuk-ui-kind; ignoring those flags.'
+        );
+        deukUiForward.length = 0;
     }
 
     return {
@@ -88,6 +121,8 @@ function parseInitArgs(argv) {
         help,
         bootstrapForward,
         useUnityEf,
+        deukUiKind,
+        deukUiForward,
     };
 }
 
@@ -104,12 +139,19 @@ Init / pipeline:
   --skip-vsix             Skip bundled Deuk IDL VSIX install (default: always attempt; forwarded to bootstrap)
 
 Bootstrap (forwarded):
-  --kind package|src      Engine install kind
+  --kind package|src      Engine install kind (aliases registry|npm → package for engine)
   --engine-root <path>     DeukPack repo root (--kind src)
   --manifest-out <dir>     Where to write .deukpack/ (default: cwd)
   -y, --yes                Non-interactive submodule yes
   --no-unity               Skip Unity scan
-
+${showDeukUiInitHelp()
+        ? `
+DeukUI (deuk-ui-init orchestration; not engine --kind):
+  --deuk-ui-kind registry|src   Run bundled deuk-ui-init (default workflow vs src + override hint)
+  --app-dir <path>              Forwarded to deuk-ui-init (only with --deuk-ui-kind)
+  --styles-dir <path>           Forwarded to deuk-ui-init (only with --deuk-ui-kind)
+`
+        : '\n'}
 Game profile (optional, when scripts/build-deukpack.config.json exists under cwd):
   --use-unity-ef           Sets unity.enableEfPersistence and default adapter paths; writes .deukpack/unity_ef_pipeline.json (recommended scripting define DEUKPACK_UNITY_EF for server asm).
 
@@ -418,6 +460,44 @@ async function runBootstrapSection(cwd, opts) {
     await bootstrapMain(args);
 }
 
+/**
+ * Spawn deuk-ui-init (dependency deuk-ui). INIT_CWD=cwd for postinstall-compatible resolution.
+ * @param {string} cwd
+ * @param {'registry'|'src'} kind
+ * @param {string[]} forwardArgv  Pairs e.g. ['--app-dir','src/next-app']
+ */
+function runDeukUiInit(cwd, kind, forwardArgv) {
+    let pkgPath;
+    try {
+        pkgPath = require.resolve('deuk-ui/package.json', { paths: [cwd, path.join(__dirname, '..')] });
+    } catch {
+        console.error(
+            '[deukpack] Missing npm package "deuk-ui". Run npm install (deukpack lists deuk-ui as a dependency).'
+        );
+        process.exit(1);
+    }
+    const initJs = path.join(path.dirname(pkgPath), 'bin', 'init.js');
+    if (!fsSync.existsSync(initJs)) {
+        console.error('[deukpack] deuk-ui bin/init.js not found:', initJs);
+        process.exit(1);
+    }
+    const argv = [initJs, '--kind', kind, ...forwardArgv];
+    const env = { ...process.env, INIT_CWD: cwd };
+    const r = spawnSync(process.execPath, argv, { cwd, stdio: 'inherit', env });
+    if (r.error) {
+        console.error('[deukpack] deuk-ui-init:', r.error.message);
+        process.exit(1);
+    }
+    if (r.status !== 0 && r.status != null) process.exit(r.status);
+    if (r.signal) process.exit(1);
+}
+
+async function maybeRunDeukUiInit(cwd, opts) {
+    if (!opts.deukUiKind) return;
+    console.log(`[deukpack] deuk-ui-init --kind ${opts.deukUiKind}`);
+    runDeukUiInit(cwd, opts.deukUiKind, opts.deukUiForward);
+}
+
 async function main(argv) {
     const opts = parseInitArgs(argv);
     if (opts.help) {
@@ -451,6 +531,7 @@ async function main(argv) {
         }
         printInitFollowUpOneLiner(cwd, defaultPipeline);
         if (opts.useUnityEf) await mergeGameBuildDeukpackProfile(cwd);
+        await maybeRunDeukUiInit(cwd, opts);
         return;
     }
 
@@ -518,6 +599,7 @@ async function main(argv) {
             await applyBundledVsixInstall(cwd, { hasUnityProject: vsixUnityHint() });
         }
         printInitFollowUpOneLiner(cwd, outPath);
+        await maybeRunDeukUiInit(cwd, opts);
         return;
     }
 
@@ -534,6 +616,7 @@ async function main(argv) {
         printInitFollowUpOneLiner(cwd, outPath);
     }
     if (opts.useUnityEf) await mergeGameBuildDeukpackProfile(cwd);
+    await maybeRunDeukUiInit(cwd, opts);
 }
 
 /** Single closing line after bootstrap + VSIX (init / --workspace-only). */

@@ -4,6 +4,9 @@
 *.md text eol=lf
 *.mdc text eol=lf
 
+# POSIX shell (Docker/Linux)
+*.sh text eol=lf
+
 # Windows scripts
 *.cmd text eol=crlf
 *.bat text eol=crlf

@@ -1,0 +1,34 @@
+{
+  "paths": {
+    "webRoot": "apps/web",
+    "appDir": "app",
+    "componentsDir": "components",
+    "publicExport": "public/export",
+    "dtoFile": "api/dto.generated.ts",
+    "mappersDir": "lib/mappers",
+    "exportImages": "/export/images/",
+    "exportIcons": "/export/icons/",
+    "publicImages": "/export/images/",
+    "publicIcons": "/export/icons/",
+    "publicVideos": "/videos/"
+  },
+  "initAppDirCandidates": [
+    "apps/web",
+    "apps/next",
+    "web",
+    "app",
+    "src"
+  ],
+  "sharedSections": {
+    "default": []
+  },
+  "codeGeneration": {
+    "outputTarget": "next",
+    "unityOutputPath": "Unity/Assets/UI/Prefabs"
+  },
+  "exportServer": {
+    "port": 3333,
+    "pluginName": "DeukUI (DeukPack)",
+    "pluginId": "deuk-ui-deukpack"
+  }
+}

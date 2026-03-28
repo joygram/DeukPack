@@ -1,0 +1,220 @@
+/* ============================================
+   테마 기반 기본 스타일
+   ============================================ */
+
+/* === HTML 기본 === */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  scroll-behavior: smooth;
+  background: var(--theme-background, var(--palette-black));
+}
+
+body {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  background: var(--theme-background, var(--palette-black));
+  color: var(--theme-text-primary, var(--palette-white));
+  overflow-x: hidden;
+  font-size: var(--theme-font-size, 16px);
+  line-height: var(--theme-line-height, 1.5);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === 텍스트 선택 === */
+::selection {
+  background-color: var(--theme-primary, var(--palette-white));
+  color: var(--palette-white);
+}
+
+::-moz-selection {
+  background-color: var(--theme-primary, var(--palette-white));
+  color: var(--palette-white);
+}
+
+/* === 링크 스타일 === */
+a {
+  color: var(--theme-primary, var(--palette-white));
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+
+a:hover {
+  opacity: 0.9;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--theme-primary, var(--palette-white));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* === 제목 === */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-weight: 700;
+  color: var(--theme-text-primary, var(--palette-white));
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+}
+
+h1 { font-size: 2.5rem; font-weight: 800; }
+h2 { font-size: 2rem; font-weight: 700; }
+h3 { font-size: 1.75rem; font-weight: 700; }
+h4 { font-size: 1.5rem; font-weight: 600; }
+h5 { font-size: 1.25rem; font-weight: 600; }
+h6 { font-size: 1rem; font-weight: 600; }
+
+/* === 텍스트 === */
+p {
+  margin: 0 0 1rem 0;
+  color: var(--theme-text-primary, var(--palette-white));
+}
+
+small {
+  font-size: 0.875rem;
+  color: var(--theme-text-secondary, var(--palette-gray-400));
+}
+
+strong, b {
+  font-weight: 600;
+  color: var(--theme-text-primary, var(--palette-white));
+}
+
+em, i {
+  font-style: italic;
+}
+
+/* === 버튼 기본 === */
+button {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--theme-primary, var(--palette-white));
+  outline-offset: 2px;
+}
+
+/* === 입력 요소 === */
+input, textarea, select {
+  font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  color: var(--theme-text-primary, var(--palette-white));
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--theme-text-secondary, var(--palette-gray-400));
+  opacity: 0.6;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid var(--theme-primary, var(--palette-white));
+  outline-offset: 0;
+}
+
+/* === 이미지 === */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* === 리스트 === */
+ul, ol {
+  margin: 0 0 1rem 0;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+  color: var(--theme-text-primary, var(--palette-white));
+}
+
+/* === 코드 === */
+code, pre {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+}
+
+code {
+  background: var(--theme-surface, var(--palette-gray-800));
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  color: var(--theme-accent, var(--palette-white));
+}
+
+pre {
+  background: var(--theme-surface, var(--palette-gray-800));
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border: 1px solid var(--theme-border, var(--palette-gray-700));
+}
+
+pre code {
+  background: none;
+  padding: 0;
+}
+
+/* === HR === */
+hr {
+  border: none;
+  border-top: 1px solid var(--theme-border, var(--palette-gray-700));
+  margin: 2rem 0;
+}
+
+/* === 유틸리티 클래스 === */
+.text-primary {
+  color: var(--theme-text-primary, var(--palette-white)) !important;
+}
+
+.text-secondary {
+  color: var(--theme-text-secondary, var(--palette-gray-400)) !important;
+}
+
+.bg-background {
+  background-color: var(--theme-background, var(--palette-black)) !important;
+}
+
+.bg-panel {
+  background-color: var(--theme-panel, var(--palette-black)) !important;
+}
+
+.bg-surface {
+  background-color: var(--theme-surface, var(--palette-gray-800)) !important;
+}
+
+/* === 레이아웃 유틸리티 === */
+.container {
+  width: 100%;
+  max-width: var(--theme-max-width, 1200px);
+  margin: 0 auto;
+  padding: 0 var(--theme-padding, 1.5rem);
+}
+
+.page {
+  min-height: 100vh;
+  background-color: var(--theme-background, var(--palette-black));
+  color: var(--theme-text-primary, var(--palette-white));
+}
+

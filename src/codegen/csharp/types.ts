@@ -81,6 +81,7 @@ export function getCSharpType(type: DeukPackType, ctx: TypeContext): string {
     const objType = type as { type: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
     switch (objType.type) {
       case 'list':
+      case 'array':
         return `List<${getCSharpType(objType.elementType!, ctx)}>`;
       case 'set':
         return `HashSet<${getCSharpType(objType.elementType!, ctx)}>`;
@@ -147,7 +148,9 @@ export function getTType(type: DeukPackType, ctx: TypeContext): string {
   if (typeof type === 'object' && type && (type as any).type) {
     const objType = type as { type: string };
     switch (objType.type) {
-      case 'list': return 'DpWireType.List';
+      case 'list':
+      case 'array':
+        return 'DpWireType.List';
       case 'set': return 'DpWireType.Set';
       case 'map': return 'DpWireType.Map';
       case 'tablelink': return 'DpWireType.Int64';

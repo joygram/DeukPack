@@ -4,6 +4,23 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.3.0] — 2026-03-28
+
+### Core: Official Transition to AI-Ready Interface Hub
+
+- **Mixed-IDL Hybrid Serializer**: Established a system that simultaneously parses **`.deuk`**, **`.thrift`**, **`.proto`**, and **OpenAPI** definitions through a single DeukPack core entry and unifies them into a single binary spec.
+- **IDL-to-AI Semantic Mapping**: Added a feature to extract **Semantic Context (Markdown/JSON)** from the DeukPack AST using **`AiContextGenerator`**, enabling AI agents (LLMs) to understand architecture and data structures with 100% clarity. (**`npm run export:ai-context`**)
+- **Website (`deukpack.app`) Overhaul**: Completely restructured and synchronized the main landing page and product introductions (Core, Protocol, Excel, Pipeline) with the 'AI-Ready Interface Hub' concept.
+
+### Added
+
+
+### Changed
+
+- **`npm run build`**: TypeScript compile uses **`node ./node_modules/typescript/lib/tsc.js`** so `build` succeeds when `tsc` is not on `PATH` (e.g. some Windows setups).
+- **DevDependencies**: **`jest`** pinned to **^29.7.0`** (with **`@types/jest`** ^29.5.14) so **`npm test`** works with **`ts-jest`** on Windows; Jest **30** rejected the `ts-jest` preset/transform path in this environment.
+- **C++ wire tests on Windows**: **`npm run test:cpp`** and **`verify-build.js`** use **`scripts/run-cpp-native-tests.js`**, which configures CMake with **Visual Studio** (`-G "Visual Studio 17 2022" -A x64` by default) so the default **NMake** generator is not required. Override with **`DEUKPACK_CPP_CMAKE_GENERATOR`** / **`DEUKPACK_CPP_CMAKE_ARCH`** if needed.
+
 ---
 
 ## [1.2.10] — 2026-03-26
@@ -15,7 +32,6 @@ Notable changes to the `deukpack` npm package by release.
 
 ### Changed
 
-- **`npm run sync:oss:apply` / `version:sync` / `bundle:vscode`**: internal `npm install`/`npm ci` calls now use **`--loglevel=silent`** — suppresses EBADENGINE (Jest 30 ↔ Node 23 engine-range mismatch) and deprecated-package noise from console output during automation.
 - **`package.json`**: added `npm` engine floor (`>=9.0.0`); added `.npmrc` to `files` so consumers inherit `fund=false` / `audit=false` defaults.
 - **`.npmrc`** (repo root): `fund=false`, `audit=false` — no fund/audit noise on `npm install` in this repo.
 

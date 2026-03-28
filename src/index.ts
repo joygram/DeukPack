@@ -29,6 +29,7 @@ export * from './protocols/JsonProtocol';
 export * from './protocols/SerializationWarnings';
 export { structToPackBinary, structFromPackBinary } from './serialization/packStructWire';
 export type { EmbeddedPackSchemaField, EmbeddedPackStructSchema } from './serialization/packStructWire';
+export * from './ai/AiContextGenerator';
 
 // Native bindings
 export { NativeDeukPackEngine } from './native/NativeDeukPackEngine';

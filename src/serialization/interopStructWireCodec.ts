@@ -105,7 +105,7 @@ function dpWireTypeForFieldHeader(field: DeukPackField): DpWireType {
   }
   if (typeof t === 'object' && t !== null && 'type' in t) {
     const o = t as { type: string };
-    if (o.type === 'list') return DpWireType.List;
+    if (o.type === 'list' || o.type === 'array') return DpWireType.List;
     if (o.type === 'set') return DpWireType.Set;
     if (o.type === 'map') return DpWireType.Map;
     if (o.type === 'tablelink') return DpWireType.Int64;
@@ -270,7 +270,7 @@ function writeValue(p: DpProtocol, value: unknown, field: DeukPackField, ctx: Ct
   }
   if (typeof t === 'object' && t !== null && 'type' in t) {
     const o = t as { type: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
-    if (o.type === 'list') {
+    if (o.type === 'list' || o.type === 'array') {
       const arr = value as unknown[];
       if (!Array.isArray(arr)) throw new Error(`[DeukPack] interop: field "${field.name}" expects array`);
       const et = o.elementType!;
@@ -412,7 +412,7 @@ function readValue(p: DpProtocol, field: DeukPackField, ctx: Ctx): unknown {
   }
   if (typeof t === 'object' && t !== null && 'type' in t) {
     const o = t as { type: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
-    if (o.type === 'list') {
+    if (o.type === 'list' || o.type === 'array') {
       const lb = p.readListBegin();
       const et = o.elementType!;
       const arr: unknown[] = [];

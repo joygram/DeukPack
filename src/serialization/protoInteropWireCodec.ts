@@ -318,7 +318,7 @@ function writeField(w: PbWriter, value: unknown, field: DeukPackField, ctx: Ctx)
 
   if (typeof t === 'object' && t !== null && 'type' in t) {
     const o = t as { type: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
-    if (o.type === 'list' || o.type === 'set') {
+    if (o.type === 'list' || o.type === 'array' || o.type === 'set') {
       writeRepeatedField(w, field.id, o.elementType!, value as unknown[], ctx);
       return;
     }
@@ -448,7 +448,9 @@ function readStruct(r: PbReader, struct: DeukPackStruct, ctx: Ctx): Record<strin
 function isRepeatedField(field: DeukPackField): boolean {
   const t = field.type;
   return typeof t === 'object' && t !== null && 'type' in t &&
-    ((t as { type: string }).type === 'list' || (t as { type: string }).type === 'set');
+    ((t as { type: string }).type === 'list' ||
+      (t as { type: string }).type === 'array' ||
+      (t as { type: string }).type === 'set');
 }
 
 function isMapField(field: DeukPackField): boolean {
@@ -475,7 +477,7 @@ function readFieldValue(r: PbReader, wireType: number, field: DeukPackField, ctx
 
   if (typeof t === 'object' && t !== null && 'type' in t) {
     const o = t as { type: string; elementType?: DeukPackType; keyType?: DeukPackType; valueType?: DeukPackType };
-    if (o.type === 'list' || o.type === 'set') {
+    if (o.type === 'list' || o.type === 'array' || o.type === 'set') {
       return readRepeatedValue(r, wireType, o.elementType!, ctx);
     }
     if (o.type === 'map') {

@@ -114,8 +114,10 @@ function _packWriteValue(a, val, f, schemas) {
     _packWriteStructBody(a, cs, val, schemas);
     return;
   }
-  if (t === "list" || t === "set") {
-    var em = (tn.match(/^(?:list|set)<(.+)>$/i) || [])[1];
+  if (t === "list" || t === "set" || t === "array") {
+    var em =
+      (tn.match(/^array<([^,>]+),\s*\d+>$/i) || [])[1] ||
+      (tn.match(/^(?:list|set)<(.+)>$/i) || [])[1];
     em = em ? em.trim() : "";
     var arr = val || [];
     a.push(_PackTag.Array);
@@ -285,7 +287,10 @@ function _packReadValue(r, f, schemas) {
   if (tag === _PackTag.Binary) return _prBinary(r);
   if (tag === _PackTag.Array) {
     var n = _prI32(r);
-    var em = f && f.typeName ? (f.typeName.match(/^(?:list|set)<(.+)>$/i) || [])[1] : "";
+    var em = f && f.typeName
+      ? (f.typeName.match(/^array<([^,>]+),\s*\d+>$/i) || [])[1] ||
+        (f.typeName.match(/^(?:list|set)<(.+)>$/i) || [])[1]
+      : "";
     em = em ? em.trim() : "";
     var fake = em ? { type: _packElemWireType(em), typeName: em, required: true } : null;
     var arr = [];

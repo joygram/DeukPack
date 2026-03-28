@@ -4,6 +4,23 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
+## [1.3.0] — 2026-03-28
+
+### 핵심: AI-Ready Interface Hub 정식 전환
+
+- **Mixed-IDL 하이브리드 시리얼라이저**: 득팩 코어 엔트리 하나로 **`.deuk`**, **`.thrift`**, **`.proto`**, **OpenAPI** 정의를 동시에 파싱하고 단일 바이너리 스펙으로 통합하는 체계를 확립했습니다.
+- **IDL-to-AI 시맨틱 매핑**: **`AiContextGenerator`**를 통해 득팩 AST에서 AI 에이전트(LLM)가 아키텍처와 데이터 구조를 100% 명확히 이해할 수 있는 **시맨틱 컨텍스트(Markdown/JSON)** 추출 기능을 추가했습니다. (**`npm run export:ai-context`**)
+- **공식 웹사이트(`deukpack.app`) 개편**: 'AI-Ready 인터페이스 허브' 컨셉에 맞춰 메인 페이지와 제품군(Core, Protocol, Excel, Pipeline) 소개서를 전면 개편하고 동기화했습니다.
+
+### 추가
+
+
+### 변경
+
+- **`npm run build`**: TypeScript 컴파일을 **`node ./node_modules/typescript/lib/tsc.js`** 로 호출 — `tsc`가 `PATH`에 없어도 빌드 가능(일부 Windows 환경).
+- **devDependencies**: **`jest`** 를 **^29.7.0** 으로 핀(**`@types/jest`** ^29.5.14) — Windows에서 **Jest 30**이 **`ts-jest`** preset/transform 경로 검증에 실패하여 **`npm test`** 가 돌아가도록 함.
+- **Windows C++ 와이어 테스트**: **`npm run test:cpp`**·**`verify-build.js`** 가 **`scripts/run-cpp-native-tests.js`** 를 사용해 CMake를 **Visual Studio** 생성기로 구성(기본 **Visual Studio 17 2022**, **x64**) — **NMake** 없이 동작. 필요 시 **`DEUKPACK_CPP_CMAKE_GENERATOR`** / **`DEUKPACK_CPP_CMAKE_ARCH`** 로 변경.
+
 ---
 
 ## [1.2.10] — 2026-03-26
@@ -15,7 +32,6 @@
 
 ### 변경
 
-- **`npm run sync:oss:apply` / `version:sync` / `bundle:vscode`**: 내부 `npm install`/`npm ci` 호출에 **`--loglevel=silent`** 적용 — 자동화 실행 중 EBADENGINE(Jest 30 ↔ Node 23 엔진 범위 불일치) 및 deprecated 패키지 노이즈 출력 제거.
 - **`package.json`**: `npm` 엔진 하한 추가(`>=9.0.0`); `.npmrc`를 `files`에 포함해 소비자에게 `fund=false`/`audit=false` 기본값 전달.
 - **`.npmrc`**(저장소 루트): `fund=false`, `audit=false` 설정.
 

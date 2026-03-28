@@ -757,6 +757,8 @@ export class DeukPackASTBuilder {
         return this.parseIdentifierType();
       case TokenType.LIST:
         return this.parseListType();
+      case TokenType.ARRAY:
+        return this.parseArrayType();
       case TokenType.SET:
         return this.parseSetType();
       case TokenType.MAP:
@@ -817,6 +819,26 @@ export class DeukPackASTBuilder {
     return {
       type: 'list',
       elementType
+    } as unknown as DeukPackType;
+  }
+
+  /** Parse array<elem, size> — 고정 길이; 와이어는 list와 동일. */
+  private parseArrayType(): DeukPackType {
+    this.advance(); // consume 'array'
+    this.expect(TokenType.LEFT_BRACKET);
+    const elementType = this.parseType();
+    this.expect(TokenType.COMMA);
+    const numTok = this.expect(TokenType.NUMBER);
+    const size = parseInt(numTok.value, 10);
+    if (!Number.isFinite(size) || size < 0) {
+      throw new Error(`Invalid array size: ${numTok.value}`);
+    }
+    this.expect(TokenType.RIGHT_BRACKET);
+
+    return {
+      type: 'array',
+      elementType,
+      size
     } as unknown as DeukPackType;
   }
 
