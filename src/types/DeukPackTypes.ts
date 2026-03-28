@@ -447,6 +447,10 @@ export interface GenerationOptions {
   braceLessNamespace?: boolean;
   /** 한 파일에 여러 `namespace` 선언 허용 여부. */
   allowMultiNamespace?: boolean;
+  /** 명시적 생성기 목록 (e.g. ['csharp', 'mcp']). */
+  generators?: string[];
+  /** 다중 언어 생성 시 목표 언어 목록. */
+  targetLanguages?: ('javascript' | 'cpp' | 'csharp')[];
 }
 
 export interface PerformanceMetrics {

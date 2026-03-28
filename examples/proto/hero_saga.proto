@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package deukpack.saga;
+
+/*
+ * 영웅의 서사시 (Hero Saga) - 실전형 복잡 구조 예제
+ */
+message Hero {
+  uint32 id = 1;
+  // 영웅의 이름
+  string name = 2;
+  
+  // 영웅의 신분
+  enum Role {
+    PALADIN = 0;
+    MAGE = 1;
+    ROGUE = 2;
+    WARRIOR = 3;
+  }
+  Role role = 3;
+  
+  // 영웅의 능력치 정보
+  message Ability {
+    int32 strength = 1;
+    int32 intelligence = 2;
+    int32 agility = 3;
+    
+    // 능력치 등급
+    enum Grade {
+      NORMAL = 0;
+      EPIC = 1;
+      LEGENDARY = 2;
+    }
+    Grade grade = 4;
+  }
+  Ability stats = 4;
+  
+  // 영웅의 인벤토리 (Oneof 예제)
+  message Weapon {
+    string weapon_name = 1;
+    int32 damage = 2;
+  }
+  
+  message Armor {
+    string armor_name = 1;
+    int32 defense = 2;
+  }
+  
+  oneof equipment {
+    Weapon primary_weapon = 5;
+    Armor main_armor = 6;
+  }
+  
+  repeated string titles = 7; // 획득한 칭호 목록
+}
+
+message QuestRequest {
+  uint32 hero_id = 1;
+  string location = 2;
+}
+
+message QuestResponse {
+  bool success = 1;
+  string message = 2;
+  repeated string rewards = 3; // 획득 보상
+}
+
+service SagaService {
+  /*
+   * 퀘스트를 수락하고 서사시를 진행합니다.
+   */
+  rpc EmbarkQuest(QuestRequest) returns (QuestResponse);
+}

@@ -11,12 +11,12 @@ import { CSharpGenerator } from '../CSharpGenerator';
 import type { DeukPackAST, DeukPackStruct, DeukPackEnum, DeukPackNamespace } from '../../types/DeukPackTypes';
 
 function buildMinimalAst(): DeukPackAST {
-  const nsGplat: DeukPackNamespace = { language: '*', name: 'gplat_define', sourceFile: 'gplat.thrift' };
-  const nsAuth: DeukPackNamespace = { language: '*', name: 'msg_gen_auth', sourceFile: 'auth.thrift' };
+  const nsCommon: DeukPackNamespace = { language: '*', name: 'dp_common', sourceFile: 'common.thrift' };
+  const nsAuth: DeukPackNamespace = { language: '*', name: 'msg_auth', sourceFile: 'auth.thrift' };
 
   const structMsgResult: DeukPackStruct = {
     name: 'MsgResult',
-    sourceFile: 'gplat.thrift',
+    sourceFile: 'common.thrift',
     fields: [
       { id: 1, name: 'ResultCode', type: 'int64', required: false },
     ],
@@ -24,10 +24,10 @@ function buildMinimalAst(): DeukPackAST {
 
   const structMsgInfo: DeukPackStruct = {
     name: 'MsgInfo',
-    sourceFile: 'gplat.thrift',
+    sourceFile: 'common.thrift',
     fields: [
       { id: 1, name: 'MsgId', type: 'int32', required: false },
-      { id: 2, name: 'MsgResult', type: 'gplat_define.MsgResult' as any, required: false },
+      { id: 2, name: 'MsgResult', type: 'dp_common.MsgResult' as any, required: false },
     ],
   };
 
@@ -41,7 +41,7 @@ function buildMinimalAst(): DeukPackAST {
     name: 'ack_login',
     sourceFile: 'auth.thrift',
     fields: [
-      { id: 1, name: 'msg_info', type: 'gplat_define.MsgInfo' as any, required: false, defaultValue: { MsgId: 1 } },
+      { id: 1, name: 'msg_info', type: 'dp_common.MsgInfo' as any, required: false, defaultValue: { MsgId: 1 } },
       { id: 2, name: 'count', type: 'int32', required: false, defaultValue: 0 },
       { id: 3, name: 'kind', type: 'test_e' as any, required: false, defaultValue: 'test_e._NONE' },
       { id: 4, name: 'scale', type: 'double', required: false, defaultValue: 1.0 },
@@ -49,7 +49,7 @@ function buildMinimalAst(): DeukPackAST {
   };
 
   return {
-    namespaces: [nsGplat, nsAuth],
+    namespaces: [nsCommon, nsAuth],
     structs: [structMsgResult, structMsgInfo, structAckLogin],
     enums: [enumTestE],
     services: [],
@@ -57,8 +57,8 @@ function buildMinimalAst(): DeukPackAST {
     constants: [],
     includes: [],
     fileNamespaceMap: {
-      'gplat.thrift': 'gplat_define',
-      'auth.thrift': 'msg_gen_auth',
+      'common.thrift': 'dp_common',
+      'auth.thrift': 'msg_auth',
     },
   };
 }
@@ -116,22 +116,22 @@ describe('CSharpGenerator: 기본값 및 호환', () => {
   describe('디폴트 값 지정 시 struct 필드 (NRE 방지)', () => {
     it('디폴트가 지정된 struct 필드는 선언 시 초기화되어 null이 아니다', () => {
       const authCs = generated['auth_deuk.cs'] ?? '';
-      expect(authCs).toMatch(/public (global::)?gplat_define\.MsgInfo Msg_info\s*\{ get; set; \}\s*=/);
+      expect(authCs).toMatch(/public (global::)?dp_common\.MsgInfo Msg_info\s*\{ get; set; \}\s*=/);
       expect(authCs).toMatch(
-        /Msg_info\s*=\s*(new (global::)?gplat_define\.MsgInfo\(\)|(global::)?gplat_define\.MsgInfo\.CreateDefault\(\))/
+        /Msg_info\s*=\s*(new (global::)?dp_common\.MsgInfo\(\)|(global::)?dp_common\.MsgInfo\.CreateDefault\(\))/
       );
     });
 
     it('Read() 진입 시 모든 필드를 기본값으로 초기화하여 wire-absent 필드·null 방지', () => {
       const authCs = generated['auth_deuk.cs'] ?? '';
-      expect(authCs).toMatch(/this\.Msg_info\s*=\s*new (global::)?gplat_define\.MsgInfo\(\)\s*\{/);
+      expect(authCs).toMatch(/this\.Msg_info\s*=\s*new (global::)?dp_common\.MsgInfo\(\)\s*\{/);
       expect(authCs).toContain('this.Count = 0');
-      expect(authCs).toContain('this.Kind = msg_gen_auth.test_e._NONE');
+      expect(authCs).toContain('this.Kind = msg_auth.test_e._NONE');
     });
 
     it('디폴트 미지정 struct 필드에는 강제 CreateDefault() 초기화를 넣지 않는다', () => {
-      const gplatCs = generated['gplat_deuk.cs'] ?? '';
-      expect(gplatCs).toContain('public static MsgInfo CreateDefault()');
+      const commonCs = generated['common_deuk.cs'] ?? '';
+      expect(commonCs).toContain('public static MsgInfo CreateDefault()');
     });
   });
 
@@ -139,21 +139,21 @@ describe('CSharpGenerator: 기본값 및 호환', () => {
     it('CreateDefault() 내부에서 디폴트가 지정된 struct 필드는 초기화된다', () => {
       const authCs = generated['auth_deuk.cs'] ?? '';
       expect(authCs).toMatch(
-        /o\.Msg_info\s*=\s*(new (global::)?gplat_define\.MsgInfo\(\)|(global::)?gplat_define\.MsgInfo\.CreateDefault\(\))/
+        /o\.Msg_info\s*=\s*(new (global::)?dp_common\.MsgInfo\(\)|(global::)?dp_common\.MsgInfo\.CreateDefault\(\))/
       );
     });
 
     it('특정 필드만 지정해도 미지정 하위 struct는 CreateDefault()로 할당된다 (Apache 방식)', () => {
       const authCs = generated['auth_deuk.cs'] ?? '';
       expect(authCs).toContain('MsgId = 1');
-      expect(authCs).toMatch(/MsgResult\s*=\s*(global::)?gplat_define\.MsgResult\.CreateDefault\(\)/);
+      expect(authCs).toMatch(/MsgResult\s*=\s*(global::)?dp_common\.MsgResult\.CreateDefault\(\)/);
     });
 
     it('생성된 C#에 CreateDefault() 메서드가 모든 struct에 존재한다', () => {
       const authCs = generated['auth_deuk.cs'] ?? '';
-      const gplatCs = generated['gplat_deuk.cs'] ?? '';
+      const commonCs = generated['common_deuk.cs'] ?? '';
       expect(authCs).toContain('public static ack_login CreateDefault()');
-      expect(gplatCs).toContain('public static MsgInfo CreateDefault()');
+      expect(commonCs).toContain('public static MsgInfo CreateDefault()');
     });
   });
 });
