@@ -82,7 +82,6 @@
     "scripts/bootstrap.js",
     "scripts/npm-postinstall.js",
     "scripts/bundled-deuk-idl-vsix.js",
-    "scripts/sync_workspace_runtime.js",
     "scripts/deukpack_init.js",
     "scripts/init-ensure-deukpack-npm.js",
     "scripts/lib/upm-helpers.js",

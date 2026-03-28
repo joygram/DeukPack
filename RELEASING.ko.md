@@ -104,6 +104,7 @@
    - `npm version patch` (또는 `minor` — 아래 버전 정책 참고)  
    - `npm install` → `package-lock.json` 갱신 후 커밋  
    - (선택) `npm version`이 만든 로컬 태그는 릴리스용이 아니므로 `git tag -d vX.Y.Z` 로 삭제해 두거나, DeukPack 원격에는 태그를 푸시하지 않는다.  
+   - `npm run sync:oss:apply` → OSS 디렉터리까지 동기화 (갱신된 `package.json` 포함)
 2. **DeukPackOSS**에서  
    - `git add -A` · `git status` 확인  
    - `git commit -m "release: vX.Y.Z"` (또는 [OSS_SYNC_COMMIT_MESSAGES.md](https://github.com/joygram/DeukPack/blob/main/docs/OSS_SYNC_COMMIT_MESSAGES.ko.md) 형식)  
@@ -143,6 +144,8 @@
 
 공개용 저장소(DeukPackOSS)에 배포할 때는 **동기화 스크립트**로 내부 전용 경로를 제외한 뒤 복사한다.
 
+1. `npm run sync:oss` — dry-run으로 변경 목록 확인  
+2. `npm run sync:oss:apply` — **`npm run build`**·**`bundle:vscode`**(동봉 **`bundled/deuk-idl.vsix`**) 후 `../DeukPackOSS` 로 동기화; 적용 후 OSS 쪽에서도 **`npm run build`**·**`bundle:vscode`** 가 다시 실행됨 (**버전 올린 뒤** 실행 권장)  
 3. `cd ../DeukPackOSS` → `git add` · `git commit` · `git push`  
 4. npm/Release 반영 시: 위 **npm 반영 및 버전 변경** 절의 순서대로 태그 푸시.
 
