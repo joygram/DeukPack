@@ -56,14 +56,14 @@ function printCliUsage(opts = {}) {
     line(`DeukPack CLI v${DEUKPACK_CLI_VERSION}`);
     line('');
     line('Usage:');
-    line('  deukpack init | deukpack config   Pipeline + workspace bootstrap + VSIX install last (unless --skip-vsix); --non-interactive uses defaults + npm sync');
+    line('  deukpack init | deukpack config   Pipeline + workspace bootstrap + VSIX install last (unless --skip-vsix); --non-interactive uses defaults + npm align');
     line('  deukpack bootstrap               Same as: deukpack init --workspace-only');
     line('  deukpack run [pipeline.json]      Run --pipeline on ./deukpack.pipeline.json or a given file');
     line('  deukpack <entry.deuk> <outputDir> [flags]');
     line('  deukpack build <entry.deuk> <outputDir> [flags]   (same)');
     line('  deukpack --pipeline <config.json>   (jobs: defineScope "all" = every .deuk under defineRoot minus exclude; else thriftFile entry)');
     line('  deukpack bootstrap [args]');
-    line('  deukpack sync [args]');
+    line('  deukpack align [args]');
     line('');
     line('Includes (single-shot CLI):');
     line('  The entry file’s directory is always searched.');
