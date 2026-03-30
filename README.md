@@ -1,6 +1,6 @@
-# DeukPack: AI-Native Universal IDL Gateway
+# DeukPack: AI-Native Universal Schema Multi-hub
 
-> **Mixed-IDL Hybrid Serializer for the AI Era.**
+> **Universal Schema Multi-hub for Protobuf, Thrift, OpenAPI, and .deuk. (High-Performance)**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://img.shields.io/npm/v/deukpack.svg)](https://www.npmjs.com/package/deukpack)
@@ -43,12 +43,89 @@ Modern systems often struggle with a fragmented mix of Specs—legacy (Thrift), 
 Go beyond basic data types. DeukPack extracts metadata from your IDL comments (`/** ... */`) and field structures, transforming them into a **'Semantic Context'** that AI can instantly grasp.
 - **Breakthrough:** Designers evolve from simple coders into high-level architects defining **data lineage** via a machine-readable semantic layer.
 
-### 3. AI-Native Execution Bridge (MCP - 🚧 WIP)
+### 3. AI-Native Execution Bridge (MCP Plugin Support)
 Existing IDL tools generate static code. DeukPack generates a **runtime execution bridge** that allows AI agents to interact with the world.
-- **Guardrailed Automation:** Automatically generates a **Model Context Protocol (MCP)** server. AI agents (Cursor, Claude, etc.) can browse live documentation and execute backend methods (Tools) with Zod-based guardrails. *(Note: Tool implementation logic currently requires manual coding in generated handlers.)*
+- **Plugin-based Expansion:** The **Model Context Protocol (MCP)** server auto-generation feature has been decoupled into a standalone plugin (`DeukPackMcp`) for better core modularity. AI agents (Cursor, Claude, etc.) can now leverage the **Intelligent Context** extracted from the core to browse live documentation and execute backend methods via the plugin.
 
-### 4. Zero-Allocation High Performance
-DeukPack is engineered for extreme efficiency. Whether parsing 500+ IDL files or serializing massive objects, it remains **orders of magnitude faster** than classic industry flows.
+### 4. Zero-Allocation High Performance (Bottleneck-Free)
+DeukPack is engineered for extreme efficiency. Whether parsing 500+ IDL files or serializing massive objects, it remains **orders of magnitude faster** than classic industry flows. See raw numbers in the [Performance](#-performance-the-zero-bottleneck-foundation) section below.
+
+---
+
+## 🚀 Release Roadmap
+
+DeukPack increments the **Minor** version for each new language or platform support. We are currently expanding the ecosystem through the **v1.5.x series**.
+
+| Version | Key Milestones | Status |
+| :--- | :--- | :--- |
+| **v1.4.0** | MCP Protobuf expansion, C#/C++/JS core runtime stabilization | **DONE** |
+| **v1.5.0** | **Java & Core Parity**: Inheritance support, Compact/TJSON protocols, Universal security guards, and **MCP Core Decoupling** | **Current** |
+| **v1.5.1** | C++ Low-latency (Zero-Alloc) optimization & DDL generator | In Progress |
+| **v1.6.0** | **Elixir Expansion Pilot**: BEAM-based distributed backend support | **Teaser** |
+
+---
+
+## ⚡ Performance: The Zero-Bottleneck Foundation
+
+DeukPack goes beyond simple speed; it aims to be a **"No-Latency Intelligent Core"** that doesn't bottleneck even when an AI agent processes tens of thousands of lines of IDL knowledge in real-time.
+
+| Workload | Legacy Industry Flow | **DeukPack (v1.5.0)** | Key Advantage |
+| :--- | :---: | :---: | :--- |
+| **IDL Tree Parsing** | Seconds (Multi-step) | **Milliseconds (ms)** | **Real-time AI Integration** |
+| **Runtime Overhead** | GC & Allocations | **Zero-Allocation** | **High-Frequency (HFT) Support** |
+| **Memory Footprint** | Heavy CLI Processes | **Lightweight AST** | **Low-overhead Knowledge Export** |
+
+> [!TIP]
+> Figures are based on typical observations in large-scale environments (500+ IDL files). Actual results may vary depending on IDL complexity and Node.js runtime. For detailed methodology, see [Benchmarking Docs](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.md).
+
+---
+
+### Versioning Policy
+
+- **Minor (0.X.0)**: **New language support**, **New platform output**, or major feature expansion.
+- **Patch (0.0.X)**: Bug fixes, performance optimizations, and minor improvements.
+
+---
+
+## Feature Matrix
+
+Current support status and plans for each target platform.
+
+| Category | Feature | TS / JS | C# / Unity | C++ | Java | Elixir |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.6) |
+| **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | 🚧 (v1.6) |
+| **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.6) |
+| | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
+| | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
+| | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
+| | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
+| **Optimizations**| Zero-Alloc Parsing | ⚠️ | ✅ | ✅ (v1.4.2) | 🚧 | 🚧 (BEAM) |
+| | `Write` Logic Overrides | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
+| **Data/Meta** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
+| | DB Interop (EF / SQL) | ⚠️ (1) | ⚠️ (2) | ⚠️ (3) | 🚧 (v1.5) | - |
+| **AI Agent & IDE Integration** | Tool Auto-Generation (Skill) | ✅ (v1.5 MCP Decoupled) | 🚧 | - | - | - |
+| | Intelligent Context (Knowledge) | ✅ (Core Ready) | ✅ | ✅ | ✅ | ✅ |
+| | IDE Encoder/Intelllsense | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+- ✅: Full Support / Production Ready
+- ⚠️: Preview / Partial Support or Constraints
+- 🚧: Pilot / Development in Progress
+- -: Not Currently Supported
+
+> [!CAUTION]
+> **Database Integration (⚠️) Detailed Constraints:**
+> 1. **TS / JS**: Primarily JSON/Binary serialization-based storage. Relational mapping is limited (Blob-centric).
+> 2. **C# (EF Core)**: Supports table generation via `entity` keyword. However, **Nested Collections (List/Map/Set)** are NOT automatically mapped to SQL columns (requires Blob storage or manual Converter).
+> 3. **C++**: Primarily DDL (SQL) generation. Runtime ORM integration is not provided.
+> 4. **Common**: DB Migration (change management) logic for schema structural changes is not provided.
+
+### Language-Specific Highlights
+
+*   **C# (.NET / Unity)**: Features **Zero-Allocation** parsing for game client performance, **EF Core** integration (see constraints), **MetaTable Registry**, and **YAML protocol**(v1.2.7) for IDL-driven configuration management.
+*   **TypeScript / JSON**: Native **Model Context Protocol (MCP)** plugin support and Intelligent Context extraction, seamless **POJO** wire mapping, and decoupled **DeukPackMcp** hub for execution bridging (v1.5.0).
+*   **C++**: Engineered for **low-latency** and **embedded** scenarios, focused on Binary/Compact and JSON protocol compatibility (stabilized in v1.5.0) with minimal memory footprint.
+*   **Java**: Robust cross-platform interoperability with full support for **Inheritance (extends)** and **Thrift-compatible** Compact/TJSON protocols, achieving full parity in v1.5.0.
 
 ---
 

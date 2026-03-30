@@ -153,18 +153,18 @@ namespace DeukPack.Protocol
         {
             switch (t)
             {
-                case DpWireType.Bool: return "bool";
-                case DpWireType.Byte: return "byte";
-                case DpWireType.Int16: return "int16";
-                case DpWireType.Int32: return "int32";
-                case DpWireType.Int64: return "int64";
-                case DpWireType.Double: return "double";
-                case DpWireType.String: return "string";
-                case DpWireType.Struct: return "record";
-                case DpWireType.List: return "list";
+                case DpWireType.Bool: return "tf";
+                case DpWireType.Byte: return "i8";
+                case DpWireType.Int16: return "i16";
+                case DpWireType.Int32: return "i32";
+                case DpWireType.Int64: return "i64";
+                case DpWireType.Double: return "dbl";
+                case DpWireType.String: return "str";
+                case DpWireType.Struct: return "rec";
+                case DpWireType.List: return "lst";
                 case DpWireType.Set: return "set";
                 case DpWireType.Map: return "map";
-                default: return "string";
+                default: return "str";
             }
         }
 
@@ -353,8 +353,8 @@ namespace DeukPack.Protocol
         int ReadI32();
         long ReadI64();
         double ReadDouble();
-        string ReadString();
-        byte[] ReadBinary();
+        string? ReadString();
+        byte[]? ReadBinary();
         DpList ReadListBegin();
         void ReadListEnd();
         DpSet ReadSetBegin();
@@ -363,7 +363,7 @@ namespace DeukPack.Protocol
         void ReadMapEnd();
     }
 
-    public struct DpRecord { public string Name; public DpRecord(string name) { Name = name; } }
+    public struct DpRecord { public string Name; public int Count; public DpRecord(string name, int count = 0) { Name = name; Count = count; } }
 
     public struct DpColumn
     {

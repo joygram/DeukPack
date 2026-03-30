@@ -65,7 +65,6 @@ export class DpTBinaryProtocol implements DpProtocol {
   writeString(value: string): void {
     const encoder = new TextEncoder();
     const bytes = encoder.encode(value);
-    this.writeI32(bytes.length);
     this.writeBinary(new Uint8Array(bytes));
   }
 
@@ -148,8 +147,21 @@ export class DpTBinaryProtocol implements DpProtocol {
     return value;
   }
 
+  private static readonly MAX_SAFE_LENGTH = 10 * 1024 * 1024; // 10MB
+
+  private requireSafeLength(len: number): void {
+    if (len < 0) throw new Error('DpTBinaryProtocol: negative length');
+    if (len > DpTBinaryProtocol.MAX_SAFE_LENGTH) {
+      throw new Error(`DpTBinaryProtocol: length ${len} exceeds MAX_SAFE_LENGTH (${DpTBinaryProtocol.MAX_SAFE_LENGTH})`);
+    }
+    if (this.offset + len > this.buffer.byteLength) {
+      throw new Error(`DpTBinaryProtocol: need ${len} byte(s), have ${this.buffer.byteLength - this.offset}`);
+    }
+  }
+
   readString(): string {
     const length = this.readI32();
+    this.requireSafeLength(length);
     const bytes = new Uint8Array(this.buffer, this.offset, length);
     this.offset += length;
     return new TextDecoder().decode(bytes);
@@ -157,6 +169,7 @@ export class DpTBinaryProtocol implements DpProtocol {
 
   readBinary(): Uint8Array {
     const length = this.readI32();
+    this.requireSafeLength(length);
     const bytes = new Uint8Array(this.buffer, this.offset, length);
     this.offset += length;
     return bytes;

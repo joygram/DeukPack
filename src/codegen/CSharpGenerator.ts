@@ -1,24 +1,19 @@
-/**
- * DeukPack C# Generator
- * C# code generation
- */
-
-import * as fs from 'fs';
+import * as fsSync from 'fs';
 import * as path from 'path';
 import { DeukPackAST, GenerationOptions, DeukPackStruct, DeukPackEnum, DeukPackField, DeukPackTypedef, DeukPackException, DeukPackService, DeukPackType } from '../types/DeukPackTypes';
 import { CodeGenerator } from './CodeGenerator';
 import { csharpSuffixFromProfile, filterStructFieldsForProfile } from './WireProfileSubset';
 import { DeukPackEngine } from '../core/DeukPackEngine';
 import { applyCodegenPlaceholders } from './templateRender';
-import { substituteDeukPackVersionMarkers } from '../deukpackVersion';
 import { parseDeukNumericLiteral } from '../core/parseDeukNumericLiteral';
+import { CodegenTemplateHost } from './codegenTemplateHost';
 
 export class CSharpGenerator extends CodeGenerator {
-  private readonly _codegenTemplateCache = new Map<string, string>();
+  private readonly _tpl = new CodegenTemplateHost('csharp');
   async generate(ast: DeukPackAST, _options: GenerationOptions): Promise<{ [filename: string]: string }> {
-    (this as any)._genOptions = _options;
     const enableNullable = _options.csharpNullable === true;
     (this as any)._csharpNullable = enableNullable;
+    (this as any)._csharpVersion = _options.csharpVersion || 'net8.0';
 
     DeukPackEngine.resolveExtends(ast);
     // Generate separate files per IDL source file
@@ -47,7 +42,7 @@ export class CSharpGenerator extends CodeGenerator {
     for (const [sourceFile, definitions] of Object.entries(fileGroups)) {
       const lines: string[] = [];
 
-      const docBlock = this.loadCodegenTemplate('StandardDeukPackFileDoc.cs.tpl').trimEnd();
+      const docBlock = this._tpl.load('StandardDeukPackFileDoc.cs.tpl').trimEnd();
       const rowDbMap = (this as any)._efMetaRowInfo as Map<string, { category: string; keyFieldNames: string[] }>;
       const needsDataAnnotationsUsings = definitions.structs.some(
         (s: DeukPackStruct) => rowDbMap.has(this.getStructFullName(s, ast))
@@ -243,25 +238,15 @@ export class CSharpGenerator extends CodeGenerator {
     return out;
   }
 
-  /** 템플릿: src/codegen/templates/csharp → 빌드 시 dist/codegen/templates 로 복사. */
-  private loadCodegenTemplate(relPath: string): string {
-    const cached = this._codegenTemplateCache.get(relPath);
-    if (cached !== undefined) {
-      return cached;
-    }
-    const primary = path.join(__dirname, 'templates', 'csharp', relPath);
-    const fallback = path.join(__dirname, '..', '..', 'src', 'codegen', 'templates', 'csharp', relPath);
-    const full = fs.existsSync(primary) ? primary : fallback;
-    if (!fs.existsSync(full)) {
-      throw new Error(`DeukPack: codegen template not found: ${relPath}`);
-    }
-    const text = substituteDeukPackVersionMarkers(fs.readFileSync(full, 'utf8'));
-    this._codegenTemplateCache.set(relPath, text);
-    return text;
-  }
+
 
   private renderCSharpTpl(relPath: string, values: Record<string, string>): string {
-    return applyCodegenPlaceholders(this.loadCodegenTemplate(relPath), values);
+    const enableNullable = (this as any)._csharpNullable === true;
+    const placeholderValues = {
+      ...values,
+      '?': enableNullable ? '?' : '',
+    };
+    return applyCodegenPlaceholders(this._tpl.load(relPath), placeholderValues);
   }
 
   /** Entity Framework Core: DbContext + DbSet. meta table + entity 모두 지원. */
@@ -314,7 +299,7 @@ export class CSharpGenerator extends CodeGenerator {
       }
     }
     const onModelBody = onModelBodyLines.length === 0 ? '' : onModelBodyLines.join('\n') + '\n';
-    const tpl = this.loadCodegenTemplate('DeukPackDbContext.cs.tpl');
+    const tpl = this._tpl.load('DeukPackDbContext.cs.tpl');
     return `${applyCodegenPlaceholders(tpl, { DBSET_PROPERTIES: dbSetProps, ONMODEL_BODY: onModelBody }).trimEnd()}\n`;
   }
 
@@ -587,7 +572,7 @@ export class CSharpGenerator extends CodeGenerator {
   }
 
   private generateEnum(enumDef: DeukPackEnum): string[] {
-    const docBlock = this.loadCodegenTemplate('StandardDeukPackFileDoc.cs.tpl').trimEnd();
+    const docBlock = this._tpl.load('StandardDeukPackFileDoc.cs.tpl').trimEnd();
     const enumAttrs = enumDef.csharpAttributes;
     const enumAttrBlock = enumAttrs?.length ? enumAttrs.map((attr) => `  ${attr}`).join('\n') + '\n' : '';
     const entryLines: string[] = [];
@@ -751,7 +736,7 @@ export class CSharpGenerator extends CodeGenerator {
     const readSwitchCases: string[] = [];
     for (const field of struct.fields) {
       readSwitchCases.push('          case ' + field.id + ':');
-      readSwitchCases.push('            if (field.Type == ' + this.getTType(field.type, ast, ns) + ')');
+      readSwitchCases.push('            if (field.Type == ' + this.getTType(field.type, ast, ns) + ' || field.Type == DpWireType.Void)');
       readSwitchCases.push('            {');
       if (field.required) readSwitchCases.push('              __read_' + field.id + ' = true;');
       readSwitchCases.push('              ' + this.generateReadField(field, ast, ns));
@@ -836,8 +821,13 @@ export class CSharpGenerator extends CodeGenerator {
         `    IReadOnlyDictionary<long, ${infosValueType}> IDeukMetaContainer<${infosValueType}>.Data => Infos;`;
     }
 
+    const nameToIdFallbackLines = struct.fields.map(f => `          if (field.Name == "${f.name}") field.ID = ${f.id};`).join('\n          else ');
+    const nameToIdFallbackStr = struct.fields.length > 0
+      ? `        if (field.ID == 0 && !string.IsNullOrEmpty(field.Name))\n        {\n${nameToIdFallbackLines}\n        }`
+      : '';
+
     const wireEsc = this.escapeCSharpStringContent(wireName);
-    const docBlock = this.loadCodegenTemplate('StandardDeukPackFileDoc.cs.tpl').trimEnd();
+    const docBlock = this._tpl.load('StandardDeukPackFileDoc.cs.tpl').trimEnd();
     const rendered = this.renderCSharpTpl('StructRecord.cs.tpl', {
       DOC_BLOCK: docBlock,
       STRUCT_ATTRS: structAttrBlock,
@@ -850,6 +840,7 @@ export class CSharpGenerator extends CodeGenerator {
       WIRE_NAME: wireEsc,
       WRITE_UNIFIED_INNER: writeUnifiedInner,
       READ_INIT_LINES: readInitLines,
+      NAME_TO_ID_FALLBACK: nameToIdFallbackStr,
       READ_SWITCH_CASES: readSwitchCasesStr,
       READ_MISSING_REQUIRED_CHECKS: readMissingRequiredChecks,
       CLONE_LINES: cloneLines,
@@ -862,6 +853,7 @@ export class CSharpGenerator extends CodeGenerator {
     });
     return rendered.replace(/\r\n/g, '\n').split('\n');
   }
+
 
   /** table 키워드: struct 이름이 table 또는 container(호환)이고 header + infos(map) 필드면 메타 테이블로 간주 */
   private isMetaContainerStruct(struct: DeukPackStruct): boolean {
@@ -1055,8 +1047,10 @@ export class CSharpGenerator extends CodeGenerator {
         }
       }
     }
-    const enableNullable = (this as any)._csharpNullable;
-    const csharpType = this.getCSharpType(field.type, ast, currentNamespace);
+    const isRequired = field.required || (field.annotations && field.annotations['required'] === 'true');
+    const isNullable = !isRequired;
+    const csharpType = this.getCSharpType(field.type, ast, currentNamespace, isNullable);
+    const useRequired = (this as any)._csharpVersion === 'net8.0' && isRequired;
     const isRef = this.isCSharpReferenceType(field.type, ast, currentNamespace);
     
     let defaultPart = '';
@@ -1064,21 +1058,22 @@ export class CSharpGenerator extends CodeGenerator {
     if (defaultExpr !== null) {
       defaultPart = ` = ${defaultExpr}`;
     } else if (isRef) {
-      if (csharpType === 'string') defaultPart = ' = ""';
-      else if (csharpType.startsWith('List<') || csharpType.startsWith('Dictionary<') || csharpType.startsWith('HashSet<')) {
-        defaultPart = ' = new()';
-      } else if (csharpType === 'byte[]') {
-        defaultPart = field.required ? ' = Array.Empty<byte>()' : '';
-      } else if (enableNullable && !field.required) {
-        // nullable mode: optional ref types get `?` suffix, no init needed
-      } else {
-        defaultPart = ` = ${csharpType}.CreateDefault()`;
+      if (!isNullable) {
+        if (field.type === 'string') defaultPart = ' = ""';
+        else if (field.type === 'binary') defaultPart = ' = Array.Empty<byte>()';
+        else if (ast && this.isStructType(field.type, ast, currentNamespace)) {
+          const structType = this.getCSharpType(field.type, ast, currentNamespace, false);
+          defaultPart = ` = new ${structType}()`;
+        } else if (typeof field.type === 'object') {
+          if (field.type.type === 'list' || field.type.type === 'array') defaultPart = ' = new()';
+          else if (field.type.type === 'set') defaultPart = ' = new()';
+          else if (field.type.type === 'map') defaultPart = ' = new()';
+        }
       }
     }
 
-    const nullable = (enableNullable && isRef && !field.required) ? '?' : '';
-    // Apache 호환: 프로퍼티로 생성 (EF Core 매핑·null 동작 일치). 기본값 있을 때만 끝에 ;
-    lines.push(`    public ${csharpType}${nullable} ${this.capitalize(field.name)} { get; set; }${defaultPart}${defaultPart ? ';' : ''}`);
+    const modifier = useRequired ? "public required" : "public";
+    lines.push(`    ${modifier} ${csharpType} ${this.capitalize(field.name)} { get; set; }${defaultPart}${defaultPart ? ';' : ''}`);
     
     return lines;
   }
@@ -1474,7 +1469,10 @@ export class CSharpGenerator extends CodeGenerator {
   }
 
   /** currentNamespace 지정 시 다른 네임스페이스 타입은 풀네임으로 반환. AST 조회만 사용(휴리스틱 없음). */
-  private getCSharpType(type: any, ast?: DeukPackAST, currentNamespace?: string): string {
+  private getCSharpType(type: any, ast?: DeukPackAST, currentNamespace?: string, isNullable: boolean = false): string {
+    const enableNullable = (this as any)._csharpNullable === true;
+    const suffix = (enableNullable && isNullable) ? "?" : "";
+
     if (typeof type === 'string') {
       switch (type) {
         case 'bool': return 'bool';
@@ -1489,26 +1487,26 @@ export class CSharpGenerator extends CodeGenerator {
         case 'uint64': return 'ulong';
         case 'float': return 'float';
         case 'double': return 'double';
-        case 'string': return 'string';
-        case 'binary': return 'byte[]';
+        case 'string': return 'string' + suffix;
+        case 'binary': return 'byte[]' + suffix;
         case 'datetime':
         case 'timestamp':
         case 'date': return 'DateTime';
         case 'time': return 'TimeSpan';
         case 'decimal':
         case 'numeric': return 'decimal';
+        case 'dynamic': return 'object' + suffix;
         default: {
           const primitives = ['bool', 'byte', 'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'float', 'double', 'string', 'binary', 'datetime', 'timestamp', 'date', 'time', 'decimal', 'numeric'];
           const typedefDef = ast ? this.findTypedef(ast, type, currentNamespace) : null;
-          if (typedefDef) return this.getCSharpType(typedefDef.type, ast, currentNamespace);
-          // 레거시 Thrift typedef i64 _link_* / _linktid_*: AST에 typedef 없을 때 long으로 처리 (코드젠/마이그레이터 호환)
+          if (typedefDef) return this.getCSharpType(typedefDef.type, ast, currentNamespace, isNullable);
           if (this.isLinkTypedefName(type)) return 'long';
           const fullName = ast ? this.resolveTypeToFullName(type, currentNamespace, ast) : type;
           if (primitives.includes(fullName)) {
-            return this.getCSharpType(fullName, ast, currentNamespace);
+            return this.getCSharpType(fullName, ast, currentNamespace, isNullable);
           }
           const named = ast ? this.renameCSharpTypeIfWireProfileSubset(fullName) : fullName;
-          return this.csharpGlobalQualifiedIfCrossNamespace(named, currentNamespace);
+          return this.csharpGlobalQualifiedIfCrossNamespace(named, currentNamespace) + suffix;
         }
       }
     }
@@ -1516,18 +1514,18 @@ export class CSharpGenerator extends CodeGenerator {
       switch (type.type) {
         case 'list':
         case 'array':
-          return `List<${this.getCSharpType(type.elementType, ast, currentNamespace)}>`;
+          return `List<${this.getCSharpType(type.elementType, ast, currentNamespace)}>` + suffix;
         case 'set':
-          return `HashSet<${this.getCSharpType(type.elementType, ast, currentNamespace)}>`;
+          return `HashSet<${this.getCSharpType(type.elementType, ast, currentNamespace)}>` + suffix;
         case 'map':
-          return `Dictionary<${this.getCSharpType(type.keyType, ast, currentNamespace)}, ${this.getCSharpType(type.valueType, ast, currentNamespace)}>`;
+          return `Dictionary<${this.getCSharpType(type.keyType, ast, currentNamespace)}, ${this.getCSharpType(type.valueType, ast, currentNamespace)}>` + suffix;
         case 'tablelink':
           return 'long';
         default:
-          return 'object';
+          return 'object' + suffix;
       }
     }
-    return 'object';
+    return 'object' + suffix;
   }
 
   private getCSharpDefaultValue(value: any, type: any, ast?: DeukPackAST, currentNamespace?: string): string {
@@ -1582,6 +1580,15 @@ export class CSharpGenerator extends CodeGenerator {
           }
           return value;
         }
+
+        // type이 Enum인 경우, 단일 식별자 값(예: Beta)을 해당 Enum 멤버로 처리
+        if (typeof type === 'string' && ast) {
+          const typeFull = this.resolveTypeToFullName(type, currentNamespace, ast);
+          const enumDef = this.findEnumByFullName(ast, typeFull, currentNamespace);
+          if (enumDef && Object.prototype.hasOwnProperty.call(enumDef.values, value)) {
+            return `${this.getEnumFullName(enumDef, ast)}.${value}`;
+          }
+        }
       // Check if it's a boolean string
       if (value === 'true' || value === 'false') {
         return value;
@@ -1589,6 +1596,10 @@ export class CSharpGenerator extends CodeGenerator {
       return `"${value}"`;
     }
     if (typeof value === 'number') {
+      const csharpType = this.getCSharpType(type, ast, currentNamespace);
+      if (csharpType === 'float') return `${value}f`;
+      if (csharpType === 'long' || csharpType === 'ulong') return `${value}L`;
+      if (csharpType === 'decimal') return `${value}m`;
       return value.toString();
     }
     if (typeof value === 'boolean') {
@@ -1799,7 +1810,7 @@ export class CSharpGenerator extends CodeGenerator {
     const wn = this.escapeCSharpStringContent(wireName);
     const lines: string[] = [];
     lines.push('      if (fieldIds != null && fieldIds.Count == 0) return;');
-    lines.push(`      DpRecord struc = new DpRecord("${wn}");`);
+    lines.push(`      DpRecord struc = new DpRecord("${wn}", ${struct.fields.length});`);
     lines.push('      oprot.WriteStructBegin(struc);');
 
     for (const field of struct.fields) {
@@ -2085,7 +2096,7 @@ export class CSharpGenerator extends CodeGenerator {
         let versionValue = '"unknown"';
         if (opts?.defineVersionFile) {
           try {
-            const content = fs.readFileSync(path.resolve(opts.defineVersionFile), 'utf-8').trim();
+            const content = fsSync.readFileSync(path.resolve(opts.defineVersionFile), 'utf-8').trim();
             versionValue = JSON.stringify(content);
           } catch {
             versionValue = '"unknown"';
@@ -2411,7 +2422,7 @@ export class CSharpGenerator extends CodeGenerator {
         case 'string':
           return `clone.${fieldName} = this.${fieldName};`;
         case 'binary':
-          return wrapOpt(`this.${fieldName}.Clone()`);
+          return wrapOpt(`(byte[])this.${fieldName}.Clone()`);
         default:
           if (ast && this.isGeometryDeukStruct(field.type, ast, currentNamespace)) {
             return `clone.${fieldName} = this.${fieldName};`;
@@ -2565,7 +2576,7 @@ export class CSharpGenerator extends CodeGenerator {
     return `sb.Append(ci).Append("${field.name}: ").Append(this.${fieldName}?.ToString() ?? "null").AppendLine(",");`;
   }
 
-  private resolveConstant(value: string, ast: DeukPackAST): number | null {
+  private resolveConstant(value: string, ast: DeukPackAST): number | bigint | null {
     // value 형식: "namespace.constant_name" 또는 "constant_name"
     const parts = value.split('.');
     if (parts.length === 0) return null;
@@ -2590,14 +2601,14 @@ export class CSharpGenerator extends CodeGenerator {
         if (namespace && constNamespace && constNamespace !== namespace) {
           continue;
         }
-        // 상수 값이 숫자인 경우 반환
-        if (typeof constant.value === 'number') {
+        // 상수 값이 숫자(BigInt 포함)인 경우 반환
+        if (typeof constant.value === 'number' || typeof constant.value === 'bigint') {
           return constant.value;
         }
         // 상수 값이 문자열인데 숫자로 파싱 가능한 경우
         if (typeof constant.value === 'string') {
           const parsed = parseDeukNumericLiteral(constant.value);
-          if (!isNaN(parsed)) {
+          if (typeof parsed === 'bigint' || !isNaN(parsed)) {
             return parsed;
           }
         }
@@ -2703,10 +2714,12 @@ export class CSharpGenerator extends CodeGenerator {
     memberLines.push(`    public static bool operator ==(${name} a, ${name} b) => a.Equals(b);`);
     memberLines.push(`    public static bool operator !=(${name} a, ${name} b) => !a.Equals(b);`);
     memberLines.push('');
-    const tpl = this.loadCodegenTemplate('GeometryStruct.cs.tpl');
+    const tpl = this._tpl.load('GeometryStruct.cs.tpl');
+    const enableNullable = (this as any)._csharpNullable === true;
     const rendered = applyCodegenPlaceholders(tpl, {
       STRUCT_NAME: name,
       MEMBERS: memberLines.join('\n'),
+      '?': enableNullable ? '?' : '',
     });
     return rendered.replace(/\r\n/g, '\n').split('\n');
   }

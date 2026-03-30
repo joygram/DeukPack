@@ -1,4 +1,4 @@
-// DpBinaryProtocol.cs - Extracted from DpProtocolLibrary.cs (DpBinaryProtocol class)
+#nullable enable
 using System;
 using System.IO;
 using System.Text;
@@ -515,7 +515,7 @@ namespace DeukPack.Protocol {
             return BitConverter.Int64BitsToDouble(bits);
         }
 
-        public string ReadString()
+        public string? ReadString()
         {
             int length = ReadI32();
             if (length == 0)
@@ -529,7 +529,7 @@ namespace DeukPack.Protocol {
             return result;
         }
 
-        public byte[] ReadBinary()
+        public byte[]? ReadBinary()
         {
             int length = ReadI32();
             if (length == 0)

@@ -1,3 +1,4 @@
+#nullable enable
 /**
  * DpJsonProtocol — 레거시 호환 JSON 프로토콜. DpProtocolLibrary 모듈화.
  * Thrift/내부 전송용; 타입 래퍼(i64/str/tf/lst 등) 포함. 설정/OpenAPI 라운드트립은 Deuk JSON/YAML 사용.
@@ -25,6 +26,7 @@ namespace DeukPack.Protocol
         private readonly Stack<MapWriteState> _mapWriteStack;
         private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
+        private string? _readMapCurrentKey = ""; // Initialized to empty to avoid null check skip
         private Dictionary<string, object> _rootRead;
         private Stack<JsonReadFrame> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
@@ -34,7 +36,6 @@ namespace DeukPack.Protocol
         private List<string>? _readMapKeys;
         private int _readMapIndex;
         private bool _readMapReadingKey;
-        private string? _readMapCurrentKey;
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
         public DpJsonProtocol(Stream stream, bool pretty = false, bool includeSchema = false, bool isReadMode = true)
@@ -86,7 +87,17 @@ namespace DeukPack.Protocol
 
         private static string DpWireTypeToJsonKey(DpWireType t)
         {
-            return DpTypeNames.ToProtocolName(t);
+            switch (t)
+            {
+                case DpWireType.Bool: return "tf";
+                case DpWireType.Byte: return "i8";
+                case DpWireType.Int16: return "i16";
+                case DpWireType.Int32: return "i32";
+                case DpWireType.Int64: return "i64";
+                case DpWireType.Double: return "dbl";
+                case DpWireType.String: return "str";
+                default: return DpTypeNames.ToProtocolName(t);
+            }
         }
 
         private static object? WrapValueForJson(object? value)
@@ -95,8 +106,11 @@ namespace DeukPack.Protocol
             if (value is Dictionary<string, object> d) return d;
             if (value is List<object> l) return new Dictionary<string, object> { { "lst", l } };
             if (value is bool b) return new Dictionary<string, object> { { "tf", b } };
-            if (value is int || value is long || value is short || value is byte) return new Dictionary<string, object> { { "i64", Convert.ToInt64(value) } };
-            if (value is double db) return new Dictionary<string, object> { { "dbl", db } };
+            if (value is int i) return new Dictionary<string, object> { { "i32", (long)i } };
+            if (value is long v) return new Dictionary<string, object> { { "i64", v.ToString() } };
+            if (value is short s) return new Dictionary<string, object> { { "i16", (long)s } };
+            if (value is byte by) return new Dictionary<string, object> { { "i8", (long)by } };
+            if (value is float || value is double f) return new Dictionary<string, object> { { "dbl", Convert.ToDouble(value) } };
             return new Dictionary<string, object> { { "str", value.ToString() ?? "" } };
         }
 
@@ -117,11 +131,14 @@ namespace DeukPack.Protocol
             }
             if (_listWriteStack.Count > 0)
             {
-                _listWriteStack.Peek().Add(value);
+                var wrappedChild = WrapValueForJson(value);
+                if (wrappedChild != null)
+                    _listWriteStack.Peek().Add(wrappedChild);
                 return;
             }
-            var wrapper = new Dictionary<string, object> { { DpWireTypeToJsonKey(_currentFieldType), value } };
-            _writeStack.Peek().Obj[_currentFieldKey] = wrapper;
+            var jsonVal = WrapValueForJson(value);
+            if (jsonVal != null)
+                _writeStack.Peek().Obj[_currentFieldKey] = jsonVal;
         }
 
         public void WriteStructBegin(DpRecord s) { _writeStack.Push(new JsonStructState { Obj = new Dictionary<string, object>(), IsMapKey = false }); }
@@ -285,13 +302,13 @@ namespace DeukPack.Protocol
         }
         public void ReadFieldEnd() { }
         public bool ReadBool() { return ReadSingleValue<bool>("tf"); }
-        public byte ReadByte() { return (byte)ReadSingleValue<long>("i8"); }
-        public short ReadI16() { return (short)ReadSingleValue<long>("i16"); }
-        public int ReadI32() { return (int)ReadSingleValue<long>("i32"); }
-        public long ReadI64() { return ReadSingleValue<long>("i64"); }
+        public byte ReadByte() { return (byte)Convert.ToInt64(ReadSingleValue<object>("i8")); }
+        public short ReadI16() { return (short)Convert.ToInt64(ReadSingleValue<object>("i16")); }
+        public int ReadI32() { return (int)Convert.ToInt64(ReadSingleValue<object>("i32")); }
+        public long ReadI64() { var res = ReadSingleValue<object>("i64"); if (res is string s) return long.Parse(s); return Convert.ToInt64(res); }
         public double ReadDouble() { return ReadSingleValue<double>("dbl"); }
-        public string ReadString() { return ReadSingleValue<string>("str") ?? ""; }
-        public byte[] ReadBinary() { var s = ReadSingleValue<string>("str"); return string.IsNullOrEmpty(s) ? Array.Empty<byte>() : Convert.FromBase64String(s); }
+        public string? ReadString() { return ReadSingleValue<string>("str") ?? ""; }
+        public byte[]? ReadBinary() { var s = ReadSingleValue<string>("str"); return string.IsNullOrEmpty(s) ? Array.Empty<byte>() : Convert.FromBase64String(s); }
         private T ReadSingleValue<T>(string key)
         {
             object? v = null;
@@ -307,11 +324,11 @@ namespace DeukPack.Protocol
                     var valObj = _readMapDict[_readMapCurrentKey];
                     if (valObj is Dictionary<string, object> dict)
                     {
-                        if (dict.TryGetValue(key, out var tv)) v = tv;
-                        else if (dict.TryGetValue("i32", out tv) || dict.TryGetValue("i64", out tv) || dict.TryGetValue("i8", out tv) || dict.TryGetValue("i16", out tv)) v = tv;
-                        else if (dict.TryGetValue("str", out tv)) v = tv;
-                        else if (dict.TryGetValue("dbl", out tv)) v = tv;
-                        else if (dict.TryGetValue("tf", out tv)) v = tv;
+                        if (dict.TryGetValue(key, out var tv1)) v = tv1;
+                        else if (dict.TryGetValue("i32", out tv1) || dict.TryGetValue("i64", out tv1) || dict.TryGetValue("i8", out tv1) || dict.TryGetValue("i16", out tv1)) v = tv1;
+                        else if (dict.TryGetValue("str", out tv1)) v = tv1;
+                        else if (dict.TryGetValue("dbl", out tv1)) v = tv1;
+                        else if (dict.TryGetValue("tf", out tv1)) v = tv1;
                     }
                     else
                         v = valObj;
@@ -324,11 +341,11 @@ namespace DeukPack.Protocol
                 var raw = _readList[_readListIndex++];
                 if (raw is Dictionary<string, object> dict)
                 {
-                    if (dict.TryGetValue(key, out var tv)) v = tv;
-                    else if (dict.TryGetValue("i32", out tv) || dict.TryGetValue("i64", out tv) || dict.TryGetValue("i8", out tv) || dict.TryGetValue("i16", out tv)) v = tv;
-                    else if (dict.TryGetValue("str", out tv)) v = tv;
-                    else if (dict.TryGetValue("dbl", out tv)) v = tv;
-                    else if (dict.TryGetValue("tf", out tv)) v = tv;
+                    if (dict.TryGetValue(key, out var tv2)) v = tv2;
+                    else if (dict.TryGetValue("i32", out tv2) || dict.TryGetValue("i64", out tv2) || dict.TryGetValue("i8", out tv2) || dict.TryGetValue("i16", out tv2)) v = tv2;
+                    else if (dict.TryGetValue("str", out tv2)) v = tv2;
+                    else if (dict.TryGetValue("dbl", out tv2)) v = tv2;
+                    else if (dict.TryGetValue("tf", out tv2)) v = tv2;
                 }
                 else
                     v = raw;
@@ -336,14 +353,16 @@ namespace DeukPack.Protocol
             else if (_currentReadField.HasValue)
             {
                 var wrapper = _currentReadField.Value.Value as Dictionary<string, object>;
-                if (wrapper != null && wrapper.TryGetValue(key, out var tv)) v = tv;
+                if (wrapper != null && wrapper.TryGetValue(key, out var tv3)) v = tv3;
             }
             if (v == null) return default!;
+            if (v is T tvVal) return tvVal;
             if (typeof(T) == typeof(string)) return (T)(object)v.ToString()!;
             if (typeof(T) == typeof(bool)) return (T)(object)Convert.ToBoolean(v);
             if (typeof(T) == typeof(long)) return (T)(object)Convert.ToInt64(v);
             if (typeof(T) == typeof(double)) return (T)(object)Convert.ToDouble(v);
-            return default!;
+            if (typeof(T) == typeof(object)) return (T)v;
+            return (T)Convert.ChangeType(v, typeof(T));
         }
         public DpList ReadListBegin()
         {

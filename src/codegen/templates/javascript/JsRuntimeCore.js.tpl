@@ -25,7 +25,7 @@ function _wrapDpJson(type, typeName, val, schemas) {
     case "datetime":
     case "timestamp":
     case "tablelink":
-      return { i64: Number(val) };
+      return { i64: BigInt(val) };
     case "float":
     case "double":
       return { dbl: Number(val) };
@@ -110,7 +110,7 @@ function _unwrapDpJson(type, typeName, jsonVal, schemas) {
     if (type === "binary" && jsonVal.str) { var b64 = jsonVal.str; if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(b64, "base64")); var bin = typeof atob !== "undefined" ? atob(b64) : ""; var arr = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return arr; }
     if (jsonVal.str !== undefined) return jsonVal.str;
     if (jsonVal.i32 !== undefined) return jsonVal.i32;
-    if (jsonVal.i64 !== undefined) return Number(jsonVal.i64);
+    if (jsonVal.i64 !== undefined) return BigInt(jsonVal.i64);
     if (jsonVal.dbl !== undefined) return jsonVal.dbl;
     if (jsonVal.tf !== undefined) return jsonVal.tf;
     if (jsonVal.lst !== undefined) { var elem = (typeName.match(/^(?:list|set)<(.+)>$/i) || [])[1]; elem = elem ? elem.trim() : ""; return jsonVal.lst.map(function(e) { return _unwrapDpJson(_elemType(elem), elem, e, schemas); }); }
@@ -158,7 +158,7 @@ function _xlParsePrimitive(type, raw, dt, enums) {
     case "datetime":
     case "timestamp":
     case "tablelink":
-      return parseInt(tok, 10) || 0;
+      return BigInt(tok) || 0n;
     case "float":
     case "double":
       return parseFloat(raw) || 0;

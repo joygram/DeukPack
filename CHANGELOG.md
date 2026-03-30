@@ -4,6 +4,21 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.5.0] — 2026-03-30
+
+### Core: Java Parity Completion & MCP Decoupling (Architecture Optimization)
+
+- **Java Runtime Parity**: Added structural inheritance (`extends`) in the Java generator, along with high-performance **Compact** (`TCompactProtocol`) and **TJSON** (`TJSONProtocol`) protocols, ensuring full Thrift compatibility for the Java ecosystem.
+- **Protocol Security Guards**: Universally enforced security policies across all supported languages (TS/JS, C#, C++, Java), including `MAX_SAFE_LENGTH` (10MB) and `MAX_RECURSION_DEPTH` (64) to neutralize malicious payloads.
+- **MCP Decoupling**: Streamlined the core repository by moving the MCP server generation logic to a dedicated module (`DeukPackMcp`). The core now focuses purely on AI knowledge extraction (`AiContextGenerator`).
+- **Feature Matrix Refinement**: Granularized the protocol support matrix into **Native Pack**, **Protobuf**, **Thrift (T-Series)**, **JSON**, and **YAML/CSV** across all major documentation files.
+
+### Fixed
+
+- **CLI Guidance**: Improved the `deukpack --mcp` CLI command to provide clear guidance regarding the decouple plugin policy introduced in v1.5.0.
+- **Dependency Optimization**: Removed `@modelcontextprotocol/sdk` from the core `package.json` to reduce installation footprint.
+
+
 ## [1.4.0] — 2026-03-29
 
 ### Core: MCP Protobuf Expansion & Server Generation Support

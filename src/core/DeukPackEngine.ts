@@ -1,13 +1,12 @@
-/**
- * DeukPack - Core Engine
- * Multi-language IDL and wire support
- */
-
-import { DeukPackAST, DeukPackError, DeukPackException, PerformanceMetrics, SerializationOptions, GenerationOptions, DeukPackStruct, DeukPackEnum, DeukPackNamespace, DeukPackTypedef, DeukPackConstant, DeukPackService, ParseFileWithIncludesOptions } from '../types/DeukPackTypes';
+import { 
+  DeukPackAST, DeukPackError, DeukPackException, PerformanceMetrics, SerializationOptions, 
+  GenerationOptions, DeukPackStruct, DeukPackEnum, DeukPackNamespace, DeukPackTypedef, 
+  DeukPackConstant, DeukPackService, ParseFileWithIncludesOptions 
+} from '../types/DeukPackTypes';
 import { DeukPackASTBuilderOptions } from '../ast/DeukPackASTBuilder';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { existsSync } from 'fs';
+import * as fsSync from 'fs';
 import { IdlParser } from './IdlParser';
 import { DeukParser } from './DeukParser';
 import { ProtoParser } from './ProtoParser';
@@ -16,30 +15,10 @@ import { WireSerializer } from '../serialization/WireSerializer';
 import { WireDeserializer } from '../serialization/WireDeserializer';
 import { PerformanceMonitor } from '../utils/PerformanceMonitor';
 import { getDeukPackPackageVersion } from '../deukpackVersion';
-
-/**
- * Canonical key for the include graph so each physical file is parsed once:
- * - Cycles (A includes B includes A) stop instead of Thrift-style unbounded recursion.
- * - Equivalent paths (e.g. dir/../file.deuk vs file.deuk) map to one entry.
- * Uses realpath when available (symlinks / stable casing on some platforms).
- */
-async function canonicalIncludeFileKey(filePath: string): Promise<string> {
-  const normalizedAbs = path.resolve(path.normalize(filePath));
-  try {
-    return await fs.realpath(normalizedAbs);
-  } catch {
-    return normalizedAbs;
-  }
-}
-
-function normSourcePath(p: string): string {
-  return p.replace(/\\/g, '/').toLowerCase();
-}
-
-function sourcePathsEqual(a: string | undefined, b: string | undefined): boolean {
-  if (a == null || b == null) return false;
-  return normSourcePath(a) === normSourcePath(b);
-}
+import {
+  canonicalIncludeFileKey, sourcePathsEqual, normSourcePath
+} from '../utils/PathUtils';
+import { DeukPackASTResolver } from '../ast/DeukPackASTResolver';
 
 function countDefinitionsOnSourceFile(
   sourceFile: string,
@@ -301,7 +280,7 @@ export class DeukPackEngine {
           return list;
         };
 
-        // Same-directory first (so e.g. _enginedeukpack_define.deuk can include "deuk_geometry.deuk")
+        // Same-directory first (so e.g. _engine/deukpack_define.deuk can include "deuk_geometry.deuk")
         const currentFileDir = path.dirname(stackKey);
         const sameDirPath = path.resolve(currentFileDir, trimmedInclude);
         const customResolved = customIncludePaths && customIncludePaths.length > 0
@@ -312,7 +291,7 @@ export class DeukPackEngine {
 
         let found = false;
         for (const includePath of includePaths) {
-          if (includePath && existsSync(includePath)) {
+          if (includePath && fsSync.existsSync(includePath)) {
             await parseFileRecursive(includePath);
             found = true;
             break;
@@ -330,7 +309,7 @@ export class DeukPackEngine {
           }
           for (let i = 0; i < Math.min(10, includePaths.length); i++) {
             const checkPath = includePaths[i];
-            console.error(`[DeukPack]     ${i + 1}. ${checkPath} [${checkPath && existsSync(checkPath) ? 'EXISTS' : 'NOT FOUND'}]`);
+            console.error(`[DeukPack]     ${i + 1}. ${checkPath} [${checkPath && fsSync.existsSync(checkPath) ? 'EXISTS' : 'NOT FOUND'}]`);
           }
           if (includePaths.length > 10) {
             console.error(`[DeukPack]     ... and ${includePaths.length - 10} more locations`);
@@ -447,88 +426,17 @@ export class DeukPackEngine {
   }
 
   /**
-   * Resolve struct extends: prepend parent fields into child (flat merge).
-   * Supports multi-level inheritance. Throws on field ID collision.
+   * Resolve struct extends
    */
   static resolveExtends(ast: DeukPackAST): void {
-    if ((ast as any)._extendsResolved) return;
-
-    const byName = new Map<string, DeukPackStruct>();
-    for (const s of ast.structs) {
-      byName.set(s.name, s);
-      const dotIdx = s.name.lastIndexOf('.');
-      if (dotIdx >= 0) byName.set(s.name.slice(dotIdx + 1), s);
-    }
-
-    const resolved = new Set<string>();
-    const resolving = new Set<string>();
-
-    const resolve = (s: DeukPackStruct) => {
-      if (resolved.has(s.name)) return;
-      if (resolving.has(s.name)) throw new Error(`Circular extends: ${s.name}`);
-      if (!s.extends) { resolved.add(s.name); return; }
-
-      resolving.add(s.name);
-
-      const parent = byName.get(s.extends);
-      if (!parent) throw new Error(`struct ${s.name} extends unknown type '${s.extends}'`);
-      resolve(parent);
-
-      const childIds = new Set(s.fields.map(f => f.id));
-      for (const pf of parent.fields) {
-        if (childIds.has(pf.id)) {
-          throw new Error(`Field ID ${pf.id} in parent '${parent.name}' collides with field in '${s.name}'`);
-        }
-      }
-
-      s.fields = [...parent.fields, ...s.fields];
-      resolving.delete(s.name);
-      resolved.add(s.name);
-    };
-
-    for (const s of ast.structs) resolve(s);
-    (ast as any)._extendsResolved = true;
+    DeukPackASTResolver.resolveExtends(ast);
   }
 
   /**
    * Validate schema
    */
   validateSchema(ast: DeukPackAST): DeukPackError[] {
-    const errors: DeukPackError[] = [];
-
-    for (const structDef of ast.structs) {
-      const fieldIds = new Set<number>();
-      for (const field of structDef.fields) {
-        if (fieldIds.has(field.id)) {
-          errors.push({
-            message: `Duplicate field ID ${field.id} in struct ${structDef.name}`,
-            line: 0,
-            column: 0,
-            file: '',
-            severity: 'error'
-          });
-        }
-        fieldIds.add(field.id);
-      }
-    }
-
-    for (const enumDef of ast.enums) {
-      const values = new Set<number>();
-      for (const [, value] of Object.entries(enumDef.values)) {
-        if (values.has(value)) {
-          errors.push({
-            message: `Duplicate enum value ${value} in enum ${enumDef.name}`,
-            line: 0,
-            column: 0,
-            file: '',
-            severity: 'error'
-          });
-        }
-        values.add(value);
-      }
-    }
-
-    return errors;
+    return DeukPackASTResolver.validateSchema(ast);
   }
 
   /**
@@ -542,3 +450,4 @@ export class DeukPackEngine {
     };
   }
 }
+

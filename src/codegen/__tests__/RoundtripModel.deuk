@@ -1,0 +1,32 @@
+namespace deuk.test
+
+struct RoundtripModel {
+    1> bool b_val = true
+    2> int8 i8_val = 8
+    3> int16 i16_val = 1616
+    4> int32 i32_val = 323232
+    5> int64 i64_val = 6464646464
+    6> float f_val = 3.14
+    7> double d_val = 2.71828
+    8> string s_val = "Hello DeukPack World"
+    9> binary bin_val
+    10> list<int32> i32_list
+    11> list<string> s_list
+    12> map<string, int32> s_i32_map
+    13> NestedStruct nested
+}
+
+struct NestedStruct {
+    1> string inner_val = "inner"
+    2> list<int32> numbers
+}
+
+enum TestEnum {
+    Alpha = 1
+    Beta = 2
+    Gamma = 3
+}
+
+struct EnumModel {
+    1> TestEnum e_val = Beta
+}
