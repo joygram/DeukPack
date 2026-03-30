@@ -64,7 +64,6 @@ export class DpTCompactProtocol implements DpProtocol {
   writeString(value: string): void {
     const encoder = new TextEncoder();
     const bytes = encoder.encode(value);
-    this.writeVarint(bytes.length);
     this.writeBinary(new Uint8Array(bytes));
   }
 
@@ -98,11 +97,19 @@ export class DpTCompactProtocol implements DpProtocol {
 
   writeMapEnd(): void {}
 
+  private recursionDepth = 0;
+  private static readonly MAX_RECURSION_DEPTH = 64;
+
   readStructBegin(): DpStruct {
+    if (++this.recursionDepth > DpTCompactProtocol.MAX_RECURSION_DEPTH) {
+      throw new Error('DpTCompactProtocol: max recursion depth exceeded');
+    }
     return { name: '' };
   }
 
-  readStructEnd(): void {}
+  readStructEnd(): void {
+    if (--this.recursionDepth < 0) this.recursionDepth = 0;
+  }
 
   readFieldBegin(): DpField {
     const byte = this.readByte();
@@ -144,8 +151,21 @@ export class DpTCompactProtocol implements DpProtocol {
     return value;
   }
 
+  private static readonly MAX_SAFE_LENGTH = 10 * 1024 * 1024; // 10MB
+
+  private requireSafeLength(len: number): void {
+    if (len < 0) throw new Error('DpTCompactProtocol: negative length');
+    if (len > DpTCompactProtocol.MAX_SAFE_LENGTH) {
+      throw new Error(`DpTCompactProtocol: length ${len} exceeds MAX_SAFE_LENGTH (${DpTCompactProtocol.MAX_SAFE_LENGTH})`);
+    }
+    if (this.offset + len > this.buffer.byteLength) {
+      throw new Error(`DpTCompactProtocol: need ${len} byte(s), have ${this.buffer.byteLength - this.offset}`);
+    }
+  }
+
   readString(): string {
     const length = this.readVarint();
+    this.requireSafeLength(length);
     const bytes = new Uint8Array(this.buffer, this.offset, length);
     this.offset += length;
     return new TextDecoder().decode(bytes);
@@ -153,6 +173,7 @@ export class DpTCompactProtocol implements DpProtocol {
 
   readBinary(): Uint8Array {
     const length = this.readVarint();
+    this.requireSafeLength(length);
     const bytes = new Uint8Array(this.buffer, this.offset, length);
     this.offset += length;
     return bytes;

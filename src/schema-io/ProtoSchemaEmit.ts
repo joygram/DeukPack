@@ -75,9 +75,13 @@ function fieldTypeToProto(
 function emitEnum(e: DeukPackEnum): string[] {
   const out: string[] = [];
   out.push(`enum ${e.name} {`);
-  const keys = Object.keys(e.values || {}).sort(
-    (a, b) => (e.values![a] ?? 0) - (e.values![b] ?? 0)
-  );
+  const keys = Object.keys(e.values || {}).sort((a, b) => {
+    const va = e.values![a] ?? 0;
+    const vb = e.values![b] ?? 0;
+    if (va < vb) return -1;
+    if (va > vb) return 1;
+    return 0;
+  });
   for (const k of keys) {
     const v = e.values![k];
     out.push(`  ${k} = ${v};`);

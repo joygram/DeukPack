@@ -64,34 +64,36 @@ export class BinaryWriter {
     this.position += 4;
   }
 
-  writeI64(value: number): void {
-    this.ensureCapacity(8);
-    if (this.endianness === 'LE') {
-      for (let i = 0; i < 8; i++) {
-        this.buffer[this.position + i] = (value >> (i * 8)) & 0xFF;
-      }
-    } else {
-      for (let i = 0; i < 8; i++) {
-        this.buffer[this.position + i] = (value >> ((7 - i) * 8)) & 0xFF;
-      }
+  private static readonly MAX_SAFE_LENGTH = 10 * 1024 * 1024; // 10MB
+
+  private checkSafeLength(len: number): void {
+    if (len > BinaryWriter.MAX_SAFE_LENGTH) {
+      throw new Error(`BinaryWriter: length ${len} exceeds MAX_SAFE_LENGTH`);
     }
+  }
+
+  writeI64(value: number | bigint): void {
+    this.ensureCapacity(8);
+    const view = new DataView(this.buffer.buffer, this.buffer.byteOffset + this.position, 8);
+    view.setBigInt64(0, BigInt(typeof value === 'number' ? Math.trunc(value) : value), this.endianness === 'LE');
     this.position += 8;
+  }
+
+  writeBigI64(value: bigint): void {
+    this.writeI64(value);
   }
 
   writeDouble(value: number): void {
     this.ensureCapacity(8);
     const view = new DataView(this.buffer.buffer, this.buffer.byteOffset + this.position, 8);
-    if (this.endianness === 'LE') {
-      view.setFloat64(0, value, true);
-    } else {
-      view.setFloat64(0, value, false);
-    }
+    view.setFloat64(0, value, this.endianness === 'LE');
     this.position += 8;
   }
 
   writeString(value: string): void {
     const encoder = new TextEncoder();
     const bytes = encoder.encode(value);
+    this.checkSafeLength(bytes.length);
     this.writeI32(bytes.length);
     this.ensureCapacity(bytes.length);
     this.buffer.set(bytes, this.position);
@@ -99,6 +101,7 @@ export class BinaryWriter {
   }
 
   writeBinary(value: Uint8Array): void {
+    this.checkSafeLength(value.length);
     this.writeI32(value.length);
     this.ensureCapacity(value.length);
     this.buffer.set(value, this.position);

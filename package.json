@@ -1,7 +1,7 @@
 {
   "name": "deukpack",
-  "version": "1.4.0",
-  "description": "DeukPack AI-Ready Interface Hub — Mixed-IDL hybrid serializer (.deuk, Protobuf, OpenAPI, JSON Schema, CSV, Thrift). AI Semantic Mapping & MCP Server generation. v1.4: MCP Protobuf expansion, MCP Server generator, Core IDL pipeline, high-performance C#/C++/JS codegen.",
+  "version": "1.5.0",
+  "description": "DeukPack — Universal schema multi-hub for Protobuf, Thrift, OpenAPI, and .deuk. Protobuf-aligned wire; fast C#/C++/JS codegen.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -52,7 +52,6 @@
     "deuk-ui": "^2.0.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.28.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.0",
     "@vscode/vsce": "^3.7.1",

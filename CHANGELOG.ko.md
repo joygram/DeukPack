@@ -4,6 +4,21 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
+## [1.5.0] — 2026-03-30
+
+### 핵심: Java 패리티 완성 및 MCP 코어 분리 (아키텍처 최적화)
+
+- **Java 런타임 패리티**: Java 생성기에서 구조체 상속(`extends`)을 지원하며, **Compact**(`TCompactProtocol`) 및 **TJSON**(`TJSONProtocol`) 고성능 프로토콜을 추가하여 Thrift와의 완전한 호환성을 확보했습니다.
+- **보안 가드 전수 적용**: 모든 언어(TS/JS, C#, C++, Java) 프로토콜에 `MAX_SAFE_LENGTH`(10MB) 및 `MAX_RECURSION_DEPTH`(64) 보안 정책을 강제 적용하여 악의적인 페이로드로부터 시스템을 보호합니다.
+- **MCP 코어 로직 분리**: 코어 저장소의 경량화를 위해 MCP 서버 생성 로직을 별도 모듈(`DeukPackMcp`)로 분리했습니다. 코어는 이제 AI 지식 추출(`AiContextGenerator`)에 집중하며, 도구 생성 기능은 플러그인 형태로 제공됩니다.
+- **기능 지원 표(Feature Matrix) 세분화**: 모든 문서의 프로토콜 지원 현황을 **Native Pack**, **Protobuf**, **Thrift (T-Series)**, **JSON**, **YAML/CSV**로 세분화하여 동기화했습니다.
+
+### 수정
+
+- **CLI 안내 메시지**: `deukpack --mcp` 실행 시, v1.5.0부터 분리된 플러그인 정책을 알리는 적절한 안내 메시지가 출력되도록 개선했습니다.
+- **의존성 경량화**: 코어 `package.json`에서 `@modelcontextprotocol/sdk`를 제거하여 설치 용량을 줄였습니다.
+
+
 ## [1.4.0] — 2026-03-29
 
 ### 핵심: MCP Protobuf 확장 및 서버 생성 지원

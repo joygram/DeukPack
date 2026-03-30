@@ -297,8 +297,8 @@ function writeField(w: PbWriter, value: unknown, field: DeukPackField, ctx: Ctx)
 
   if (field.enumValues) {
     w.writeTag(field.id, PB_VARINT);
-    const n = typeof value === 'number' ? value : (field.enumValues[value as string] ?? 0);
-    w.writeSignedVarint(n);
+    const n = typeof value === 'number' || typeof value === 'bigint' ? value : (field.enumValues[value as string] ?? 0);
+    w.writeSignedVarint(Number(n));
     return;
   }
 

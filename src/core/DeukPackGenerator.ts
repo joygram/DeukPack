@@ -4,10 +4,13 @@
  */
 
 import { DeukPackAST, GenerationOptions } from '../types/DeukPackTypes';
-import { McpGenerator } from '../codegen/mcp/McpGenerator';
+// import { McpGenerator } from '../codegen/mcp/McpGenerator';
 import { CSharpGenerator } from '../codegen/CSharpGenerator';
 import { CppGenerator } from '../codegen/cpp/CppGenerator';
 import { TypeScriptGenerator } from '../codegen/typescript/TypeScriptGenerator';
+import { JavaGenerator } from '../codegen/JavaGenerator';
+import { JavaScriptGenerator } from '../codegen/javascript/JavaScriptGenerator';
+
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -23,8 +26,9 @@ export class DeukPackGenerator {
       let generator;
       switch (genName.toLowerCase()) {
         case 'mcp':
-          generator = new McpGenerator();
-          break;
+          console.log(`[DeukPack] Notice: MCP features have been moved to the standalone 'DeukPackMcp' extension in v1.5.0.`);
+          console.log(`[DeukPack] For AI context, use 'deukpack --export:ai-context' or look for the DeukPackMcp plugin coming soon.`);
+          continue; // Skip the rest of the generation for MCP in Core
         case 'csharp':
           generator = new CSharpGenerator();
           break;
@@ -34,17 +38,24 @@ export class DeukPackGenerator {
         case 'typescript':
           generator = new TypeScriptGenerator();
           break;
+        case 'java':
+          generator = new JavaGenerator();
+          break;
+        case 'javascript':
+          generator = new JavaScriptGenerator();
+          break;
         default:
           console.warn(`[DeukPack] Unknown generator: ${genName}. Skipping.`);
           continue;
       }
 
-      const result = await generator.generate(ast, options);
+      const result = await (generator as any).generate(ast, options);
       if (typeof result === 'string') {
-        const fileName = genName.toLowerCase() === 'mcp' ? 'deukpack-mcp-server.js' : `generated_${genName}.txt`;
+        const fileName = `generated_${genName}.txt`;
         await fs.writeFile(path.join(outDir, fileName), result);
       } else {
-        for (const [file, content] of Object.entries(result)) {
+        const records = result as Record<string, string>;
+        for (const [file, content] of Object.entries(records)) {
           const fullPath = path.join(outDir, file);
           await fs.mkdir(path.dirname(fullPath), { recursive: true });
           await fs.writeFile(fullPath, content);

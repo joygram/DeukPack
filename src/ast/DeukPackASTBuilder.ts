@@ -1054,9 +1054,9 @@ export class DeukPackASTBuilder {
     const annotations = this.tryParseAnnotations();
     this.expect(TokenType.LEFT_BRACE);
 
-    const values: { [key: string]: number } = {};
+    const values: { [key: string]: number | bigint } = {};
     const valueComments: { [key: string]: string } = {};
-    let currentValue = 0;
+    let currentValue: number | bigint = 0;
 
     while (!this.check(TokenType.RIGHT_BRACE)) {
       const memberComment = this.collectLeadingComments();

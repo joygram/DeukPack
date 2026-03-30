@@ -2,7 +2,7 @@
  * Single source for emitted/runtime version: ../package.json (DeukPack repo root).
  * Works when loaded from dist/*.js (__dirname === .../dist).
  */
-import * as fs from 'fs';
+import * as fsSync from 'fs';
 import * as path from 'path';
 
 let _cachedVersion: string | undefined;
@@ -13,7 +13,7 @@ export function getDeukPackPackageVersion(): string {
   }
   try {
     const pkgPath = path.join(__dirname, '..', 'package.json');
-    const raw = fs.readFileSync(pkgPath, 'utf8');
+    const raw = fsSync.readFileSync(pkgPath, 'utf8');
     const pkg = JSON.parse(raw) as { version?: string };
     _cachedVersion =
       typeof pkg.version === 'string' && pkg.version.length > 0 ? pkg.version : '0.0.0';

@@ -253,7 +253,7 @@ function writeValue(p: DpProtocol, value: unknown, field: DeukPackField, ctx: Ct
     else if (typeof value === 'string') {
       const v = field.enumValues[value];
       if (v === undefined) throw new Error(`[DeukPack] interop: unknown enum "${value}" for field "${field.name}"`);
-      n = v;
+      n = Number(v);
     } else throw new Error(`[DeukPack] interop: invalid enum value for field "${field.name}"`);
     p.writeI32(n);
     return;

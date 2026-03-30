@@ -49,7 +49,7 @@ namespace DeukPack.Protocol
                     oprot.WriteBool((bool)value);
                     break;
                 case DpWireType.Byte:
-                    oprot.WriteByte((byte)value);
+                    oprot.WriteByte(value is sbyte sb ? unchecked((byte)sb) : Convert.ToByte(value));
                     break;
                 case DpWireType.Int16:
                     oprot.WriteI16(value is short s16 ? s16 : Convert.ToInt16(value));
@@ -65,7 +65,7 @@ namespace DeukPack.Protocol
                     else oprot.WriteI64(Convert.ToInt64(value));
                     break;
                 case DpWireType.Double:
-                    oprot.WriteDouble((double)value);
+                    oprot.WriteDouble(Convert.ToDouble(value));
                     break;
                 case DpWireType.String:
                     if (value is byte[] bytes)
@@ -94,7 +94,11 @@ namespace DeukPack.Protocol
                 case DpWireType.Bool:
                     return iprot.ReadBool();
                 case DpWireType.Byte:
-                    return iprot.ReadByte();
+                {
+                    byte v = iprot.ReadByte();
+                    if (targetType == typeof(sbyte)) return unchecked((sbyte)v);
+                    return v;
+                }
                 case DpWireType.Int16:
                 {
                     short v = iprot.ReadI16();
@@ -115,7 +119,11 @@ namespace DeukPack.Protocol
                     return v;
                 }
                 case DpWireType.Double:
-                    return iprot.ReadDouble();
+                {
+                    double v = iprot.ReadDouble();
+                    if (targetType == typeof(float)) return (float)v;
+                    return v;
+                }
                 case DpWireType.String:
                     if (targetType == typeof(string))
                         return iprot.ReadString();

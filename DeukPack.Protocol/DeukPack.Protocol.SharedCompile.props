@@ -4,6 +4,7 @@
   <ItemGroup>
     <Compile Include="..\src\codegen\DpProtocolCore.cs" Link="DpProtocolCore.cs" />
     <Compile Include="..\src\codegen\DpBinaryProtocol.cs" Link="DpBinaryProtocol.cs" />
+    <Compile Include="..\src\codegen\DpPackProtocol.cs" Link="DpPackProtocol.cs" />
     <Compile Include="..\src\codegen\DpJsonProtocol.cs" Link="DpJsonProtocol.cs" />
     <Compile Include="..\src\codegen\DpDeukJsonProtocol.cs" Link="DpDeukJsonProtocol.cs" />
     <Compile Include="..\src\codegen\DpDeukYamlProtocol.cs" Link="DpDeukYamlProtocol.cs" />

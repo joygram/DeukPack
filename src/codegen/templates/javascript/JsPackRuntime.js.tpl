@@ -27,15 +27,7 @@ function _packPushDouble(a, d) {
 function _packPushI64(a, n) {
   var u8 = new Uint8Array(8);
   var dv = new DataView(u8.buffer);
-  if (typeof dv.setBigInt64 === "function") {
-    dv.setBigInt64(0, BigInt(Math.trunc(Number(n))), true);
-  } else {
-    var v = Math.trunc(Number(n));
-    var lo = v >>> 0;
-    var hi = Math.floor(v / 4294967296);
-    dv.setUint32(0, lo, true);
-    dv.setInt32(4, hi, true);
-  }
+  dv.setBigInt64(0, BigInt(n), true);
   for (var i = 0; i < 8; i++) a.push(u8[i]);
 }
 function _packWriteNumber(a, n) {
@@ -44,15 +36,20 @@ function _packWriteNumber(a, n) {
     _packPushDouble(a, n);
     return;
   }
+  if (typeof n === 'bigint') {
+    a.push(_PackTag.Int64);
+    _packPushI64(a, n);
+    return;
+  }
   var t = Math.trunc(Number(n));
   if (t === n && t >= -2147483648 && t <= 2147483647) {
     a.push(_PackTag.Int32);
     _packPushI32(a, t);
     return;
   }
-  if (t === n) {
+  if (t === n && !Number.isSafeInteger(t)) {
     a.push(_PackTag.Int64);
-    _packPushI64(a, t);
+    _packPushI64(a, BigInt(t));
     return;
   }
   a.push(_PackTag.Double);
@@ -224,7 +221,7 @@ function _packWriteStructBody(a, schema, obj, schemas) {
     _packWriteValue(a, parts[j + 2], parts[j + 1], schemas);
   }
 }
-function _structToPackBinary(schema, obj, schemas) {
+function _packStructToBinary(schema, obj, schemas) {
   var a = [];
   _packWriteStructBody(a, schema, obj, schemas);
   return new Uint8Array(a);
@@ -272,10 +269,9 @@ function _prI32(r) {
 }
 function _prI64(r) {
   var dv = new DataView(r.u8.buffer, r.u8.byteOffset + r.i, 8);
-  var lo = dv.getUint32(0, true);
-  var hi = dv.getInt32(4, true);
+  var v = dv.getBigInt64(0, true);
   r.i += 8;
-  return hi * 4294967296 + lo;
+  return v;
 }
 function _prDbl(r) {
   var d = new DataView(r.u8.buffer, r.u8.byteOffset + r.i, 8).getFloat64(0, true);
@@ -347,7 +343,7 @@ function _packReadValue(r, f, schemas) {
   }
   throw new Error("[DeukPack] pack: unknown tag " + tag);
 }
-function _structFromPackBinary(schema, buf, schemas) {
+function _packBinaryToStruct(schema, buf, schemas) {
   var u8 = buf && buf.buffer ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) : new Uint8Array(buf || []);
   var r = { u8: u8, i: 0 };
   if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");

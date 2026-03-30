@@ -3,7 +3,7 @@
  * Paths: dist/codegen/templates/<lang>/ (after copy-codegen-templates) or src fallback.
  */
 
-import * as fs from 'fs';
+import * as fsSync from 'fs';
 import * as path from 'path';
 import { applyCodegenPlaceholders } from './templateRender';
 import { substituteDeukPackVersionMarkers } from '../deukpackVersion';
@@ -21,11 +21,11 @@ export class CodegenTemplateHost {
     }
     const primary = path.join(__dirname, 'templates', this._langDir, relPath);
     const fallback = path.join(__dirname, '..', '..', 'src', 'codegen', 'templates', this._langDir, relPath);
-    const full = fs.existsSync(primary) ? primary : fallback;
-    if (!fs.existsSync(full)) {
+    const full = fsSync.existsSync(primary) ? primary : fallback;
+    if (!fsSync.existsSync(full)) {
       throw new Error(`DeukPack: codegen template not found: ${this._langDir}/${relPath}`);
     }
-    const text = substituteDeukPackVersionMarkers(fs.readFileSync(full, 'utf8'));
+    const text = substituteDeukPackVersionMarkers(fsSync.readFileSync(full, 'utf8'));
     this._cache.set(key, text);
     return text;
   }
