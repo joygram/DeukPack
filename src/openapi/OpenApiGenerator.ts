@@ -83,9 +83,13 @@ function structToOpenApiSchema(struct: DeukPackStruct, ast: DeukPackAST, current
 }
 
 function enumToOpenApiSchema(enumDef: DeukPackEnum): OpenApiSchemaObject {
-  const values = Object.keys(enumDef.values || {}).sort(
-    (a, b) => (enumDef.values![a] ?? 0) - (enumDef.values![b] ?? 0)
-  );
+  const values = Object.keys(enumDef.values || {}).sort((a, b) => {
+    const va = enumDef.values![a] ?? 0;
+    const vb = enumDef.values![b] ?? 0;
+    if (va < vb) return -1;
+    if (va > vb) return 1;
+    return 0;
+  });
   const out: OpenApiSchemaObject = { type: 'string', enum: values };
   if (enumDef.docComment) out.description = enumDef.docComment;
   return out;

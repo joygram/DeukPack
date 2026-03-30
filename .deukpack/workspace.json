@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "installKind": "src",
+  "deukPackRoot": "d:\\workspace\\i\\DeukPack",
+  "unity": {
+    "projects": [
+      {
+        "projectRoot": "d:\\workspace\\i\\project_dp\\unity_app"
+      }
+    ],
+    "runtimePluginsOut": "upm/Runtime/Plugins"
+  },
+  "sync": {
+    "cli": "npx deukpack sync",
+    "buildScript": "scripts/build_unity_runtime_plugins.js"
+  },
+  "bootstrap": {
+    "cli": "npx deukpack bootstrap"
+  }
+}

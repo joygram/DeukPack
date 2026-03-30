@@ -13,6 +13,7 @@ import {
   DeukPackConstant,
   DeukPackType,
   DeukPackTypedef,
+  DeukPackField,
 } from '../../types/DeukPackTypes';
 import { CodeGenerator } from '../CodeGenerator';
 import { DeukPackEngine } from '../../core/DeukPackEngine';
@@ -63,6 +64,9 @@ export class CppGenerator extends CodeGenerator {
     const out: { [filename: string]: string } = {};
 
     out['DpProtocol.h'] = this._tpl.load('DpProtocol.h.tpl');
+    out['DpBinaryProtocol.h'] = this._tpl.load('DpBinaryProtocol.h.tpl');
+    out['DpPackProtocol.h'] = this._tpl.load('DpPackProtocol.h.tpl');
+    out['DpJsonProtocol.h'] = this._tpl.load('DpJsonProtocol.h.tpl');
 
     for (const [sourceFile, group] of Object.entries(fileGroups)) {
       const baseName = this.getBaseNameFromSource(sourceFile);
@@ -83,7 +87,7 @@ export class CppGenerator extends CodeGenerator {
       for (const c of group.constants) namespaces.add(this.getConstantNamespace(c, ast));
       for (const t of group.typedefs) namespaces.add(this.getTypedefNamespace(t, ast));
 
-      const cppContent = this.generateCppFile(baseName, Array.from(namespaces));
+      const cppContent = this.generateCppFile(baseName, Array.from(namespaces), group, ast);
 
       out[this.cppHeaderFileName(baseName)] = hContent;
       out[this.cppSourceFileName(baseName)] = cppContent;
@@ -108,7 +112,7 @@ export class CppGenerator extends CodeGenerator {
 
       const idlNs = this.lookupFileNamespace(sourceFile, ast);
       out[this.cppHeaderFileName(baseName)] = this.generateUmbrellaHeader(headerNames, idlNs);
-      out[this.cppSourceFileName(baseName)] = this.generateCppFile(baseName, []);
+      out[this.cppSourceFileName(baseName)] = this.generateCppFile(baseName, [], group!, ast);
     }
 
     return out;
@@ -347,6 +351,12 @@ export class CppGenerator extends CodeGenerator {
     const lines: string[] = [];
     lines.push(this._tpl.load('HeaderPreamble.h.tpl').trimEnd());
     lines.push('');
+    lines.push('#include "DpProtocol.h"');
+    lines.push('#include <memory>');
+    lines.push('#include <vector>');
+    lines.push('#include <map>');
+    lines.push('#include <set>');
+    lines.push('');
 
     const crossHeaders = this.collectCrossSourceHeaderIncludes(_baseName, group, ast);
     for (const h of crossHeaders) {
@@ -402,6 +412,10 @@ export class CppGenerator extends CodeGenerator {
         lines.push(this.renderEnum(e).trimEnd());
         lines.push('');
         emittedDeclaration = true;
+      }
+      if (defs.structs.length > 0) {
+        for (const s of defs.structs) lines.push(`  struct ${s.name};`);
+        lines.push('');
       }
       for (const s of defs.structs) {
         lines.push(this.renderStructDecl(s, ast, ns).trimEnd());
@@ -514,13 +528,13 @@ export class CppGenerator extends CodeGenerator {
         ? this.resolveTypeName(f.type, currentNs, ast)
         : this.getCppType(f.type, ast, currentNs);
       const name = f.name || 'field';
-      fieldDeclLines.push(`    ${cppType} ${name}{};`);
+      fieldDeclLines.push(`  std::shared_ptr<${cppType}> ${name};`);
     }
     const fieldIdLines: string[] = [];
     for (const f of s.fields || []) {
       const name = f.name || 'field';
       const constName = 'kFieldId_' + name.charAt(0).toUpperCase() + name.slice(1);
-      fieldIdLines.push(`    static constexpr int ${constName} = ${f.id};`);
+      fieldIdLines.push(`  static constexpr int ${constName} = ${f.id};`);
     }
     return this._tpl.render('CppStructDecl.h.tpl', {
       DOC_COMMENT: docComment,
@@ -545,17 +559,228 @@ export class CppGenerator extends CodeGenerator {
     return this._tpl.render('CppConstantLine.h.tpl', { CONST_LINE: line });
   }
 
-  private generateCppFile(baseName: string, namespaces: string[]): string {
-    const nsBlocks = namespaces
-      .map((ns) => {
-        const open = this.renderCppNamespaceOpen(ns);
-        const close = this.renderCppNamespaceClose(ns);
-        return `\n${open}\n  // Types defined in header; add serialization implementation if needed.\n${close}\n`;
-      })
-      .join('');
-    return this._tpl.render('TypesCppStub.cpp.tpl', {
-      HEADER_FILE: this.cppHeaderFileName(baseName),
-      NAMESPACE_BLOCKS: nsBlocks,
-    });
+  private generateCppFile(baseName: string, namespaces: string[], group: TypeGroup, ast: DeukPackAST): string {
+    const lines: string[] = [];
+    lines.push(`#include "${this.cppHeaderFileName(baseName)}"`);
+    lines.push('');
+
+    for (const ns of namespaces) {
+      lines.push(this.renderCppNamespaceOpen(ns));
+      lines.push('');
+
+      for (const s of group.structs) {
+        if (this.getStructNamespace(s, ast) === ns) {
+            lines.push(this.renderStructImpl(s, ast, ns));
+            lines.push('');
+        }
+      }
+
+      lines.push(this.renderCppNamespaceClose(ns));
+      lines.push('');
+    }
+
+    return lines.join('\n');
+  }
+
+  private renderStructImpl(s: DeukPackStruct, ast: DeukPackAST, ns: string): string {
+    const name = s.name;
+    const fields = s.fields || [];
+
+    // Write method
+    const nonNullCount = fields.map(f => `(${f.name} ? 1 : 0)`).join(' + ');
+    const writeLines = fields.map(f => {
+        return `    if (${f.name}) {\n` +
+               `      oprot.WriteFieldBegin({"${f.name}", DpWireType::${this.toWireType(f.type, ast)}, ${f.id}});\n` +
+               `      ${this.renderWriteCall(f, f.name, ast)}\n` +
+               `      oprot.WriteFieldEnd();\n` +
+               `    }`;
+    }).join('\n');
+
+    // Read method
+    const readSwitchCases = fields.map(f => {
+        return `      case ${f.id}:\n` +
+               `        if (field.Type == DpWireType::${this.toWireType(f.type, ast)} || field.Type == DpWireType::Void) {\n` +
+               `          ${this.renderReadCall(f, f.name, ast, ns)}\n` +
+               `        } else {\n` +
+               `          iprot.Skip(field.Type);\n` +
+               `        }\n` +
+               `        break;`;
+    }).join('\n');
+
+    const nameToIdLogic = fields.map(f => 
+        `    if (id == 0 && field.Name == "${f.name}") id = ${f.id};`
+    ).join('\n');
+
+    return `void ${name}::Write(DpProtocol& oprot) const {\n` +
+           `  oprot.WriteStructBegin({"${name}", ${nonNullCount || '0'}});\n` +
+           `${writeLines}\n` +
+           `  oprot.WriteFieldStop();\n` +
+           `  oprot.WriteStructEnd();\n` +
+           `}\n\n` +
+           `void ${name}::Read(DpProtocol& iprot) {\n` +
+           `  iprot.ReadStructBegin();\n` +
+           `  while (true) {\n` +
+           `    DpColumn field = iprot.ReadFieldBegin();\n` +
+           `    if (field.Type == DpWireType::Stop) break;\n` +
+           `    int16 id = field.ID;\n` +
+           `${nameToIdLogic}\n` +
+           `    switch (id) {\n` +
+           `${readSwitchCases}\n` +
+           `      default: iprot.Skip(field.Type); break;\n` +
+           `    }\n` +
+           `    iprot.ReadFieldEnd();\n` +
+           `  }\n` +
+           `  iprot.ReadStructEnd();\n` +
+           `}`;
+  }
+
+  private getRealType(type: DeukPackType, ast: DeukPackAST): string {
+    if (typeof type !== 'string') return type.type;
+    const primitives = ['bool', 'byte', 'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'float', 'double', 'string', 'binary'];
+    if (primitives.includes(type)) return type;
+    if (ast.enums.some(e => e.name === type || type.endsWith('.' + e.name))) return 'enum';
+    if (ast.structs.some(s => s.name === type || type.endsWith('.' + s.name))) return 'record';
+    return 'record';
+  }
+
+  private toWireType(type: DeukPackType, ast: DeukPackAST): string {
+    const t = this.getRealType(type, ast);
+    switch (t) {
+        case 'bool': return 'Bool';
+        case 'byte': case 'int8': return 'Byte';
+        case 'int16': return 'Int16';
+        case 'int32': return 'Int32';
+        case 'int64': return 'Int64';
+        case 'float': case 'double': return 'Double';
+        case 'string': return 'String';
+        case 'binary': return 'String';
+        case 'record': return 'Struct';
+        case 'enum': return 'Int32';
+        case 'list': case 'array': return 'List';
+        case 'set': return 'Set';
+        case 'map': return 'Map';
+        default: return 'Void';
+    }
+  }
+
+  private renderWriteCall(f: DeukPackField, varName: string, ast: DeukPackAST): string {
+    const type = f.type;
+    const t = this.getRealType(type, ast);
+    switch (t) {
+        case 'bool': return `oprot.WriteBool(*${varName});`;
+        case 'byte': case 'int8': return `oprot.WriteByte(*${varName});`;
+        case 'int16': return `oprot.WriteI16(*${varName});`;
+        case 'int32': return `oprot.WriteI32(*${varName});`;
+        case 'int64': return `oprot.WriteI64(*${varName});`;
+        case 'float': case 'double': return `oprot.WriteDouble(*${varName});`;
+        case 'string': return `oprot.WriteString(*${varName});`;
+        case 'binary': return `oprot.WriteBinary(*${varName});`;
+        case 'record': return `${varName}->Write(oprot);`;
+        case 'enum': return `oprot.WriteI32(static_cast<deuk::int32>(*${varName}));`;
+        case 'list': case 'array': case 'set': {
+            const et = (type as any).elementType;
+            const etWire = this.toWireType(et, ast);
+            const isSet = t === 'set';
+            const begin = isSet ? 'WriteSetBegin' : 'WriteListBegin';
+            const end = isSet ? 'WriteSetEnd' : 'WriteListEnd';
+            return `oprot.${begin}({DpWireType::${etWire}, static_cast<deuk::int32>(${varName}->size())});\n` +
+                   `      for (const auto& elem : *${varName}) {\n` +
+                   `        ${this.renderWriteValueOnly(et, 'elem', ast)}\n` +
+                   `      }\n` +
+                   `      oprot.${end}();`;
+        }
+        case 'map': {
+            const kt = (type as any).keyType;
+            const vt = (type as any).valueType;
+            return `oprot.WriteMapBegin({DpWireType::${this.toWireType(kt, ast)}, DpWireType::${this.toWireType(vt, ast)}, static_cast<deuk::int32>(${varName}->size())});\n` +
+                   `      for (const auto& kv : *${varName}) {\n` +
+                   `        ${this.renderWriteValueOnly(kt, 'kv.first', ast)}\n` +
+                   `        ${this.renderWriteValueOnly(vt, 'kv.second', ast)}\n` +
+                   `      }\n` +
+                   `      oprot.WriteMapEnd();`;
+        }
+        default: return `// TODO: ${t}`;
+    }
+  }
+
+  private renderWriteValueOnly(type: DeukPackType, varName: string, ast: DeukPackAST): string {
+    const t = this.getRealType(type, ast);
+    switch (t) {
+        case 'bool': return `oprot.WriteBool(${varName});`;
+        case 'byte': case 'int8': return `oprot.WriteByte(${varName});`;
+        case 'int16': return `oprot.WriteI16(${varName});`;
+        case 'int32': return `oprot.WriteI32(${varName});`;
+        case 'int64': return `oprot.WriteI64(${varName});`;
+        case 'float': case 'double': return `oprot.WriteDouble(${varName});`;
+        case 'string': return `oprot.WriteString(${varName});`;
+        case 'binary': return `oprot.WriteBinary(${varName});`;
+        case 'record': return `${varName}.Write(oprot);`;
+        case 'enum': return `oprot.WriteI32(static_cast<deuk::int32>(${varName}));`;
+        default: return `// TODO: ${t}`;
+    }
+  }
+
+  private renderReadCall(f: DeukPackField, varName: string, ast: DeukPackAST, currentNs: string): string {
+    const type = f.type;
+    const t = this.getRealType(type, ast);
+    const cppType = typeof type === 'string' ? this.resolveTypeName(type, currentNs, ast) : this.getCppType(type, ast, currentNs);
+    
+    switch (t) {
+        case 'bool': return `${varName} = std::make_shared<bool>(iprot.ReadBool());`;
+        case 'byte': case 'int8': return `${varName} = std::make_shared<deuk::int8>(iprot.ReadByte());`;
+        case 'int16': return `${varName} = std::make_shared<deuk::int16>(iprot.ReadI16());`;
+        case 'int32': return `${varName} = std::make_shared<deuk::int32>(iprot.ReadI32());`;
+        case 'int64': return `${varName} = std::make_shared<deuk::int64>(iprot.ReadI64());`;
+        case 'float': return `${varName} = std::make_shared<deuk::float32>(static_cast<deuk::float32>(iprot.ReadDouble()));`;
+        case 'double': return `${varName} = std::make_shared<deuk::float64>(iprot.ReadDouble());`;
+        case 'string': return `${varName} = std::make_shared<std::string>(iprot.ReadString());`;
+        case 'binary': return `${varName} = std::make_shared<std::string>(iprot.ReadBinary());`;
+        case 'enum': return `${varName} = std::make_shared<${cppType}>(static_cast<${cppType}>(iprot.ReadI32()));`;
+        case 'record': return `${varName} = std::make_shared<${cppType}>();\n          ${varName}->Read(iprot);`;
+        case 'list': case 'array': case 'set': {
+            const et = (type as any).elementType;
+            const isSet = t === 'set';
+            const begin = isSet ? 'ReadSetBegin' : 'ReadListBegin';
+            const end = isSet ? 'ReadSetEnd' : 'ReadListEnd';
+            return `${varName} = std::make_shared<${cppType}>();\n` +
+                   `          auto info = iprot.${begin}();\n` +
+                   `          for (int32 i = 0; i < info.Count; ++i) {\n` +
+                   `            ${varName}->${isSet ? 'insert' : 'push_back'}(${this.renderReadValueOnly(et, ast, currentNs)});\n` +
+                   `          }\n` +
+                   `          iprot.${end}();`;
+        }
+        case 'map': {
+            const kt = (type as any).keyType;
+            const vt = (type as any).valueType;
+            return `${varName} = std::make_shared<${cppType}>();\n` +
+                   `          auto info = iprot.ReadMapBegin();\n` +
+                   `          for (int32 i = 0; i < info.Count; ++i) {\n` +
+                   `            auto key = ${this.renderReadValueOnly(kt, ast, currentNs)};\n` +
+                   `            auto val = ${this.renderReadValueOnly(vt, ast, currentNs)};\n` +
+                   `            (*${varName})[key] = val;\n` +
+                   `          }\n` +
+                   `          iprot.ReadMapEnd();`;
+        }
+        default: return `// TODO: ${t}`;
+    }
+  }
+
+  private renderReadValueOnly(type: DeukPackType, ast: DeukPackAST, currentNs: string): string {
+    const t = this.getRealType(type, ast);
+    const cppType = typeof type === 'string' ? this.resolveTypeName(type, currentNs, ast) : this.getCppType(type, ast, currentNs);
+    switch (t) {
+        case 'bool': return `iprot.ReadBool()`;
+        case 'byte': case 'int8': return `iprot.ReadByte()`;
+        case 'int16': return `iprot.ReadI16()`;
+        case 'int32': return `iprot.ReadI32()`;
+        case 'int64': return `iprot.ReadI64()`;
+        case 'float': return `static_cast<deuk::float32>(iprot.ReadDouble())`;
+        case 'double': return `iprot.ReadDouble()`;
+        case 'string': return `iprot.ReadString()`;
+        case 'binary': return `iprot.ReadBinary()`;
+        case 'record': return `[] (DpProtocol& ip) { ${cppType} v; v.Read(ip); return v; }(iprot)`;
+        case 'enum': return `static_cast<${cppType}>(iprot.ReadI32())`;
+        default: return `/* TODO: ${t} */ {}`;
+    }
   }
 }

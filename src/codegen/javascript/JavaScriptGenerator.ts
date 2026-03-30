@@ -23,6 +23,7 @@ export class JavaScriptGenerator extends CodeGenerator {
     lines.push('');
     lines.push(this._tpl.load('JsRuntimeCore.js.tpl').trimEnd());
     lines.push(this._tpl.load('JsPackRuntime.js.tpl').trimEnd());
+    lines.push(this._tpl.load('JsBinaryProtocol.js.tpl').trimEnd());
     lines.push('');
 
     const wireProfilesJs = this.normalizeWireProfiles(options);
@@ -94,6 +95,16 @@ export class JavaScriptGenerator extends CodeGenerator {
       ...(ast.enums || []).map((e) => e.name.replace(/\./g, '_')),
       ...(ast.structs || []).map((s) => s.name.replace(/\./g, '_')),
       ...wireProfileExportNames,
+      '_schemas',
+      '_enums',
+      '_packStructToBinary',
+      '_packBinaryToStruct',
+      '_structToBinary',
+      '_structFromBinary',
+      '_toDpJson',
+      '_fromDpJson',
+      '_wrapDpJson',
+      '_unwrapDpJson'
     ];
     const exportLines = allNames.map((n) => '  module.exports.' + n + ' = ' + n + ';').join('\n');
     lines.push(this._tpl.render('JsModuleExports.js.tpl', { EXPORT_LINES: exportLines }).trimEnd());
@@ -139,9 +150,17 @@ export class JavaScriptGenerator extends CodeGenerator {
       const cap = f.name.charAt(0).toUpperCase() + f.name.slice(1);
       return `${cap}: ${f.id}`;
     });
+
+    const schemaJson = JSON.stringify(schemaObj, (_unusedKey, value) => {
+      if (typeof value === 'bigint') {
+        return `@@BIGINT@@${value}n`;
+      }
+      return value;
+    }).replace(/"@@BIGINT@@([0-9n\-]+)"/g, '$1');
+
     return this._tpl.render('JsStructFull.js.tpl', {
       SAFE_NAME: safeName,
-      SCHEMA_JSON: JSON.stringify(schemaObj),
+      SCHEMA_JSON: schemaJson,
       FIELD_ID_ENTRIES: fieldIdEntries.join(', '),
     });
   }

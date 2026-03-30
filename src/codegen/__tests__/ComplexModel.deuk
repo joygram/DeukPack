@@ -1,0 +1,27 @@
+namespace deuk.test
+
+struct LeafRecord {
+    1> string value
+}
+
+struct InnerRecord {
+    1> LeafRecord leaf
+    2> string name
+}
+
+struct MidRecord {
+    1> InnerRecord inner
+    2> list<InnerRecord> inner_list
+    3> int32 level
+}
+
+struct RootRecord {
+    1> MidRecord mid
+    2> list<MidRecord> mid_list
+}
+
+struct ComplexModel {
+    1> RootRecord root
+    2> map<string, MidRecord> mid_map
+    3> binary extra_data
+}

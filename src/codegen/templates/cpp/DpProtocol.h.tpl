@@ -46,6 +46,7 @@ enum class DpMessageType : uint8 {
 
 struct DpRecord {
   std::string Name{};
+  int32 Count{0};
 };
 
 struct DpMessage {

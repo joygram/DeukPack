@@ -7,7 +7,7 @@
     // Serialization methods
     public void Write(DpProtocol oprot) => Write(oprot, null, null);
 
-    public void Write(DpProtocol oprot, ICollection<int>? fieldIds, Dictionary<int, object>? overrides = null)
+    public void Write(DpProtocol oprot, ICollection<int>@@?@@ fieldIds, Dictionary<int, object>@@?@@ overrides = null)
     {
 @@WRITE_UNIFIED_INNER@@
     }
@@ -24,11 +24,12 @@
         {
           break;
         }
+@@NAME_TO_ID_FALLBACK@@
         switch (field.ID)
         {
 @@READ_SWITCH_CASES@@
           default:
-            DeukPack.Protocol.DeukPackSerializationWarnings.LogUnknownField("@@WIRE_NAME@@", field.ID, field.Name ?? "");
+            DeukPack.Protocol.DeukPackSerializationWarnings.LogUnknownField("@@WIRE_NAME@@", field.ID, field.Name @@?@@@@?@@ "");
             DpProtocolUtil.Skip(iprot, field.Type);
             break;
         }

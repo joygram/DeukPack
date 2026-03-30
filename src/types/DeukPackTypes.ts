@@ -158,7 +158,7 @@ export interface DeukPackField {
   required: boolean;
   defaultValue?: any;
   structType?: string;
-  enumValues?: { [key: string]: number };
+  enumValues?: { [key: string]: number | bigint };
   /** Doc comment immediately above this field (recoverable to IDL) */
   docComment?: string;
   /** C# attributes parsed from doc comment lines like /// [Key], /// [Required] (DeukPack extension) */
@@ -195,7 +195,7 @@ export interface DeukPackStruct {
 
 export interface DeukPackEnum {
   name: string;
-  values: { [key: string]: number };
+  values: { [key: string]: number | bigint };
   /** Synthesized for forward refs (e.g. ns.foo_e before parse order); not from IDL */
   forwardRefPlaceholder?: boolean;
   /** Doc comment immediately above enum (recoverable to IDL) */
@@ -274,7 +274,7 @@ export interface DeukPackFullStructSchema {
 export interface DeukPackFullEnumSchema {
   name: string;
   type: 'enum';
-  values: { [key: string]: number };
+  values: { [key: string]: number | bigint };
   valueComments?: { [key: string]: string };
   docComment?: string;
   annotations?: { [key: string]: string };
@@ -443,11 +443,13 @@ export interface GenerationOptions {
   wireProfilesEmit?: string[];
   /** C# Nullable Reference Types (NRT) 지원: #nullable enable 및 참조 타입 ? 주석 생성. 기본값 false. */
   csharpNullable?: boolean;
+  /** C# 대상 언어 버전 (e.g. net8.0, netstandard2.0). */
+  csharpVersion?: string;
   /** 단일 네임스페이스일 때 `namespace { }` 중괄호 블록 생략 여부. 인덴트는 유지. */
   braceLessNamespace?: boolean;
   /** 한 파일에 여러 `namespace` 선언 허용 여부. */
   allowMultiNamespace?: boolean;
-  /** 명시적 생성기 목록 (e.g. ['csharp', 'mcp']). */
+  /** 명시적 생성기 목록 (e.g. ['csharp', 'java', 'typescript']). */
   generators?: string[];
   /** 다중 언어 생성 시 목표 언어 목록. */
   targetLanguages?: ('javascript' | 'cpp' | 'csharp')[];

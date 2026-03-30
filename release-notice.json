@@ -1,11 +1,23 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce": "<strong>득팩 코어 1.3.0</strong> — 동적 릴리스 공지·마크다운 링크 수정·OSS 싱크 강화 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/releases/\">EN</a>",
-  "landing_ko": "**득팩 코어 1.3.0** — 득팩앱 빌드 타임 의존성 제거 및 브라우저 실시간 공지 렌더링 도입; 마크다운 내 깨진 링크 및 앵커 일괄 수정; OSS 미러링 시 불필요한 빌드 아티팩트 전역 제외 규칙 강화. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
-  "landing_en": "**DeukPack core 1.3.0** — dynamic client-side release notice; fixed broken markdown links and anchors; enhanced OSS sync with global exclusion rules for build artifacts (`obj`, `bin`, etc.). [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
+  "announce": "<strong>득팩 코어 1.5.0</strong> — Java 패리티(상속, Compact/TJSON 추가) · MCP 코어 분리 · 전수 보안 가드 도입 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/releases/\">EN</a>",
+  "landing_ko": "**득팩 코어 1.5.0** — Java 파이프라인에서 `extends`(상속), `TCompact`, `TJSON` 프로토콜을 정식 지원하며 C#/TS와 동등한 수준의 기능을 달성했습니다. 또한 MCP 서버 생성 로직을 독립 플러그인(`DeukPackMcp`)으로 완전히 분리하여 코어 엔진의 경량화를 실현하고, 모든 언어의 바이너리 리더/라이터에 전역 보안 가드(MAX_SAFE_LENGTH, MAX_RECURSION_DEPTH)를 적용하여 안정성을 강화했습니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.5.0** — achieved Java parity with support for `extends` (inheritance), `TCompact`, and `TJSON` protocols. Decoupled MCP server generation into a separate plugin (`DeukPackMcp`) for a leaner core engine. Enhanced security across all languages with global guards (MAX_SAFE_LENGTH, MAX_RECURSION_DEPTH) in binary readers/writers. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
   "product_notices": [
+    {
+      "date": "2026-03-30",
+      "products": [
+        "core-engine",
+        "protocol",
+        "pipeline-unity"
+      ],
+      "title_ko": "1.5.0 — Java 패리티·MCP 분리·보안 강화",
+      "title_en": "1.5.0 — Java parity, MCP decoupling, security guards",
+      "body_ko": "- **Java**: `extends`(상속), `TCompact`, `TJSON` 프로토콜 정식 지원.\n- **아키텍처**: MCP 서버 생성 로직을 독립 플러그인(`DeukPackMcp`)으로 분리.\n- **보안**: 전 언어 바이너리 입출력에 `MAX_SAFE_LENGTH`, `MAX_RECURSION_DEPTH` 보안 가드 적용.\n- **문서**: 공식 사이트(deukpack.app) 및 README 최신화.",
+      "body_en": "- **Java**: Added support for `extends` (inheritance), `TCompact`, and `TJSON` protocols.\n- **Architecture**: Decoupled MCP server logic into a standalone `DeukPackMcp` plugin.\n- **Security**: Implemented `MAX_SAFE_LENGTH` and `MAX_RECURSION_DEPTH` guards across all language runtimes.\n- **Docs**: Synchronized deukpack.app and repository READMEs with v1.5.0 status."
+    },
     {
       "date": "2026-03-28",
       "products": [

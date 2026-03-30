@@ -1,6 +1,6 @@
-# DeukPack: AI-Native 유니버설 IDL 게이트웨이
+# DeukPack: AI-Native 유니버설 스키마 멀티 허브 (Protobuf, Thrift, OpenAPI 통합)
 
-> **AI 시대를 위한 Mixed-IDL 하이브리드 직렬화 파이프라인.**
+> **Protobuf, Thrift, OpenAPI를 하나로 묶는 고성능 유니버설 스키마 멀티 허브(Multi-hub).**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://img.shields.io/npm/v/deukpack.svg)](https://www.npmjs.com/package/deukpack)
@@ -43,12 +43,86 @@ npx deukpack init
 단순한 데이터 타입을 넘어, IDL 주석(`/** ... */`)과 필드 구조에서 추출된 메타데이터를 AI가 즉시 이해할 수 있는 **'의미론적 맥락(Semantic Context)'**으로 전환합니다.
 - **돌파구:** 엔지니어는 단순 코딩 업무에서 벗어나, 데이터의 계보(Lineage)를 기계가 읽을 수 있는 형태로 설계하는 정교한 **상위 아키텍트**로 진화합니다.
 
-### 3. AI-Native 실시간 실행 브리지 (MCP - 🚧 WIP)
+### 3. AI-Native 실행 브리지 (MCP 플러그인 대응)
 기존의 IDL 도구들이 정적인 코딩만 지원했다면, 득팩은 에이전트가 현실 세계와 소통할 수 있는 **런타임 실행 브리지**를 구축합니다.
-- **가드레일 자동화:** **MCP(Model Context Protocol)** 서버를 자동 생성합니다. Cursor, Claude Desktop 등의 AI 에이전트가 **실시간으로 문서를 조회**하고 **백엔드 기능(Tools)을 직접 실행**할 수 있습니다. **Zod 기반 가드레일**이 함께 작동하여 AI가 안전하게 시스템을 제어하도록 보장합니다.
+- **플러그인 기반 확장:** **MCP(Model Context Protocol)** 서버 자동 생성 기능을 별도 플러그인(`DeukPackMcp`)으로 분리하여 코어의 경량화와 확장성을 동시에 확보했습니다. Cursor, Claude Desktop 등의 AI 에이전트가 코어에서 추출된 **지능형 컨텍스트**를 기반으로 실시간 문서를 조회하고 백엔드 기능을 실행할 수 있도록 지원합니다.
 
-### 4. Zero-Allocation 극한의 성능
-득팩은 리소스 효율성을 위해 설계되었습니다. 수백 개의 IDL 파일을 파싱하거나 대규모 객체를 직렬화할 때, 기존 업계 표준 대비 **수십 배 이상의 속도와 낮은 메모리 점유율**을 유지합니다. 실제 수치는 아래 [성능](#성능-레거시-워크플로-대비) 표를 참고하세요.
+### 4. Zero-Allocation 극한의 성능 (Bottleneck-Free)
+득팩은 리소스 효율성을 위해 설계되었습니다. 수백 개의 IDL 파일을 파싱하거나 대규모 객체를 직렬화할 때, 기존 업계 표준 대비 **수십 배 이상의 속도와 낮은 메모리 점유율**을 유지합니다. 실제 수치는 아래 [성능](#성능-병목-없는-지능형-코어) 섹션을 참고하세요.
+
+---
+
+## 🚀 릴리스 로드맵 (Roadmap)
+
+득팩(DeukPack)은 언어·플랫폼 지원 확대 시마다 마이너 버전을 갱신하며, 현재 **v1.5.x 시리즈**를 통해 생태계를 확장 중입니다.
+
+| 버전 | 주요 목표 (Milestones) | 상태 |
+| :--- | :--- | :--- |
+| **v1.4.0** | MCP Protobuf 확장, C#/C++/JS 코어 런타임 안정화 | **DONE** |
+| **v1.5.0** | **Java & Core Parity**: 상속 지원, Compact/TJSON 추가, 전수 보안 가드 및 **MCP 코어 분리** | **Current** |
+| **v1.5.1** | C++ 저지연(Zero-Alloc) 최적화 및 DDL 생성기 보강 | In Progress |
+| **v1.6.0** | **Elixir Expansion Pilot**: BEAM 기반 초고성능 분산 백엔드 지원 | **Teaser** |
+
+---
+
+
+
+득팩은 단순히 빠른 것을 넘어, AI 에이전트가 수만 줄의 IDL 지식을 실시간으로 다루어도 시스템에 주하를 주지 않는 **"지연 없는 지능형 코어"**를 지향합니다.
+
+| 작업 항목 | 기존 레거시 워크플로 | **DeukPack (v1.5.0)** | 핵심 이점 |
+| :--- | :---: | :---: | :--- |
+| **IDL 트리 파싱** | 초(s) 단위 (다단계 빌드) | **밀리초(ms) 단위** | **AI 실시간 인터랙션 최적화** |
+| **런타임 오버헤드** | 객체 할당 및 GC 발생 | **Zero-Allocation** | **고빈도 데이터 통신(HFT) 지원** |
+
+> [!TIP]
+> 위 수치는 대규모 프로젝트 환경(500+ IDL 파일)에서의 일반적인 관측치를 기반으로 하며, 사용자 환경 및 IDL 복잡도에 따라 차이가 있을 수 있습니다. 상세 벤치마크 방법론은 [성능 문서](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.ko.md)를 참고하세요.
+
+### 버전 관리 정책 (Versioning Policy)
+
+- **Minor (0.X.0)**: **신규 언어 지원**, **신규 플랫폼 아웃풋** 추가 및 주요 기능 확장.
+- **Patch (0.0.X)**: 기존 기능의 버그 수정, 성능 최적화, 사소한 개선.
+
+---
+
+## 기능 지원 매트릭스 (Feature Matrix)
+
+각 타겟 플랫폼별 지원 현황 및 계획입니다.
+
+| 카테고리 | 기능 | TS / JS | C# / Unity | C++ | Java | Elixir |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.6) |
+| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | 🚧 (v1.6) |
+| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.6) |
+| | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
+| | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
+| | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
+| | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
+| **최적화**| Zero-Alloc 파싱 | ⚠️ | ✅ | ✅ (v1.4.2) | 🚧 | 🚧 (BEAM) |
+| | `Write` 로직 오버라이드 | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
+| **데이터/메타** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
+| | DB 연동 (EF / SQL) | ⚠️ (1) | ⚠️ (2) | ⚠️ (3) | 🚧 (v1.5) | - |
+| **AI & IDE 통합** | 도구 자동 생성 (Skill) | ✅ (v1.5 MCP 분리) | 🚧 | - | - | - |
+| | 지능형 컨텍스트 (Knowledge) | ✅ (Core Ready) | ✅ | ✅ | ✅ | ✅ |
+| | IDE 인코더/인텔리센스 | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+- ✅: 정식 지원 / Production Ready
+- ⚠️: 프리뷰 / 일부 기능 지원 또는 제약 있음
+- 🚧: 파일럿 / 개발 진행 중
+- -: 현재 미지원
+
+> [!CAUTION]
+> **데이터베이스 연동 (⚠️) 상세 제약 사항:**
+> 1. **TS / JS**: JSON/Binary 직렬화 기반 저장 위주. 관계형 매핑은 제한적(Blob 중심).
+> 2. **C# (EF Core)**: `entity` 키워드를 통한 테이블 생성 지원. 단, **중첩 컬렉션(List/Map/Set)** 필드는 SQL 컬럼 자동 매핑 미지원 (Blob 저장 또는 수동 Converter 필요).
+> 3. **C++**: DDL(SQL) 생성 위주. 런타임 ORM 연동은 지원되지 않음.
+> 4. **공통**: 스키마 구조 변경에 따른 DB Migration(변경 관리) 로직은 제공되지 않음.
+
+### 언어별 주요 특징
+
+*   **C# (.NET / Unity)**: 게임 클라이언트를 위한 **Zero-Allocation** 파서, 백엔드 연동을 위한 **EF Core** 지원(제약사항 참고), 그리고 IDL 기반 설정 관리를 위한 **MetaTable Registry**, **YAML 프로토콜**(v1.2.7) 기능을 제공합니다.
+*   **TypeScript / JSON**: AI 도구 호출을 위한 **MCP (Model Context Protocol)** 플러그인 대응 및 지능형 컨텍스트 추출, 순수 JS 객체(**POJO**) 기반의 유연한 매핑, 그리고 v1.5.0에서 분리된 **DeukPackMcp**를 통한 도구 실행 환경을 지원합니다.
+*   **C++**: **저지연(Low-latency)** 및 **임베디드** 환경에 최적화되어 있으며, v1.5.0에서 안정화된 **Binary/Compact** 및 **JSON** 프로토콜 호환성과 최소한의 메모리 점유율에 집중합니다.
+*   **Java**: 다양한 플랫폼 간의 상호운용성을 보장하며, v1.5.0에서 추가된 **상속(extends)** 지원과 **Compact/TJSON** 프로토콜을 통해 Thrift 생태계와의 완전한 패리티를 달성했습니다.
 
 ---
 
