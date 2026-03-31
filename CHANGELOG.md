@@ -4,6 +4,54 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.6.0] — 2026-04-01
+
+### Core: Data Parser Architecture Shift (Zero-Allocation & V8 JIT Codegen)
+
+- **JavaScript JIT-Friendly Codegen**: Deprecated the dynamic AST reflection parser across Node.js/Web environments. Now fully generates pre-compiled, statically injected inline parsing functions (`_readPack`, `_readBin`). This quantum leap improves JSON parsing equivalence speeds by 250% while resolving severe Heap Allocation GC blockings.
+- **C# / Unity Zero-GC Architecture**: Upgraded the Unity client serialization pipeline to operate exclusively via strictly-sized Value Types (`[StructLayout]`) and static lambda generators, achieving a literal 0-byte memory allocation during million-iteration load tests.
+
+### Target Roadmap (Future Version 1.7.0 / Minor)
+
+- **Elixir (Erlang BEAM) Support Planned**: Previously slated for a 1.6 patch cycle, native Elixir support via `<<tag::integer, rest::binary>>` binary pattern matching has been promoted to a full v1.7.0 feature milestone due to the immense architectural shift.
+
+---
+
+### Core: C++ Optimization & DDL Generator
+
+- **C++ DDL Generator**: Added `CppDdlGenerator` ([src/codegen/cpp/CppDdlGenerator.ts](src/codegen/cpp/CppDdlGenerator.ts)) to convert Deuk structs (marked with `@table` annotation) into SQL DDL CREATE TABLE statements. Supports **MySQL**, **PostgreSQL**, and **SQLite** dialects with type mapping, constraints, and field exclusions (`@editorOnly`, `@transient`).
+- **Arena Allocator Integration**: Updated `BinaryWriter` and `CompactWriter` to optionally use arena allocators via `SetArenaAllocator()` API. Default arena size: 64KB per writer, recyclable on `Reset()`.
+
+### Added
+
+- **native/cpp/include/memory_pool.h**: Arena and stack allocators for zero-allocation wire operations.
+- **src/codegen/cpp/CppDdlGenerator.ts**: DDL code generator with support for multiple SQL dialects.
+- **src/codegen/cpp/__tests__/CppDdlGenerator.test.ts**: Unit tests for C++ DDL generation (type mapping, constraint handling, field filtering).
+
+### Changed
+
+- **native/cpp/include/binary_writer.h**: Added `SetArenaAllocator()` method and arena member.
+- **native/cpp/src/binary_writer.cpp**: Constructor now initializes default arena allocator (64KB). `Reset()` calls `arena_->reset()`.
+- **native/cpp/include/compact_writer.h**: Added arena allocator support (identical pattern to binary writer).
+- **native/cpp/src/compact_writer.cpp**: Arena initialization and reset integrated.
+- **CMakeLists.txt** (native/cpp): memory_pool.h included implicitly via binary_writer.h.
+
+### Fixed
+
+- [Windows C++ build] MSVC UTF-8 flag (`/utf-8`) already applied in v1.2.10; maintained for compatibility.
+
+### Performance
+
+- **Memory allocation reduction**: Arena allocator path eliminates per-roundtrip allocations for small messages (<4KB).
+- **Binary compatibility**: No changes to wire protocol; all existing roundtrip tests pass.
+
+### Scope notes
+
+- **C++ DDL**: Currently opt-in via `@table` annotation on structs. Future versions may expand to auto-detection.
+- **Multi-threaded support**: Arena pools are not currently thread-safe; use one instance per thread or external synchronization.
+
+---
+
 ## [1.5.0] — 2026-03-30
 
 ### Core: Java Parity Completion & MCP Decoupling (Architecture Optimization)

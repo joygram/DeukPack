@@ -1,5 +1,10 @@
 // wire profile "@@PROFILE@@" subset
 const _schema_@@SUBSET_EXPORT_NAME@@ = @@SCHEMA_JSON@@;
+@@INLINE_BIN@@
+@@INLINE_PACK@@
+
+_schema_@@SUBSET_EXPORT_NAME@@._readBin = _read_@@SUBSET_EXPORT_NAME@@_bin;
+_schema_@@SUBSET_EXPORT_NAME@@._readPack = _read_@@SUBSET_EXPORT_NAME@@_pack;
 const @@SUBSET_EXPORT_NAME@@ = {
   getSchema() { return _schema_@@SUBSET_EXPORT_NAME@@; },
   create() { return {}; },

@@ -1,4 +1,9 @@
 const _schema_@@SAFE_NAME@@ = @@SCHEMA_JSON@@;
+@@INLINE_BIN@@
+@@INLINE_PACK@@
+
+_schema_@@SAFE_NAME@@._readBin = _read_@@SAFE_NAME@@_bin;
+_schema_@@SAFE_NAME@@._readPack = _read_@@SAFE_NAME@@_pack;
 const @@SAFE_NAME@@ = {
   getSchema() { return _schema_@@SAFE_NAME@@; },
   create() { return {}; },

@@ -191,6 +191,7 @@ function _jsBinReadValue(p, type, typeName, schemas) {
 function _jsBinReadStruct(p, schema, schemas) {
   var obj = {};
   if (!schema) return obj;
+  if (schema._readBin) return schema._readBin(p, schemas);
   if (!p.depth) p.depth = 0;
   if (++p.depth > 64) {
     throw new Error("Max recursion depth exceeded");

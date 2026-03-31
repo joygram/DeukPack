@@ -1,6 +1,6 @@
 /**
  * DeukPack Binary Writer
- * High-performance binary serialization
+ * High-performance binary serialization with Arena allocator support
  */
 
 #include "binary_writer.h"
@@ -9,9 +9,12 @@
 
 namespace deukpack
 {
+    // Internal arena allocator instance (thread-local would be preferred for MT scenarios)
+    static const size_t DEFAULT_ARENA_SIZE = 65536;     // 64KB arena per writer
+    static const size_t SMALL_MESSAGE_THRESHOLD = 4096; // Use arena for <4KB allocations
 
     BinaryWriter::BinaryWriter(Endianness endianness, size_t initialSize)
-        : endianness_(endianness), position_(0)
+        : endianness_(endianness), position_(0), arena_(std::make_shared<ArenaAllocator>(DEFAULT_ARENA_SIZE))
     {
         currentBuffer_.resize(initialSize);
     }
@@ -28,12 +31,12 @@ namespace deukpack
 
         if (endianness_ == Endianness::Little)
         {
-            currentBuffer_[position_]     = static_cast<uint8_t>(value & 0xFF);
+            currentBuffer_[position_] = static_cast<uint8_t>(value & 0xFF);
             currentBuffer_[position_ + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);
         }
         else
         {
-            currentBuffer_[position_]     = static_cast<uint8_t>((value >> 8) & 0xFF);
+            currentBuffer_[position_] = static_cast<uint8_t>((value >> 8) & 0xFF);
             currentBuffer_[position_ + 1] = static_cast<uint8_t>(value & 0xFF);
         }
 
@@ -46,14 +49,14 @@ namespace deukpack
 
         if (endianness_ == Endianness::Little)
         {
-            currentBuffer_[position_]     = static_cast<uint8_t>(value & 0xFF);
+            currentBuffer_[position_] = static_cast<uint8_t>(value & 0xFF);
             currentBuffer_[position_ + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);
             currentBuffer_[position_ + 2] = static_cast<uint8_t>((value >> 16) & 0xFF);
             currentBuffer_[position_ + 3] = static_cast<uint8_t>((value >> 24) & 0xFF);
         }
         else
         {
-            currentBuffer_[position_]     = static_cast<uint8_t>((value >> 24) & 0xFF);
+            currentBuffer_[position_] = static_cast<uint8_t>((value >> 24) & 0xFF);
             currentBuffer_[position_ + 1] = static_cast<uint8_t>((value >> 16) & 0xFF);
             currentBuffer_[position_ + 2] = static_cast<uint8_t>((value >> 8) & 0xFF);
             currentBuffer_[position_ + 3] = static_cast<uint8_t>(value & 0xFF);
@@ -153,7 +156,7 @@ namespace deukpack
             totalSize += buffer.size();
         }
 
-        // Concatenate all buffers
+        // Concatenate all buffers (pre-allocated to avoid secondary allocations)
         std::vector<uint8_t> result;
         result.reserve(totalSize);
 
@@ -180,6 +183,12 @@ namespace deukpack
         buffers_.clear();
         position_ = 0;
         currentBuffer_.resize(1024);
+
+        // Reset arena allocator for next roundtrip
+        if (arena_)
+        {
+            arena_->reset();
+        }
     }
 
     void BinaryWriter::EnsureCapacity(size_t needed)

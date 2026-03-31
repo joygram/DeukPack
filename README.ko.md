@@ -59,23 +59,17 @@ npx deukpack init
 | 버전 | 주요 목표 (Milestones) | 상태 |
 | :--- | :--- | :--- |
 | **v1.4.0** | MCP Protobuf 확장, C#/C++/JS 코어 런타임 안정화 | **DONE** |
-| **v1.5.0** | **Java & Core Parity**: 상속 지원, Compact/TJSON 추가, 전수 보안 가드 및 **MCP 코어 분리** | **Current** |
-| **v1.5.1** | C++ 저지연(Zero-Alloc) 최적화 및 DDL 생성기 보강 | In Progress |
-| **v1.6.0** | **Elixir Expansion Pilot**: BEAM 기반 초고성능 분산 백엔드 지원 | **Teaser** |
+| **v1.5.0** | **Java & Core Parity**: 상속 지원, Compact/TJSON 추가, 전수 보안 가드 및 **MCP 코어 분리** | **DONE** |
+| **v1.5.1** | C++ 저지연(Zero-Alloc) 최적화 및 DDL 생성기 보강 | **DONE** |
+| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc 아키텍처**: JS/C# 전수 메모리 최적화 및 벤치마크 공개 | **Current** |
+| **v1.7.0** | **Elixir Expansion Pilot**: BEAM 기반 분산 백엔드 타겟 | **Teaser** |
 
 ---
 
 
 
-득팩은 단순히 빠른 것을 넘어, AI 에이전트가 수만 줄의 IDL 지식을 실시간으로 다루어도 시스템에 주하를 주지 않는 **"지연 없는 지능형 코어"**를 지향합니다.
 
-| 작업 항목 | 기존 레거시 워크플로 | **DeukPack (v1.5.0)** | 핵심 이점 |
-| :--- | :---: | :---: | :--- |
-| **IDL 트리 파싱** | 초(s) 단위 (다단계 빌드) | **밀리초(ms) 단위** | **AI 실시간 인터랙션 최적화** |
-| **런타임 오버헤드** | 객체 할당 및 GC 발생 | **Zero-Allocation** | **고빈도 데이터 통신(HFT) 지원** |
-
-> [!TIP]
-> 위 수치는 대규모 프로젝트 환경(500+ IDL 파일)에서의 일반적인 관측치를 기반으로 하며, 사용자 환경 및 IDL 복잡도에 따라 차이가 있을 수 있습니다. 상세 벤치마크 방법론은 [성능 문서](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.ko.md)를 참고하세요.
+👉 **[성능 테스트 결과 요약 및 상세 비교표 보기](#-성능-지향점-확장성-및-효율성)
 
 ### 버전 관리 정책 (Versioning Policy)
 
@@ -90,14 +84,14 @@ npx deukpack init
 
 | 카테고리 | 기능 | TS / JS | C# / Unity | C++ | Java | Elixir |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.6) |
-| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | 🚧 (v1.6) |
-| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.6) |
+| **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.7) |
+| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | 🚧 (v1.7) |
+| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.7) |
 | | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
 | | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
-| **최적화**| Zero-Alloc 파싱 | ⚠️ | ✅ | ✅ (v1.4.2) | 🚧 | 🚧 (BEAM) |
+| **최적화**| Zero-Alloc 파싱 / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | 🚧 (BEAM) |
 | | `Write` 로직 오버라이드 | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | **데이터/메타** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | DB 연동 (EF / SQL) | ⚠️ (1) | ⚠️ (2) | ⚠️ (3) | 🚧 (v1.5) | - |
@@ -175,13 +169,30 @@ npm install ./deukpack-x.y.z.tgz
 
 득팩(DeukPack)은 **극한의 확장성**과 **저지연 엔지니어링**을 목표로 설계되었습니다. 기존 IDL 스타일 컴파일러의 병목 현상을 제거하고 데이터 호환성을 유지하는 데 집중합니다.
 
-- **빠른 TS/C# 코드 생성**: CI/CD 주기와 로컬 개발 환경의 핫 리로딩 속도에 최적화된 설계입니다.
-- **효율적인 이진 포맷**: 고성능 패킹(DPK1) 및 최적화된 와이어 코덱을 구현하여 힙 메모리 압박을 최소화합니다.
+- **프로세스 오버헤드 제거**: 정적 파싱 및 인라인 JIT 생성기(Codegen)를 통해 메모리 내 핫 리로딩 속도와 실행 성능을 극대화합니다.
+- **빠른 TS/C# 코드 생성**: CI/CD 주기와 로컬 개발 환경의 속도에 최적화된 Zero-Allocation 중심 설계입니다.
+- **효율적인 이진 포맷**: 고성능 패킹(DPK1) 및 최적화된 와이어 코덱을 구현하여 힙(Heap) 메모리 GC 압박을 원천 차단합니다.
 
-상세 벤치마크는 다양한 하드웨어 및 클라우드 환경에서의 안정화 작업이 완료되는 대로 **[벤치마킹 가이드](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.ko.md)**를 통해 정기적으로 업데이트됩니다.
+### 🔥 v1.6.0 성능 테스트 결과 요약 (10,000 Rows 디코딩 스트레스 테스트)
+
+| 언어 환경 | 지표 | 타사 Tag-based | 타사 RPC-based | **DeukPack** |
+| :--- | :--- | :---: | :---: | :---: |
+| **C# / Unity** | 속도 | ~ 45 ms | ~ 85 ms | **~ 28 ms** |
+| | 메모리 | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
+| **C++ (Native)** | 속도 | ~ 14 ms | ~ 22 ms | **~ 12 ms** |
+| | 메모리 | Heap Alloc | Heap Alloc | **Manual Pool** |
+| **Java (Backend)** | 속도 | ~ 25 ms | ~ 38 ms | **~ 35 ms** |
+| | 메모리 | 지속 할당 | 대규모 객체 | **+2.1 MB (최소)** |
+| **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | **~ 158 ms** |
+| | 메모리 | +4.2 MB | -1.9 MB | **즉시 회수** |
+
+> [!TIP]
+> 위 수치는 10,000 Rows Payload 디코딩 기준이며, 사용자 환경에 따라 차이가 있을 수 있습니다.  
+> 👉 **[전체 프로토콜별 상세 비교표 보기](https://deukpack.app/ko/journal/performance-matrix/)** · **[벤치마킹 가이드](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.ko.md)**
 
 
 ---
+
 
 ## 개발 (Development)
 

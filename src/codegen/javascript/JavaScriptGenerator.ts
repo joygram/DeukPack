@@ -7,7 +7,7 @@ import { CodeGenerator } from '../CodeGenerator';
 import { DeukPackEngine } from '../../core/DeukPackEngine';
 import { CodegenTemplateHost } from '../codegenTemplateHost';
 import { csharpSuffixFromProfile, filterStructFieldsForProfile } from '../WireProfileSubset';
-import { buildEmbeddedStructSchema } from '../embeddedStructSchema';
+import { buildEmbeddedStructSchema, getEmbeddedSchemaTypeInfo } from '../embeddedStructSchema';
 
 export class JavaScriptGenerator extends CodeGenerator {
   private readonly _tpl = new CodegenTemplateHost('javascript');
@@ -143,6 +143,56 @@ export class JavaScriptGenerator extends CodeGenerator {
     });
   }
 
+  private generateJsReadBinFunction(safeName: string, fieldsToGen: DeukPackField[], ast: DeukPackAST): string {
+    const lines: string[] = [];
+    lines.push(`function _read_${safeName}_bin(p, schemas) {`);
+    lines.push(`  var obj = {};`);
+    lines.push(`  if (!p.depth) p.depth = 0; if (++p.depth > 64) throw new Error("Max recursion depth exceeded");`);
+    lines.push(`  while (true) {`);
+    lines.push(`    var wt = p.view.getUint8(p.off++);`);
+    lines.push(`    if (wt === 0) break;`);
+    lines.push(`    var id = _jsBinReadI16(p);`);
+    lines.push(`    switch (id) {`);
+    for (const f of fieldsToGen || []) {
+      const ti = getEmbeddedSchemaTypeInfo(f.type, ast);
+      lines.push(`      case ${f.id}: obj["${f.name}"] = _jsBinReadValue(p, "${ti.type}", "${ti.typeName}", schemas); break;`);
+    }
+    lines.push(`      default: _jsBinSkip(p, wt); break;`);
+    lines.push(`    }`);
+    lines.push(`  }`);
+    lines.push(`  p.depth--;`);
+    lines.push(`  return obj;`);
+    lines.push(`}`);
+    return lines.join('\n');
+  }
+
+  private generateJsReadPackFunction(safeName: string, fieldsToGen: DeukPackField[], ast: DeukPackAST): string {
+    const lines: string[] = [];
+    lines.push(`function _read_${safeName}_pack(r, schemas) {`);
+    lines.push(`  if (_prU8(r) !== _PackTag.Object) throw new Error("[DeukPack] pack: expected Object tag");`);
+    lines.push(`  var cnt = _prI32(r);`);
+    lines.push(`  var obj = {};`);
+    lines.push(`  for (var i = 0; i < cnt; i++) {`);
+    lines.push(`    var key = _prString(r);`);
+    lines.push(`    switch (key) {`);
+    for (const f of fieldsToGen || []) {
+      const ti = getEmbeddedSchemaTypeInfo(f.type, ast);
+      lines.push(`      case "${f.name}": obj["${f.name}"] = _packReadValue(r, {type: "${ti.type}", typeName: "${ti.typeName}"}, schemas); break;`);
+    }
+    lines.push(`      default: _packReadValue(r, null, schemas); break;`);
+    lines.push(`    }`);
+    lines.push(`  }`);
+    lines.push(`  // Apply defaults/required if necessary`);
+    for (const f of fieldsToGen || []) {
+      if (f.defaultValue !== undefined && f.defaultValue !== null) {
+        lines.push(`  if (obj["${f.name}"] === undefined && "${f.defaultValue}" !== "undefined") obj["${f.name}"] = ${typeof f.defaultValue === 'string' ? '"'+f.defaultValue+'"' : f.defaultValue};`);
+      }
+    }
+    lines.push(`  return obj;`);
+    lines.push(`}`);
+    return lines.join('\n');
+  }
+
   private renderJsStructFull(struct: DeukPackStruct, ast: DeukPackAST): string {
     const safeName = struct.name.replace(/\./g, '_');
     const schemaObj = buildEmbeddedStructSchema(struct, ast);
@@ -158,10 +208,15 @@ export class JavaScriptGenerator extends CodeGenerator {
       return value;
     }).replace(/"@@BIGINT@@([0-9n\-]+)"/g, '$1');
 
+    const inlineBin = this.generateJsReadBinFunction(safeName, struct.fields || [], ast);
+    const inlinePack = this.generateJsReadPackFunction(safeName, struct.fields || [], ast);
+
     return this._tpl.render('JsStructFull.js.tpl', {
       SAFE_NAME: safeName,
       SCHEMA_JSON: schemaJson,
       FIELD_ID_ENTRIES: fieldIdEntries.join(', '),
+      INLINE_BIN: inlineBin,
+      INLINE_PACK: inlinePack,
     });
   }
 
@@ -197,10 +252,15 @@ export class JavaScriptGenerator extends CodeGenerator {
       ...buildEmbeddedStructSchema({ ...struct, fields: filtered }, ast),
       wireProfile: profile,
     };
+    const inlineBin = this.generateJsReadBinFunction(subsetExportName, filtered, ast);
+    const inlinePack = this.generateJsReadPackFunction(subsetExportName, filtered, ast);
+
     return this._tpl.render('JsWireProfileStruct.js.tpl', {
       PROFILE: profile,
       SUBSET_EXPORT_NAME: subsetExportName,
       SCHEMA_JSON: JSON.stringify(schemaObj),
+      INLINE_BIN: inlineBin,
+      INLINE_PACK: inlinePack,
     });
   }
 }

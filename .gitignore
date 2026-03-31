@@ -63,8 +63,3 @@ Thumbs.db
 
 # Temporary / lock files
 ~$*
-
-# Garbage files
-mcp_test_run/
-deuk-ui.config.json
-step*.bin

@@ -25,6 +25,23 @@ function runCmd(cmd, args = [], options = {}) {
     }
 }
 
+function toWslPath(p) {
+    return p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (m, drive) => `/mnt/${drive.toLowerCase()}`);
+}
+
+function generateAllLanguages() {
+    console.log('\n--- Generating Roundtrip Test Artifacts ---');
+    runCmd('node', [
+        'scripts/build_deukpack.js',
+        'src/codegen/__tests__/RoundtripModel.deuk',
+        'dist-test',
+        '--js',
+        '--csharp',
+        '--cpp',
+        '--java'
+    ]);
+}
+
 async function prepareBridges() {
     console.log('\n--- Building Bridges ---');
 
@@ -53,8 +70,6 @@ async function prepareBridges() {
     const cppOut = path.join(outDir, 'cpp');
     const cppBin = path.join(binDir, 'CppBridge'); // Linux binary (no .exe)
     
-    // Convert paths to WSL-friendly (assuming /mnt/d/...)
-    const toWslPath = (p) => p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (m, drive) => `/mnt/${drive.toLowerCase()}`);
     const wslSrc =   toWslPath(cppSrc);
     const wslInclude = toWslPath(cppOut);
     const wslBin =   toWslPath(cppBin);
@@ -90,8 +105,12 @@ async function runChain(protocol) {
     console.log('\n[Phase 3] C++ Processing...');
     const cppBridgeBin = path.join(binDir, 'CppBridge');
     if (fs.existsSync(cppBridgeBin)) {
-        const toWslPath = (p) => p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (m, drive) => `/mnt/${drive.toLowerCase()}`);
-        runCmd('wsl', [toWslPath(cppBridgeBin), protocol, 'step2.bin', 'step3.bin']);
+        runCmd('wsl', [
+            toWslPath(cppBridgeBin),
+            protocol,
+            toWslPath(path.join(root, 'step2.bin')),
+            toWslPath(path.join(root, 'step3.bin'))
+        ]);
     } else {
         console.log('[C++] Bridge binary missing, passing step2.bin to step3.bin');
         fs.copyFileSync('step2.bin', 'step3.bin');
@@ -110,6 +129,7 @@ async function runChain(protocol) {
 }
 
 async function main() {
+    generateAllLanguages();
     await prepareBridges();
     
     // Test all protocols

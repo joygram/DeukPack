@@ -25,7 +25,7 @@ function _wrapDpJson(type, typeName, val, schemas) {
     case "datetime":
     case "timestamp":
     case "tablelink":
-      return { i64: BigInt(val) };
+      return { i64: String(val) };
     case "float":
     case "double":
       return { dbl: Number(val) };
@@ -51,7 +51,7 @@ function _wrapDpJson(type, typeName, val, schemas) {
       return { map: out };
     default:
       var s = schemas && schemas[typeName];
-      return s ? { rec: _toDpJson(s, val, schemas) } : { str: String(val) };
+      return s ? _toDpJson(s, val, schemas) : { str: String(val) };
   }
 }
 function _elemType(tn) {
@@ -101,11 +101,10 @@ function _toDpJsonFiltered(schema, obj, schemas, fieldIds, overrides) {
 // Unwrap: reads wire keys (.i32, .str, …) from the compatibility JSON shape above.
 function _unwrapDpJson(type, typeName, jsonVal, schemas) {
   if (jsonVal === null || jsonVal === undefined) return null;
-  if (typeof jsonVal === "object" && !Array.isArray(jsonVal) && jsonVal.rec !== undefined) {
+  if (type === "struct" || type === "Struct") {
     var sn = schemas && schemas[typeName];
-    if (sn && (type === "struct" || type === "Struct")) return _fromDpJson(sn, jsonVal.rec, schemas);
+    return sn ? _fromDpJson(sn, jsonVal, schemas) : jsonVal;
   }
-  if (type === "struct" || type === "Struct") return jsonVal;
   if (typeof jsonVal === "object" && !Array.isArray(jsonVal)) {
     if (type === "binary" && jsonVal.str) { var b64 = jsonVal.str; if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(b64, "base64")); var bin = typeof atob !== "undefined" ? atob(b64) : ""; var arr = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return arr; }
     if (jsonVal.str !== undefined) return jsonVal.str;
