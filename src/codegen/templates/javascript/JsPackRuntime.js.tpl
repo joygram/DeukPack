@@ -347,6 +347,7 @@ function _packBinaryToStruct(schema, buf, schemas) {
   var u8 = buf && buf.buffer ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) : new Uint8Array(buf || []);
   var r = { u8: u8, i: 0 };
   if (!schema || (schema.type !== "struct" && schema.type !== "Struct") || !schema.fields) throw new Error("[DeukPack] pack: invalid struct schema");
+  if (schema._readPack) return schema._readPack(r, schemas);
   if (_prU8(r) !== _PackTag.Object) throw new Error("[DeukPack] pack: expected Object tag");
   var cnt = _prI32(r);
   var raw = {};

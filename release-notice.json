@@ -1,8 +1,8 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce_ko": "<strong>득팩 코어 1.5.0</strong> — Java 패리티(상속, Compact/TJSON 추가) · MCP 코어 분리 · 전수 보안 가드 도입 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>",
+  "announce_ko": "<strong>득팩 코어 1.5.0</strong> — Java 패리티(상속, Compact/TJSON 추가) · MCP 코어 분리 · 전수 보안 가드 도입 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/releases/\">EN</a>",
   "announce_en": "<strong>DeukPack Core 1.5.0</strong> — Java parity (Inheritance, Compact/TJSON) · MCP core decoupling · Global security guards —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
   "landing_ko": "**득팩 코어 1.5.0** — Java 파이프라인에서 `extends`(상속), `TCompact`, `TJSON` 프로토콜을 정식 지원하며 C#/TS와 동등한 수준의 기능을 달성했습니다. 또한 MCP 서버 생성 로직을 독립 플러그인(`DeukPackMcp`)으로 완전히 분리하여 코어 엔진의 경량화를 실현하고, 모든 언어의 바이너리 리더/라이터에 전역 보안 가드(MAX_SAFE_LENGTH, MAX_RECURSION_DEPTH)를 적용하여 안정성을 강화했습니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
   "landing_en": "**DeukPack core 1.5.0** — achieved Java parity with support for `extends` (inheritance), `TCompact`, and `TJSON` protocols. Decoupled MCP server generation into a separate plugin (`DeukPackMcp`) for a leaner core engine. Enhanced security across all languages with global guards (MAX_SAFE_LENGTH, MAX_RECURSION_DEPTH) in binary readers/writers. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",

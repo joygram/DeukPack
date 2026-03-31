@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "DeukPack — Universal schema multi-hub for Protobuf, Thrift, OpenAPI, and .deuk. Protobuf-aligned wire; fast C#/C++/JS codegen.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,6 +20,7 @@
     "test:idl-convert-smoke": "node scripts/idl-convert/smoke-thrift-to-deuk.js",
     "dev": "node ./node_modules/typescript/lib/tsc.js --watch",
     "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",
+    "test:roundtrip-security-perf": "node scripts/run-roundtrip-security-perf.js",
     "export:ai-context": "node scripts/export-ai-context.js"
   },
   "keywords": [

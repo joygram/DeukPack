@@ -12,6 +12,14 @@ public class DpJsonProtocol implements DpProtocol {
     private final Writer _writer;
     private final PushbackReader _reader;
     private final Stack<Boolean> _firstField = new Stack<>();
+    private final Stack<String> _writeContext = new Stack<>();
+    private final Stack<MapWriteState> _mapWriteStack = new Stack<>();
+
+    private static class MapWriteState {
+        boolean firstEntry = true;
+        boolean expectingKey = true;
+        String pendingKey = "";
+    }
 
     private static final int MAX_SAFE_LENGTH = 10 * 1024 * 1024;
     private static final int MAX_RECURSION_DEPTH = 64;
@@ -23,37 +31,174 @@ public class DpJsonProtocol implements DpProtocol {
     }
     public DpJsonProtocol(InputStream in) {
         this._writer = null;
-        this._reader = new PushbackReader(new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+        this._reader = new PushbackReader(new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8), MAX_SAFE_LENGTH);
     }
 
     private void write(String s) { try { if (_writer != null) _writer.write(s); } catch (IOException e) { throw new RuntimeException(e); } }
     @Override public void writeMessageBegin(DpMessage msg) { write("["); write("\"" + msg.Name + "\","); write(msg.Type + ","); write(msg.SeqID + ","); }
     @Override public void writeMessageEnd() { write("]"); flush(); }
-    @Override public void writeStructBegin(DpRecord rec) { write("{"); _firstField.push(true); }
-    @Override public void writeStructEnd() { write("}"); _firstField.pop(); }
+    private boolean tryWriteMapKey(Object v) {
+        if (_mapWriteStack.isEmpty()) return false;
+        MapWriteState top = _mapWriteStack.peek();
+        if (!top.expectingKey) return false;
+        top.pendingKey = String.valueOf(v);
+        top.expectingKey = false;
+        return true;
+    }
+    private void prepareValueWrite() {
+        if (!_mapWriteStack.isEmpty()) {
+            MapWriteState top = _mapWriteStack.peek();
+            if (!top.expectingKey) {
+                if (!top.firstEntry) write(",");
+                top.firstEntry = false;
+                write("\"" + top.pendingKey.replace("\\", "\\\\").replace("\"", "\\\"") + "\":");
+                top.pendingKey = "";
+                top.expectingKey = true;
+            }
+        }
+        if (!_writeContext.isEmpty() && "list".equals(_writeContext.peek())) {
+            if (!_firstField.peek()) write(",");
+            _firstField.set(_firstField.size() - 1, false);
+        }
+    }
+
+    @Override public void writeStructBegin(DpRecord rec) { prepareValueWrite(); write("{"); _writeContext.push("struct"); _firstField.push(true); }
+    @Override public void writeStructEnd() { write("}"); _writeContext.pop(); _firstField.pop(); if (_writeContext.isEmpty()) flush(); }
     @Override public void writeFieldBegin(DpColumn col) { if (!_firstField.peek()) write(","); _firstField.set(_firstField.size() - 1, false); write("\"" + col.ID + "\":"); }
     @Override public void writeFieldEnd() {}
     @Override public void writeFieldStop() {}
-    @Override public void writeMapBegin(DpDict dict) { write("{\"map\":{"); _firstField.push(true); }
-    @Override public void writeMapEnd() { write("}}"); _firstField.pop(); }
-    @Override public void writeListBegin(DpList list) { write("{\"lst\":["); _firstField.push(true); }
-    @Override public void writeListEnd() { write("]}"); _firstField.pop(); }
+    @Override public void writeMapBegin(DpDict dict) { prepareValueWrite(); write("{\"map\":{"); _writeContext.push("map"); _mapWriteStack.push(new MapWriteState()); }
+    @Override public void writeMapEnd() { write("}}"); _mapWriteStack.pop(); _writeContext.pop(); }
+    @Override public void writeListBegin(DpList list) { prepareValueWrite(); write("{\"lst\":["); _writeContext.push("list"); _firstField.push(true); }
+    @Override public void writeListEnd() { write("]}"); _writeContext.pop(); _firstField.pop(); }
     @Override public void writeSetBegin(DpSet set) { writeListBegin(new DpList(set.ElementType, set.Count)); }
     @Override public void writeSetEnd() { writeListEnd(); }
 
-    @Override public void writeBool(boolean v) { write("{\"tf\":" + (v ? "true" : "false") + "}"); }
-    @Override public void writeByte(byte v) { write("{\"i32\":" + (int)v + "}"); }
-    @Override public void writeI16(short v) { write("{\"i32\":" + (int)v + "}"); }
-    @Override public void writeI32(int v) { write("{\"i32\":" + v + "}"); }
-    @Override public void writeI64(long v) { write("{\"i64\":\"" + v + "\"}"); }
-    @Override public void writeDouble(double v) { write("{\"dbl\":" + v + "}"); }
-    @Override public void writeString(String v) { write("{\"str\":\"" + v.replace("\"", "\\\"") + "\"}"); }
+    @Override public void writeBool(boolean v) { if (tryWriteMapKey(v)) return; prepareValueWrite(); write("{\"tf\":" + (v ? "true" : "false") + "}"); }
+    @Override public void writeByte(byte v) { if (tryWriteMapKey((int)v)) return; prepareValueWrite(); write("{\"i32\":" + (int)v + "}"); }
+    @Override public void writeI16(short v) { if (tryWriteMapKey((int)v)) return; prepareValueWrite(); write("{\"i32\":" + (int)v + "}"); }
+    @Override public void writeI32(int v) { if (tryWriteMapKey(v)) return; prepareValueWrite(); write("{\"i32\":" + v + "}"); }
+    @Override public void writeI64(long v) { if (tryWriteMapKey(v)) return; prepareValueWrite(); write("{\"i64\":\"" + v + "\"}"); }
+    @Override public void writeDouble(double v) { if (tryWriteMapKey(v)) return; prepareValueWrite(); write("{\"dbl\":" + v + "}"); }
+    @Override public void writeString(String v) { if (tryWriteMapKey(v)) return; prepareValueWrite(); write("{\"str\":\"" + v.replace("\"", "\\\"") + "\"}"); }
     @Override public void writeBinary(byte[] v) { writeString(Base64.getEncoder().encodeToString(v)); }
 
     private void flush() { try { if (_writer != null) _writer.flush(); } catch (IOException e) {} }
 
     // --- Reader (Manual Tagged JSON Parser) ---
     private char skipWS() throws IOException { int c; while ((c = _reader.read()) != -1 && Character.isWhitespace(c)); return (char) c; }
+    private void skipComma() {
+        try {
+            char c = skipWS();
+            if (c != ',') _reader.unread(c);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int countArrayElements() {
+        try {
+            StringBuilder consumed = new StringBuilder();
+            int depthObj = 0;
+            int depthArr = 0;
+            int commas = 0;
+            boolean hasToken = false;
+            boolean inString = false;
+            boolean escaped = false;
+
+            while (true) {
+                int r = _reader.read();
+                if (r == -1) break;
+                char ch = (char) r;
+                consumed.append(ch);
+
+                if (inString) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (ch == '\\') {
+                        escaped = true;
+                    } else if (ch == '"') {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (ch == '"') { inString = true; hasToken = true; continue; }
+                if (ch == '{') { depthObj++; hasToken = true; continue; }
+                if (ch == '[') { depthArr++; hasToken = true; continue; }
+                if (ch == '}') { if (depthObj > 0) depthObj--; continue; }
+                if (ch == ']') {
+                    if (depthObj == 0 && depthArr == 0) break;
+                    if (depthArr > 0) depthArr--;
+                    continue;
+                }
+
+                if (depthObj == 0 && depthArr == 0) {
+                    if (ch == ',') commas++;
+                    else if (!Character.isWhitespace(ch)) hasToken = true;
+                }
+            }
+
+            if (consumed.length() > 0) {
+                _reader.unread(consumed.toString().toCharArray());
+            }
+            return hasToken ? (commas + 1) : 0;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int countMapEntries() {
+        try {
+            StringBuilder consumed = new StringBuilder();
+            int depthObj = 0;
+            int depthArr = 0;
+            int commas = 0;
+            boolean hasToken = false;
+            boolean inString = false;
+            boolean escaped = false;
+
+            while (true) {
+                int r = _reader.read();
+                if (r == -1) break;
+                char ch = (char) r;
+                consumed.append(ch);
+
+                if (inString) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (ch == '\\') {
+                        escaped = true;
+                    } else if (ch == '"') {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (ch == '"') { inString = true; hasToken = true; continue; }
+                if (ch == '{') { depthObj++; hasToken = true; continue; }
+                if (ch == '[') { depthArr++; hasToken = true; continue; }
+                if (ch == ']') { if (depthArr > 0) depthArr--; continue; }
+                if (ch == '}') {
+                    if (depthObj == 0 && depthArr == 0) break;
+                    if (depthObj > 0) depthObj--;
+                    continue;
+                }
+
+                if (depthObj == 0 && depthArr == 0) {
+                    if (ch == ',') commas++;
+                    else if (!Character.isWhitespace(ch)) hasToken = true;
+                }
+            }
+
+            if (consumed.length() > 0) {
+                _reader.unread(consumed.toString().toCharArray());
+            }
+            return hasToken ? (commas + 1) : 0;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private void expect(char exp) { try { char c = skipWS(); if (c != exp) throw new RuntimeException("Expected " + exp + ", got " + c); } catch (IOException e) { throw new RuntimeException(e); } }
     private String readQuoted() throws IOException { expect('\"'); StringBuilder sb = new StringBuilder(); int c; while ((c = _reader.read()) != -1 && c != '\"') { if (c == '\\') { c = _reader.read(); } sb.append((char)c); } String s = sb.toString(); if (s.length() > MAX_SAFE_LENGTH) throw new RuntimeException("Safe Len"); return s; }
     private void expectKey(String key) { try { String k = readQuoted(); if (!k.equals(key)) throw new RuntimeException("Expected key " + key + ", got " + k); expect(':'); } catch (IOException e) { throw new RuntimeException(e); } }
@@ -61,23 +206,23 @@ public class DpJsonProtocol implements DpProtocol {
     @Override public DpMessage readMessageBegin() { expect('['); String name = null; try { name = readQuoted(); } catch(Exception e){} expect(','); String typeStr = readSimpleValue(); expect(','); String seqStr = readSimpleValue(); expect(','); return new DpMessage(name, (byte)Integer.parseInt(typeStr), Integer.parseInt(seqStr)); }
     @Override public void readMessageEnd() { expect(']'); }
 
-    @Override public DpRecord readStructBegin() { if (++recursionDepth > MAX_RECURSION_DEPTH) throw new RuntimeException("Depth"); expect('{'); return new DpRecord(); }
+    @Override public DpRecord readStructBegin() { if (++recursionDepth > MAX_RECURSION_DEPTH) throw new RuntimeException("Depth"); skipComma(); expect('{'); return new DpRecord(); }
     @Override public void readStructEnd() { expect('}'); recursionDepth--; }
-    @Override public DpColumn readFieldBegin() { try { char c = skipWS(); if (c == '}') return new DpColumn("", DpWireType.Stop, (short)0); if (c == ',') c = skipWS(); if (c != '\"') throw new RuntimeException("Expected \" for field ID"); StringBuilder sb = new StringBuilder(); int r; while ((r = _reader.read()) != -1 && r != '\"') sb.append((char)r); expect(':'); return new DpColumn("", DpWireType.Void, Short.parseShort(sb.toString())); } catch (IOException e) { throw new RuntimeException(e); } }
+    @Override public DpColumn readFieldBegin() { try { char c = skipWS(); if (c == '}') { _reader.unread(c); return new DpColumn("", DpWireType.Stop, (short)0); } if (c == ',') c = skipWS(); if (c != '\"') throw new RuntimeException("Expected \" for field ID"); StringBuilder sb = new StringBuilder(); int r; while ((r = _reader.read()) != -1 && r != '\"') sb.append((char)r); expect(':'); return new DpColumn("", DpWireType.Void, Short.parseShort(sb.toString())); } catch (IOException e) { throw new RuntimeException(e); } }
     @Override public void readFieldEnd() {}
 
-    @Override public boolean readBool() { expect('{'); expectKey("tf"); String vBody = readSimpleValue(); expect('}'); return Boolean.parseBoolean(vBody); }
+    @Override public boolean readBool() { skipComma(); expect('{'); expectKey("tf"); String vBody = readSimpleValue(); expect('}'); return Boolean.parseBoolean(vBody); }
     @Override public byte readByte() { return (byte)readI32(); }
     @Override public short readI16() { return (short)readI32(); }
-    @Override public int readI32() { expect('{'); expectKey("i32"); String vBody = readSimpleValue(); expect('}'); return Integer.parseInt(vBody); }
-    @Override public long readI64() { expect('{'); expectKey("i64"); String vBody = ""; try { vBody = readQuoted(); } catch(IOException e){} expect('}'); return Long.parseLong(vBody); }
-    @Override public double readDouble() { expect('{'); expectKey("dbl"); String vBody = readSimpleValue(); expect('}'); return Double.parseDouble(vBody); }
-    @Override public String readString() { try { expect('{'); expectKey("str"); String s = readQuoted(); expect('}'); return s; } catch (IOException e) { throw new RuntimeException(e); } }
+    @Override public int readI32() { skipComma(); expect('{'); expectKey("i32"); String vBody = readSimpleValue(); expect('}'); return Integer.parseInt(vBody); }
+    @Override public long readI64() { skipComma(); expect('{'); expectKey("i64"); String vBody = ""; try { vBody = readQuoted(); } catch(IOException e){} expect('}'); return Long.parseLong(vBody); }
+    @Override public double readDouble() { skipComma(); expect('{'); expectKey("dbl"); String vBody = readSimpleValue(); expect('}'); return Double.parseDouble(vBody); }
+    @Override public String readString() { try { skipComma(); char c = skipWS(); if (c == '"') { _reader.unread(c); String key = readQuoted(); char maybeColon = skipWS(); if (maybeColon == ':') return key; _reader.unread(maybeColon); return key; } _reader.unread(c); expect('{'); expectKey("str"); String s = readQuoted(); expect('}'); return s; } catch (IOException e) { throw new RuntimeException(e); } }
     @Override public byte[] readBinary() { return Base64.getDecoder().decode(readString()); }
 
-    @Override public DpDict readMapBegin() { expect('{'); expectKey("map"); expect('{'); return new DpDict(); }
+    @Override public DpDict readMapBegin() { skipComma(); expect('{'); expectKey("map"); expect('{'); int count = countMapEntries(); return new DpDict(DpWireType.Void, DpWireType.Void, count); }
     @Override public void readMapEnd() { expect('}'); expect('}'); }
-    @Override public DpList readListBegin() { expect('{'); expectKey("lst"); expect('['); return new DpList(); }
+    @Override public DpList readListBegin() { skipComma(); expect('{'); expectKey("lst"); expect('['); int count = countArrayElements(); return new DpList(DpWireType.Void, count); }
     @Override public void readListEnd() { expect(']'); expect('}'); }
     @Override public DpSet readSetBegin() { DpList l = readListBegin(); return new DpSet(l.ElementType, l.Count); }
     @Override public void readSetEnd() { readListEnd(); }

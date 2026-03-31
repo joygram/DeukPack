@@ -35,11 +35,14 @@ public:
     void WriteMessageEnd() override { *_os << "]"; }
 
     void WriteStructBegin(const DpRecord&) override {
+        PrepareValueWrite();
         *_os << "{";
+        _writeContext.push_back(WriteContext::Struct);
         _firstField.push_back(true);
     }
     void WriteStructEnd() override {
         *_os << "}";
+        _writeContext.pop_back();
         _firstField.pop_back();
     }
 
@@ -51,22 +54,68 @@ public:
     void WriteFieldEnd() override {}
     void WriteFieldStop() override {}
 
-    void WriteMapBegin(const DpDict&) override { *_os << "{\"map\":{"; _firstField.push_back(true); }
-    void WriteMapEnd() override { *_os << "}}"; _firstField.pop_back(); }
+    void WriteMapBegin(const DpDict&) override {
+        PrepareValueWrite();
+        *_os << "{\"map\":{";
+        _writeContext.push_back(WriteContext::Map);
+        _firstField.push_back(true);
+        _mapWriteStack.push_back(MapWriteState{});
+    }
+    void WriteMapEnd() override {
+        *_os << "}}";
+        _mapWriteStack.pop_back();
+        _writeContext.pop_back();
+        _firstField.pop_back();
+    }
 
-    void WriteListBegin(const DpList&) override { *_os << "{\"lst\":["; _firstField.push_back(true); }
-    void WriteListEnd() override { *_os << "]}"; _firstField.pop_back(); }
+    void WriteListBegin(const DpList&) override {
+        PrepareValueWrite();
+        *_os << "{\"lst\":[";
+        _writeContext.push_back(WriteContext::List);
+        _firstField.push_back(true);
+    }
+    void WriteListEnd() override {
+        *_os << "]}";
+        _writeContext.pop_back();
+        _firstField.pop_back();
+    }
 
     void WriteSetBegin(const DpSet& s) override { WriteListBegin({s.ElementType, s.Count}); }
     void WriteSetEnd() override { WriteListEnd(); }
 
-    void WriteBool(bool v) override { *_os << "{\"tf\":" << (v ? "true" : "false") << "}"; }
-    void WriteByte(uint8 v) override { *_os << "{\"i32\":" << (int)v << "}"; }
-    void WriteI16(int16 v) override { *_os << "{\"i32\":" << (int)v << "}"; }
-    void WriteI32(int32 v) override { *_os << "{\"i32\":" << v << "}"; }
-    void WriteI64(int64 v) override { *_os << "{\"i64\":\"" << v << "\"}"; }
-    void WriteDouble(float64 v) override { *_os << "{\"dbl\":" << v << "}"; }
+    void WriteBool(bool v) override {
+        if (TryWriteMapKey(v ? "true" : "false")) return;
+        PrepareValueWrite();
+        *_os << "{\"tf\":" << (v ? "true" : "false") << "}";
+    }
+    void WriteByte(uint8 v) override {
+        if (TryWriteMapKey((int)v)) return;
+        PrepareValueWrite();
+        *_os << "{\"i32\":" << (int)v << "}";
+    }
+    void WriteI16(int16 v) override {
+        if (TryWriteMapKey((int)v)) return;
+        PrepareValueWrite();
+        *_os << "{\"i32\":" << (int)v << "}";
+    }
+    void WriteI32(int32 v) override {
+        if (TryWriteMapKey(v)) return;
+        PrepareValueWrite();
+        *_os << "{\"i32\":" << v << "}";
+    }
+    void WriteI64(int64 v) override {
+        if (TryWriteMapKey(v)) return;
+        PrepareValueWrite();
+        *_os << "{\"i64\":\"" << v << "\"}";
+    }
+    void WriteDouble(float64 v) override {
+        if (TryWriteMapKey(v)) return;
+        PrepareValueWrite();
+        *_os << "{\"dbl\":" << v << "}";
+    }
     void WriteString(const std::string& v) override {
+        if (TryWriteMapKey(v)) return;
+        PrepareValueWrite();
         *_os << "{\"str\":\"" << Escape(v) << "\"}";
     }
     void WriteBinary(const std::string& v) override {
@@ -149,7 +198,6 @@ public:
         DpList l;
         l.ElementType = DpWireType::Void;
         l.Count = count;
-        std::cerr << "ReadListBegin: pos=" << savePos << " count=" << count << std::endl;
         return l;
     }
     void ReadListEnd() override { Expect(']'); Expect('}'); }
@@ -160,10 +208,7 @@ public:
     bool ReadBool() override {
         SkipComma();
         Expect('{'); ExpectRawString("tf"); Expect(':');
-        bool v;
-        if (Peek() == 't') { std::string s = ReadRawString(); v = (s == "true"); }
-        else if (Peek() == 'f') { std::string s = ReadRawString(); v = (s == "false"); }
-        else { v = ReadRawBool(); }
+        bool v = ReadRawBool();
         Expect('}');
         return v;
     }
@@ -197,11 +242,53 @@ public:
     std::string ReadBinary() override { return ReadString(); }
 
 private:
+    enum class WriteContext { Struct, List, Map };
+    struct MapWriteState {
+        bool firstEntry = true;
+        bool expectingKey = true;
+        std::string pendingKey;
+    };
+
     std::ostream* _os;
     std::istream* _is;
     std::string _json;
     size_t _pos;
+    std::vector<WriteContext> _writeContext;
     std::vector<bool> _firstField;
+    std::vector<MapWriteState> _mapWriteStack;
+    bool _readMapKey = false;
+
+    template <typename T>
+    bool TryWriteMapKey(const T& value) {
+        if (_mapWriteStack.empty()) return false;
+        auto& top = _mapWriteStack.back();
+        if (!top.expectingKey) return false;
+        std::ostringstream oss;
+        oss << value;
+        top.pendingKey = oss.str();
+        top.expectingKey = false;
+        return true;
+    }
+
+    bool IsMapValuePending() const {
+        return !_mapWriteStack.empty() && !_mapWriteStack.back().expectingKey;
+    }
+
+    void PrepareValueWrite() {
+        if (IsMapValuePending()) {
+            auto& top = _mapWriteStack.back();
+            if (!top.firstEntry) *_os << ",";
+            top.firstEntry = false;
+            *_os << "\"" << Escape(top.pendingKey) << "\":";
+            top.pendingKey.clear();
+            top.expectingKey = true;
+        }
+
+        if (!_writeContext.empty() && _writeContext.back() == WriteContext::List) {
+            if (!_firstField.back()) *_os << ",";
+            _firstField.back() = false;
+        }
+    }
 
     void SkipWS() { while (_pos < _json.size() && isspace((unsigned char)_json[_pos])) _pos++; }
     void SkipComma() { 

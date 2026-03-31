@@ -1,6 +1,6 @@
 /**
  * DeukPack Binary Writer Header
- * High-performance binary serialization
+ * High-performance binary serialization with optional Arena allocator
  * Guard: DEUKPACK_ prefix to avoid clashes.
  */
 
@@ -10,7 +10,9 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <memory>
 #include "wire_engine.h"
+#include "memory_pool.h"
 
 namespace deukpack
 {
@@ -20,6 +22,9 @@ namespace deukpack
     public:
         explicit BinaryWriter(Endianness endianness = Endianness::Little, size_t initialSize = 1024);
         ~BinaryWriter() = default;
+
+        // Set arena allocator for zero-alloc optimization (optional)
+        void SetArenaAllocator(std::shared_ptr<ArenaAllocator> arena) { arena_ = arena; }
 
         // Basic types
         void WriteByte(uint8_t value);
@@ -46,6 +51,7 @@ namespace deukpack
         Endianness endianness_;
         std::vector<uint8_t> currentBuffer_;
         std::vector<std::vector<uint8_t>> buffers_;
+        std::shared_ptr<ArenaAllocator> arena_; // Optional arena allocator for zero-alloc path
         size_t position_;
     };
 

@@ -1,6 +1,6 @@
 /**
  * DeukPack Compact Writer Header
- * High-performance compact protocol serialization
+ * High-performance compact protocol serialization with Arena allocator support
  */
 
 #ifndef DEUKPACK_COMPACT_WRITER_H
@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <string>
 #include <cstring>
+#include <memory>
+#include "memory_pool.h"
 
 namespace deukpack
 {
@@ -19,6 +21,9 @@ namespace deukpack
     public:
         explicit CompactWriter(size_t initialSize = 1024);
         ~CompactWriter() = default;
+
+        // Set arena allocator for zero-alloc optimization (optional)
+        void SetArenaAllocator(std::shared_ptr<ArenaAllocator> arena) { arena_ = arena; }
 
         void WriteByte(uint8_t value);
         void WriteVarInt(int32_t value);
@@ -35,6 +40,7 @@ namespace deukpack
 
         std::vector<uint8_t> currentBuffer_;
         std::vector<std::vector<uint8_t>> buffers_;
+        std::shared_ptr<ArenaAllocator> arena_; // Optional arena allocator for zero-alloc path
         size_t position_;
     };
 

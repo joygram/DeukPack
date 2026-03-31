@@ -71,6 +71,7 @@ namespace DeukPack.Protocol
         {
             public Dictionary<string, object> Obj;
             public bool IsMapKey;
+            public string FieldKey;
         }
 
         private struct JsonReadFrame
@@ -141,7 +142,7 @@ namespace DeukPack.Protocol
                 _writeStack.Peek().Obj[_currentFieldKey] = jsonVal;
         }
 
-        public void WriteStructBegin(DpRecord s) { _writeStack.Push(new JsonStructState { Obj = new Dictionary<string, object>(), IsMapKey = false }); }
+        public void WriteStructBegin(DpRecord s) { _writeStack.Push(new JsonStructState { Obj = new Dictionary<string, object>(), IsMapKey = false, FieldKey = _currentFieldKey }); }
         public void WriteStructEnd()
         {
             var top = _writeStack.Pop();
@@ -154,7 +155,7 @@ namespace DeukPack.Protocol
             else if (_listWriteStack.Count > 0)
                 _listWriteStack.Peek().Add(top.Obj);
             else if (_writeStack.Count > 0)
-                _writeStack.Peek().Obj[_currentFieldKey] = top.Obj;
+                _writeStack.Peek().Obj[top.FieldKey] = top.Obj;
             else
             {
                 var json = JsonProtocolSerialize(top.Obj);
@@ -203,7 +204,7 @@ namespace DeukPack.Protocol
         public void WriteFieldStop() { }
         public void WriteBool(bool b) { WriteValueToCurrent(b); }
         public void WriteByte(byte b) { WriteValueToCurrent((int)b); }
-        public void WriteI16(short v) { WriteValueToCurrent(v); }
+        public void WriteI16(short v) { WriteValueToCurrent((int)v); }
         public void WriteI32(int v) { WriteValueToCurrent(v); }
         public void WriteI64(long v) { WriteValueToCurrent(v); }
         public void WriteDouble(double v) { WriteValueToCurrent(v); }
@@ -298,12 +299,12 @@ namespace DeukPack.Protocol
                 _readMapIndex = 0;
                 _readMapReadingKey = true;
             }
-            return new DpColumn(kv.Key, t, short.TryParse(kv.Key, out var id) ? id : (short)0);
+            return new DpColumn(kv.Key, DpWireType.Void, short.TryParse(kv.Key, out var id) ? id : (short)0);
         }
         public void ReadFieldEnd() { }
         public bool ReadBool() { return ReadSingleValue<bool>("tf"); }
-        public byte ReadByte() { return (byte)Convert.ToInt64(ReadSingleValue<object>("i8")); }
-        public short ReadI16() { return (short)Convert.ToInt64(ReadSingleValue<object>("i16")); }
+        public byte ReadByte() { return (byte)ReadI32(); }
+        public short ReadI16() { return (short)ReadI32(); }
         public int ReadI32() { return (int)Convert.ToInt64(ReadSingleValue<object>("i32")); }
         public long ReadI64() { var res = ReadSingleValue<object>("i64"); if (res is string s) return long.Parse(s); return Convert.ToInt64(res); }
         public double ReadDouble() { return ReadSingleValue<double>("dbl"); }
