@@ -14,7 +14,7 @@ namespace deukpack
     static const size_t SMALL_MESSAGE_THRESHOLD = 4096; // Use arena for <4KB allocations
 
     CompactWriter::CompactWriter(size_t initialSize)
-        : position_(0), arena_(std::make_shared<ArenaAllocator>(DEFAULT_ARENA_SIZE))
+        : arena_(std::make_shared<ArenaAllocator>(DEFAULT_ARENA_SIZE)), position_(0)
     {
         currentBuffer_.resize(initialSize);
     }

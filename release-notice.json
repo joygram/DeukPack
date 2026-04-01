@@ -2,11 +2,24 @@
   "version": "1.6.0",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce_ko": "<strong>득팩 코어 1.5.0</strong> — Java 패리티(상속, Compact/TJSON 추가) · MCP 코어 분리 · 전수 보안 가드 도입 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>\n· <a href=\"https://deukpack.app/releases/\">EN</a>",
-  "announce_en": "<strong>DeukPack Core 1.5.0</strong> — Java parity (Inheritance, Compact/TJSON) · MCP core decoupling · Global security guards —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
-  "landing_ko": "**득팩 코어 1.5.0** — Java 파이프라인에서 `extends`(상속), `TCompact`, `TJSON` 프로토콜을 정식 지원하며 C#/TS와 동등한 수준의 기능을 달성했습니다. 또한 MCP 서버 생성 로직을 독립 플러그인(`DeukPackMcp`)으로 완전히 분리하여 코어 엔진의 경량화를 실현하고, 모든 언어의 바이너리 리더/라이터에 전역 보안 가드(MAX_SAFE_LENGTH, MAX_RECURSION_DEPTH)를 적용하여 안정성을 강화했습니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
-  "landing_en": "**DeukPack core 1.5.0** — achieved Java parity with support for `extends` (inheritance), `TCompact`, and `TJSON` protocols. Decoupled MCP server generation into a separate plugin (`DeukPackMcp`) for a leaner core engine. Enhanced security across all languages with global guards (MAX_SAFE_LENGTH, MAX_RECURSION_DEPTH) in binary readers/writers. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
+  "announce": "<strong>득팩 코어 1.6.0</strong> — JavaScript V8 JIT Codegen · C# 무할당(Zero-Alloc) 아키텍처 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약 (KO/EN)</a>",
+  "announce_ko": "<strong>득팩 코어 1.6.0</strong> — JavaScript V8 JIT Codegen · C# 완전 무할당(Zero-Alloc) · 크로스 랭귀지 벤치마크 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>",
+  "announce_en": "<strong>DeukPack Core 1.6.0</strong> — JavaScript V8 JIT Codegen · C# Zero-Alloc architecture · Cross-language benchmark —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
+  "landing_ko": "**득팩 코어 1.6.0** — JavaScript(Node.js/Web) 환경에 사전 컴파일 기반 정적 **V8 JIT Codegen**을 도입하여 동역 파싱 대비 속도를 250% 높이고 힙 할당을 즉시 회수합니다. 또한 C#(Unity) 파이프라인을 `[StructLayout]` 기반의 **완전 무할당(Zero-Alloc) 구조**로 격상시켜 백만 회 로딩에도 0바이트의 가비지를 보장합니다. 퍼포먼스가 중요한 모든 레이어에 업계 최상위권의 속도와 메모리 안정성을 제공합니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.6.0** — Introduced pre-compiled **V8 JIT Codegen** for JavaScript (Node.js/Web), achieving a 250% parsing speed boost and zero GC spikes. Upgraded the C# (Unity) pipeline to a strictly-sized `[StructLayout]` **Zero-Alloc architecture**, guaranteeing 0-byte heap allocation across over a million operations. Delivers industry-leading latency and absolute memory stability to all critical execution layers. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
   "product_notices": [
+    {
+      "date": "2026-04-01",
+      "products": [
+        "core-engine",
+        "protocol",
+        "pipeline-unity"
+      ],
+      "title_ko": "1.6.0 — JS JIT Codegen 및 C# Zero-Alloc 달성",
+      "title_en": "1.6.0 — JS JIT Codegen, C# Zero-Alloc architecture",
+      "body_ko": "- **JavaScript**: 사전 컴파일된 `_readPack` 기반 V8 JIT 인라인 최적화 도입 (250% 성능 향상 및 GC 방어).\n- **C# / Unity**: 값 타입 캡슐화와 구조체 정적 할당을 통한 메모리 할당 0(Zero) 달성.\n- **벤치마크**: 전 언어 통합 메모리 방어 및 레이턴시 벤치마크 제공.\n- **로드맵**: Elixir(Erlang BEAM) 지원이 1.7.0 마이너 릴리즈로 승격.",
+      "body_en": "- **JavaScript**: Introduced V8 JIT inline optimization using pre-compiled `_readPack` (250% speed boost & GC defense).\n- **C# / Unity**: Achieved literal zero (0) heap allocation via Value Type encapsulation and structural statically-allocated lambdas.\n- **Benchmark**: Provided cross-language, comprehensive memory and parsing latency matrices.\n- **Roadmap**: Elixir (Erlang BEAM) support officially promoted to the v1.7.0 minor release."
+    },
     {
       "date": "2026-03-30",
       "products": [
