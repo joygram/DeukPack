@@ -14,7 +14,7 @@ namespace deukpack
     static const size_t SMALL_MESSAGE_THRESHOLD = 4096; // Use arena for <4KB allocations
 
     BinaryWriter::BinaryWriter(Endianness endianness, size_t initialSize)
-        : endianness_(endianness), position_(0), arena_(std::make_shared<ArenaAllocator>(DEFAULT_ARENA_SIZE))
+        : endianness_(endianness), arena_(std::make_shared<ArenaAllocator>(DEFAULT_ARENA_SIZE)), position_(0)
     {
         currentBuffer_.resize(initialSize);
     }
