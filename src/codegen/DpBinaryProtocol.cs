@@ -28,6 +28,7 @@ namespace DeukPack.Protocol {
         private int _readLength;
         private const int READ_BUFFER_SIZE = 4096;
         private const int MaxBinaryLength = 1024 * 1024 * 10; // 10MB
+        private const int MaxElementCount = 1000000; // 1M elements
 
         // Small buffer for primitive types (stackalloc-like optimization)
         private const int SMALL_BUFFER_SIZE = 16;
@@ -580,6 +581,7 @@ namespace DeukPack.Protocol {
         {
             byte elementType = ReadByte();
             int count = ReadI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid list count: {count}");
             return new DpList { ElementType = (DpWireType)elementType, Count = count };
         }
 
@@ -592,6 +594,7 @@ namespace DeukPack.Protocol {
         {
             byte elementType = ReadByte();
             int count = ReadI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid set count: {count}");
             return new DpSet { ElementType = (DpWireType)elementType, Count = count };
         }
 
@@ -605,6 +608,7 @@ namespace DeukPack.Protocol {
             byte keyType = ReadByte();
             byte valueType = ReadByte();
             int count = ReadI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid map count: {count}");
             return new DpDict { KeyType = (DpWireType)keyType, ValueType = (DpWireType)valueType, Count = count };
         }
 

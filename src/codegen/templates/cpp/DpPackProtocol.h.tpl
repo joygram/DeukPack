@@ -17,6 +17,8 @@ private:
   std::istream* input{nullptr};
   std::ostream* output{nullptr};
   std::stack<int32> fieldCounts{};
+  static constexpr int32 MAX_SAFE_LENGTH = 10 * 1024 * 1024; // 10MB
+  static constexpr int32 MAX_ELEMENT_COUNT = 1000000; // 1M elements
 
 public:
   enum class PackTag : uint8 {
@@ -174,6 +176,7 @@ public:
     PackTag tag = static_cast<PackTag>(ReadRawByte());
     if (tag != PackTag::Object) throw std::runtime_error("Expected Object tag");
     int32 count = ReadRawI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid struct field count: out of bounds");
     fieldCounts.push(count);
     return {};
   }
@@ -194,7 +197,8 @@ public:
   private:
   std::string ReadRawString() {
     int32 len = ReadRawI32();
-    if (len <= 0) return {};
+    if (len == 0) return {};
+    if (len < 0 || len > MAX_SAFE_LENGTH) throw std::runtime_error("Invalid string/binary length: negative or too long");
     std::string s(len, '\0');
     if (input) input->read(&s[0], len);
     return s;
@@ -203,19 +207,25 @@ public:
   public:
   DpDict ReadMapBegin() override {
     if (static_cast<PackTag>(ReadRawByte()) != PackTag::Map) throw std::runtime_error("Expected Map tag");
-    return {DpWireType::Stop, DpWireType::Stop, ReadRawI32()};
+    int32 count = ReadRawI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid map count: out of bounds");
+    return {DpWireType::Stop, DpWireType::Stop, count};
   }
   void ReadMapEnd() override {}
 
   DpList ReadListBegin() override {
     if (static_cast<PackTag>(ReadRawByte()) != PackTag::Array) throw std::runtime_error("Expected Array tag");
-    return {DpWireType::Stop, ReadRawI32()};
+    int32 count = ReadRawI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid list count: out of bounds");
+    return {DpWireType::Stop, count};
   }
   void ReadListEnd() override {}
 
   DpSet ReadSetBegin() override {
     if (static_cast<PackTag>(ReadRawByte()) != PackTag::Array) throw std::runtime_error("Expected Array tag");
-    return {DpWireType::Stop, ReadRawI32()};
+    int32 count = ReadRawI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid set count: out of bounds");
+    return {DpWireType::Stop, count};
   }
   void ReadSetEnd() override {}
 

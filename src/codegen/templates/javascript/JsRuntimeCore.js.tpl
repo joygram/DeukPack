@@ -128,8 +128,10 @@ function _fromDpJson(schema, jsonObj, schemas) {
   for (var id in schema.fields) {
     var f = schema.fields[id];
     var w = jsonObj && jsonObj[String(id)];
-    if (f.required && w === undefined) _deukSerializationWarn('missing', structName, f.name, id);
-    if (w !== undefined) out[f.name] = _unwrapDpJson(f.type, f.typeName, w, schemas);
+    var v = (w !== undefined) ? _unwrapDpJson(f.type, f.typeName, w, schemas) : undefined;
+    if (v === undefined && f.defaultValue !== undefined && f.defaultValue !== null) v = f.defaultValue;
+    if (v === undefined && f.required) _deukSerializationWarn('missing', structName, f.name, id);
+    if (v !== undefined) out[f.name] = v;
   }
   return out;
 }

@@ -13,6 +13,7 @@ public class DpBinaryProtocol implements DpProtocol {
     private final OutputStream output;
 
     private static final int MAX_SAFE_LENGTH = 10 * 1024 * 1024; // 10MB
+    private static final int MAX_ELEMENT_COUNT = 1000000; // 1M elements
     private static final int MAX_RECURSION_DEPTH = 64;
     private int recursionDepth = 0;
 
@@ -194,7 +195,11 @@ public class DpBinaryProtocol implements DpProtocol {
 
     @Override
     public DpDict readMapBegin() {
-        return new DpDict(DpWireType.findByValue(readByte()), DpWireType.findByValue(readByte()), readI32());
+        DpWireType keyType = DpWireType.findByValue(readByte());
+        DpWireType valueType = DpWireType.findByValue(readByte());
+        int count = readI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Invalid map count: " + count);
+        return new DpDict(keyType, valueType, count);
     }
 
     @Override
@@ -202,7 +207,10 @@ public class DpBinaryProtocol implements DpProtocol {
 
     @Override
     public DpList readListBegin() {
-        return new DpList(DpWireType.findByValue(readByte()), readI32());
+        DpWireType elementType = DpWireType.findByValue(readByte());
+        int count = readI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Invalid list count: " + count);
+        return new DpList(elementType, count);
     }
 
     @Override
@@ -210,7 +218,10 @@ public class DpBinaryProtocol implements DpProtocol {
 
     @Override
     public DpSet readSetBegin() {
-        return new DpSet(DpWireType.findByValue(readByte()), readI32());
+        DpWireType elementType = DpWireType.findByValue(readByte());
+        int count = readI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Invalid set count: " + count);
+        return new DpSet(elementType, count);
     }
 
     @Override

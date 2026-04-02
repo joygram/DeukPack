@@ -1810,21 +1810,32 @@ export class CSharpGenerator extends CodeGenerator {
     const wn = this.escapeCSharpStringContent(wireName);
     const lines: string[] = [];
     lines.push('      if (fieldIds != null && fieldIds.Count == 0) return;');
-    lines.push(`      DpRecord struc = new DpRecord("${wn}", ${struct.fields.length});`);
-    lines.push('      oprot.WriteStructBegin(struc);');
 
+    lines.push('      int _oprot_cnt = 0;');
     for (const field of struct.fields) {
       const fieldName = this.capitalize(field.name);
       const csharpType = this.getCSharpType(field.type, ast, ns);
+      const id = field.id;
+      // Pre-evaluate local var so we avoid doing TryGetValue twice
+      lines.push(`      var _v${id} = (overrides != null && overrides.TryGetValue(${id}, out var _o${id})) ? (${csharpType})_o${id} : this.${fieldName};`);
+      const condExpr = this.generateWriteConditionForVar(`_v${id}`, field, ast, ns);
+      lines.push(`      if (fieldIds == null || fieldIds.Contains(${id}))`);
+      lines.push('      {');
+      lines.push(`        ${condExpr}`);
+      lines.push('        { _oprot_cnt++; }');
+      lines.push('      }');
+    }
+
+    lines.push(`      DpRecord struc = new DpRecord("${wn}", _oprot_cnt);`);
+    lines.push('      oprot.WriteStructBegin(struc);');
+
+    for (const field of struct.fields) {
       const tType = this.getTType(field.type, ast, ns);
       const id = field.id;
 
       lines.push(`      // field ${id}: ${field.name}`);
       lines.push(`      if (fieldIds == null || fieldIds.Contains(${id}))`);
       lines.push('      {');
-      lines.push(
-        `        var _v${id} = (overrides != null && overrides.TryGetValue(${id}, out var _o${id})) ? (${csharpType})_o${id} : this.${fieldName};`
-      );
       const condExpr = this.generateWriteConditionForVar(`_v${id}`, field, ast, ns);
       lines.push(`        ${condExpr}`);
       lines.push('        {');

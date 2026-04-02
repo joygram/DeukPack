@@ -43,7 +43,8 @@ function hasCodegenOrEmit(options) {
         (options.excel && String(options.excel).trim()) ||
         (options.protoSchema && String(options.protoSchema).trim()) ||
         (options.thriftSchema && String(options.thriftSchema).trim()) ||
-        options.mcp
+        options.mcp ||
+        options.elixir
     );
 }
 
@@ -315,6 +316,7 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
     if (options.js) generationPromises.push(generateJavaScript(engine, ast, outputDir, options));
     if (options.java) generationPromises.push(generateJava(engine, ast, outputDir, options));
     if (options.mcp) generationPromises.push(generateMcp(engine, ast, outputDir, options));
+    if (options.elixir) generationPromises.push(generateElixir(engine, ast, outputDir, options));
     await Promise.all(generationPromises);
 
     if (options.convertToDeuk) {
@@ -609,6 +611,7 @@ const DEFAULT_LANG_OUTPUT_SUBDIRS = Object.freeze({
     js: 'js',
     java: 'java',
     mcp: 'mcp',
+    elixir: 'elixir',
 });
 
 /**
@@ -636,9 +639,10 @@ function mergeLangOutputSubdirs(partial) {
         js: DEFAULT_LANG_OUTPUT_SUBDIRS.js,
         java: DEFAULT_LANG_OUTPUT_SUBDIRS.java,
         mcp: DEFAULT_LANG_OUTPUT_SUBDIRS.mcp,
+        elixir: DEFAULT_LANG_OUTPUT_SUBDIRS.elixir,
     };
     if (!partial || typeof partial !== 'object') return out;
-    for (const k of ['csharp', 'cpp', 'ts', 'js', 'java', 'mcp']) {
+    for (const k of ['csharp', 'cpp', 'ts', 'js', 'java', 'mcp', 'elixir']) {
         if (partial[k] != null && String(partial[k]).trim() !== '') {
             out[k] = assertLangOutputSubdirSegment(String(partial[k]), k);
         }
@@ -713,6 +717,7 @@ async function runPipeline(configPath) {
             js: !!job.js,
             java: !!job.java,
             mcp: !!job.mcp,
+            elixir: !!job.elixir,
             json: !!job.json,
             importOpenApi: job.importOpenApi || undefined,
             openapi: job.openapi || undefined,
@@ -817,6 +822,7 @@ function parseOptions(args) {
         js: false,
         java: false,
         mcp: false,
+        elixir: false,
         json: false,
         protocol: 'pack',
         endianness: 'little',
@@ -883,6 +889,9 @@ function parseOptions(args) {
                 break;
             case '--mcp':
                 options.mcp = true;
+                break;
+            case '--elixir':
+                options.elixir = true;
                 break;
             case '--ef':
                 options.ef = true;
@@ -1238,6 +1247,28 @@ async function generateJava(engine, ast, outputDir, options = {}) {
 
     const generateTime = Date.now() - startTime;
     console.log(`✅ Java generated ${Object.keys(javaFiles).length} files in ${generateTime}ms`);
+}
+
+async function generateElixir(engine, ast, outputDir, options = {}) {
+    console.log('🔧 Generating Elixir code...');
+    const startTime = Date.now();
+
+    const elixirDir = path.join(outputDir, options.langOutputSubdirs.elixir);
+    await fs.mkdir(elixirDir, { recursive: true });
+
+    const { ElixirGenerator } = require('../dist/codegen/ElixirGenerator');
+    const generator = new ElixirGenerator();
+    const elixirFiles = await generator.generate(ast, options);
+
+    for (const [filename, content] of Object.entries(elixirFiles)) {
+        const filePath = path.join(elixirDir, filename);
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.writeFile(filePath, content, 'utf8');
+        console.log(`   📄 Generated: ${filename}`);
+    }
+
+    const generateTime = Date.now() - startTime;
+    console.log(`✅ Elixir generated ${Object.keys(elixirFiles).length} files in ${generateTime}ms`);
 }
 
 // Run the main function

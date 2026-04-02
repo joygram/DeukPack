@@ -103,13 +103,19 @@ export function buildEmbeddedFieldsObject(fields: DeukPackField[], ast: DeukPack
   const fieldsObj: Record<string, unknown> = {};
   for (const field of fields) {
     const ti = getEmbeddedSchemaTypeInfo(field.type, ast);
+    
+    let defVal = field.defaultValue !== undefined ? field.defaultValue : null;
+    if (defVal !== null && ti.type === 'bool') {
+      defVal = (defVal === 'true' || defVal === true);
+    }
+    
     fieldsObj[field.id] = {
       id: field.id,
       name: field.name,
       type: ti.type,
       typeName: ti.typeName,
       required: !!field.required,
-      defaultValue: field.defaultValue !== undefined ? field.defaultValue : null,
+      defaultValue: defVal,
       docComment: field.docComment != null ? field.docComment : undefined,
       annotations: field.annotations && Object.keys(field.annotations).length ? field.annotations : undefined,
     };

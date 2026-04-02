@@ -209,17 +209,16 @@ npm run test:idl-convert-smoke    # optional: Thrift → .deuk conversion smoke 
 
 ---
 
-## Support development
+## ☕ Support & Contact
 
-DeukPack stays **free and Apache-2.0** — you can ship products on it without a license fee. That only works if the project stays **maintained**: documentation, CI, compatibility fixes, faster parsers, new language targets, and time to review issues and PRs.
+DeukPack is completely open-source (Apache 2.0). I built this engine to solve the fundamental Zero-Allocation and Sync issues I've encountered over my career as a server architect.
 
-If DeukPack **saves you CI minutes**, **replaces brittle hand-rolled serializers**, or **keeps your game/server stacks aligned on one IDL**, consider **chipping in**. A one-time or recurring tip **directly supports continued OSS work** on the engine, docs ([deukpack.app](https://deukpack.app/)), and releases — at any amount you’re comfortable with.
+If DeukPack is saving your team weeks of development time, or if you're planning to adopt it for a production MMORPG and need architectural advice on integrating it safely into your server stack, feel free to reach out via email.
 
-- **Ko-fi**: [Support via Ko-fi](https://ko-fi.com/joygram) (card, Apple Pay, Google Pay, etc.)
+- 📩 **Contact / Technical Inquiries**: joygram@gmail.com
+- ☕ **Support the Project**: [Sponsor via Ko-fi](https://ko-fi.com/joygram)
 
-This is **not** a tax-deductible charity donation unless you have a separate registered nonprofit; treat it as **support for the maintainer’s OSS work**.
-
-Not in a position to donate? **Star the repo**, **open clear issues**, **send PRs**, or **tell a team** that’s juggling Protobuf + Thrift + OpenAPI — that helps too.
+Even if you aren't in a position to support financially, **starring the repo** or sharing it with a team juggling Protobuf/Thrift helps immensely.
 
 ---
 
