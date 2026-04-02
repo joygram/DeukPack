@@ -161,6 +161,14 @@ export class JavaScriptGenerator extends CodeGenerator {
     lines.push(`    }`);
     lines.push(`  }`);
     lines.push(`  p.depth--;`);
+    for (const f of fieldsToGen || []) {
+      if (f.defaultValue !== undefined && f.defaultValue !== null) {
+        let dv = f.defaultValue;
+        const ti = getEmbeddedSchemaTypeInfo(f.type, ast);
+        if (ti.type === 'bool' && typeof dv === 'string') dv = (dv === 'true');
+        lines.push(`  if (obj["${f.name}"] === undefined) obj["${f.name}"] = ${JSON.stringify(dv)};`);
+      }
+    }
     lines.push(`  return obj;`);
     lines.push(`}`);
     return lines.join('\n');
@@ -182,10 +190,12 @@ export class JavaScriptGenerator extends CodeGenerator {
     lines.push(`      default: _packReadValue(r, null, schemas); break;`);
     lines.push(`    }`);
     lines.push(`  }`);
-    lines.push(`  // Apply defaults/required if necessary`);
     for (const f of fieldsToGen || []) {
       if (f.defaultValue !== undefined && f.defaultValue !== null) {
-        lines.push(`  if (obj["${f.name}"] === undefined && "${f.defaultValue}" !== "undefined") obj["${f.name}"] = ${typeof f.defaultValue === 'string' ? '"'+f.defaultValue+'"' : f.defaultValue};`);
+        let dv = f.defaultValue;
+        const ti = getEmbeddedSchemaTypeInfo(f.type, ast);
+        if (ti.type === 'bool' && typeof dv === 'string') dv = (dv === 'true');
+        lines.push(`  if (obj["${f.name}"] === undefined) obj["${f.name}"] = ${JSON.stringify(dv)};`);
       }
     }
     lines.push(`  return obj;`);

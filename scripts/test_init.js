@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { _schemas, _packStructToBinary, _structToBinary, _toDpJson } = require('../dist-test/js/generated_deuk');
 
-function init(protocol) {
+function init(protocol, outFile) {
     const model = {
         b_val: true,
         i8_val: 123,
@@ -19,7 +19,12 @@ function init(protocol) {
         nested: {
             inner_val: "nested_world",
             numbers: [1, 1, 2, 3, 5]
-        }
+        },
+        empty_nested: {
+            inner_val: "",
+            numbers: []
+        },
+        null_nested: { inner_val: "inner", numbers: [] }
     };
 
     const schema = _schemas["RoundtripModel"];
@@ -36,13 +41,14 @@ function init(protocol) {
         throw new Error(`Unknown protocol: ${protocol}`);
     }
 
-    fs.writeFileSync('step1.bin', bytes);
-    console.log(`[JS] Initiated ${protocol} to step1.bin (Size: ${bytes.length} bytes)`);
+    fs.writeFileSync(outFile, bytes);
+    console.log(`[JS] Initiated ${protocol} to ${outFile} (Size: ${bytes.length} bytes)`);
 }
 
 const protocol = process.argv[2] || 'pack';
+const outFile = process.argv[3] || 'step0.bin';
 try {
-    init(protocol);
+    init(protocol, outFile);
 } catch (e) {
     console.error(`[JS] Init Error: ${e.message}`);
     process.exit(1);

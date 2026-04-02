@@ -16,6 +16,9 @@ namespace DeukPack.Protocol
         private readonly Stream? _output;
         private readonly Stack<int> _fieldCounts = new Stack<int>();
 
+        private const int MaxBinaryLength = 1024 * 1024 * 10; // 10MB
+        private const int MaxElementCount = 1000000; // 1M
+
         public enum PackTag : byte
         {
             Null = 0, False = 1, True = 2, Int32 = 3, Int64 = 4, Double = 5, String = 6, Binary = 7, Array = 8, Map = 9, Object = 10
@@ -197,6 +200,7 @@ namespace DeukPack.Protocol
             PackTag tag = (PackTag)ReadRawByte();
             if (tag != PackTag.Object) throw new Exception("Expected Object tag");
             int count = ReadRawI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid struct field count: {count}");
             _fieldCounts.Push(count);
             return new DpRecord();
         }
@@ -220,7 +224,7 @@ namespace DeukPack.Protocol
         private string ReadRawString()
         {
             int length = ReadRawI32();
-            Console.WriteLine($"[DEBUG] ReadRawString length: {length} at offset {(_input as System.IO.MemoryStream)?.Position}");
+            if (length < 0 || length > MaxBinaryLength) throw new InvalidOperationException($"Invalid string length: {length}");
             byte[] bytes = new byte[length];
             ReadAll(bytes);
             return Encoding.UTF8.GetString(bytes);
@@ -242,7 +246,9 @@ namespace DeukPack.Protocol
         public DpDict ReadMapBegin()
         {
             if ((PackTag)ReadRawByte() != PackTag.Map) throw new Exception("Expected Map tag");
-            return new DpDict { KeyType = DpWireType.Stop, ValueType = DpWireType.Stop, Count = ReadRawI32() };
+            int count = ReadRawI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid map count: {count}");
+            return new DpDict { KeyType = DpWireType.Stop, ValueType = DpWireType.Stop, Count = count };
         }
 
         public void ReadMapEnd() { }
@@ -250,7 +256,9 @@ namespace DeukPack.Protocol
         public DpList ReadListBegin()
         {
             if ((PackTag)ReadRawByte() != PackTag.Array) throw new Exception("Expected Array tag");
-            return new DpList { ElementType = DpWireType.Stop, Count = ReadRawI32() };
+            int count = ReadRawI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid list count: {count}");
+            return new DpList { ElementType = DpWireType.Stop, Count = count };
         }
 
         public void ReadListEnd() { }
@@ -258,7 +266,9 @@ namespace DeukPack.Protocol
         public DpSet ReadSetBegin()
         {
             if ((PackTag)ReadRawByte() != PackTag.Array) throw new Exception("Expected Array tag");
-            return new DpSet { ElementType = DpWireType.Stop, Count = ReadRawI32() };
+            int count = ReadRawI32();
+            if (count < 0 || count > MaxElementCount) throw new InvalidOperationException($"Invalid set count: {count}");
+            return new DpSet { ElementType = DpWireType.Stop, Count = count };
         }
 
         public void ReadSetEnd() { }
@@ -310,6 +320,7 @@ namespace DeukPack.Protocol
             if (tag == PackTag.Null) return null;
             if (tag != PackTag.Binary) throw new Exception("Expected Binary tag");
             int length = ReadRawI32();
+            if (length < 0 || length > MaxBinaryLength) throw new InvalidOperationException($"Invalid binary length: {length}");
             byte[] bytes = new byte[length];
             ReadAll(bytes);
             return bytes;

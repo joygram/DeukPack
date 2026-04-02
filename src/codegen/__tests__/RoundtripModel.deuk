@@ -14,6 +14,8 @@ struct RoundtripModel {
     11> list<string> s_list
     12> map<string, int32> s_i32_map
     13> NestedStruct nested
+    14> NestedStruct empty_nested
+    15> NestedStruct null_nested
 }
 
 struct NestedStruct {

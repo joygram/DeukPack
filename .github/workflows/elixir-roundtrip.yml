@@ -1,0 +1,62 @@
+name: Elixir Matrix Roundtrip CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-elixir-matrix:
+    runs-on: ubuntu-latest
+    name: Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }} Matrix Test
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 16개의 조합 대신 시대를 대표하는 가장 많이 쓰이는 3대장 조합으로 압축
+        include:
+          # 1. 안정화 레거시 LTS (가장 많은 프로덕션)
+          - elixir: '1.14.5'
+            otp: '25.3'
+          # 2. 과도기 메인스트림
+          - elixir: '1.16.2'
+            otp: '26.2'
+          # 3. 최신 JIT 및 모던 스펙 (Edge)
+          - elixir: '1.17.0'
+            otp: '27.0'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Elixir & Erlang BEAM
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+
+      # (Optional) Setup .NET for C# Bridge and JDK for Java Bridge if full chain runs
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Build DeukPack Engine
+        run: npm run build
+
+      - name: Run E2E Roundtrip Chain (inc. Elixir)
+        run: node scripts/test-e2e-roundtrip-chain.js

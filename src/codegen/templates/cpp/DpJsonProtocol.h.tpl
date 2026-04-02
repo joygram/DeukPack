@@ -20,9 +20,13 @@ public:
     DpJsonProtocol(std::ostream* os) : _os(os), _is(nullptr) {}
     DpJsonProtocol(std::istream* is) : _os(nullptr), _is(is), _pos(0) {
         if (is) {
-            std::stringstream ss;
-            ss << is->rdbuf();
-            _json = ss.str();
+            std::string content;
+            char buffer[4096];
+            while (is->read(buffer, sizeof(buffer)) || is->gcount() > 0) {
+                content.append(buffer, is->gcount());
+                if (content.length() > 10 * 1024 * 1024) throw std::runtime_error("Protocol buffer overflow: json exceeds max size 10MB");
+            }
+            _json = std::move(content);
         }
     }
 
@@ -119,8 +123,7 @@ public:
         *_os << "{\"str\":\"" << Escape(v) << "\"}";
     }
     void WriteBinary(const std::string& v) override {
-        // Placeholder, typically Base64
-        *_os << "{\"str\":\"" << Escape(v) << "\"}";
+        *_os << "{\"str\":\"" << Escape(Base64Encode(v)) << "\"}";
     }
 
     // Reader Implementation
@@ -239,7 +242,7 @@ public:
         }
         Expect('{'); ExpectRawString("str"); Expect(':'); std::string s = ReadRawString(); Expect('}'); return s;
     }
-    std::string ReadBinary() override { return ReadString(); }
+    std::string ReadBinary() override { return Base64Decode(ReadString()); }
 
 private:
     enum class WriteContext { Struct, List, Map };
@@ -377,9 +380,52 @@ private:
         for (char c : s) {
             if (c == '"') res += "\\\"";
             else if (c == '\\') res += "\\\\";
+            else if (c == '\b') res += "\\b";
+            else if (c == '\f') res += "\\f";
+            else if (c == '\n') res += "\\n";
+            else if (c == '\r') res += "\\r";
+            else if (c == '\t') res += "\\t";
+            else if ((unsigned char)c < 0x20) {
+                char buf[8];
+                snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                res += buf;
+            }
             else res += c;
         }
         return res;
+    }
+
+    static std::string Base64Encode(const std::string& in) {
+        std::string out;
+        int val = 0, valb = -6;
+        for (unsigned char c : in) {
+            val = (val << 8) + c;
+            valb += 8;
+            while (valb >= 0) {
+                out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(val >> valb) & 0x3F]);
+                valb -= 6;
+            }
+        }
+        if (valb > -6) out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[((val << 8) >> (valb + 8)) & 0x3F]);
+        while (out.size() % 4) out.push_back('=');
+        return out;
+    }
+
+    static std::string Base64Decode(const std::string& in) {
+        std::string out;
+        std::vector<int> T(256, -1);
+        for (int i = 0; i < 64; i++) T["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[i]] = i;
+        int val = 0, valb = -8;
+        for (unsigned char c : in) {
+            if (T[c] == -1) break;
+            val = (val << 6) + T[c];
+            valb += 6;
+            if (valb >= 0) {
+                out.push_back(char((val >> valb) & 0xFF));
+                valb -= 8;
+            }
+        }
+        return out;
     }
 };
 

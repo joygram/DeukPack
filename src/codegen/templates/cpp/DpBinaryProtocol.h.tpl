@@ -15,6 +15,7 @@ private:
   std::istream* input{nullptr};
   std::ostream* output{nullptr};
   static constexpr int32 MAX_SAFE_LENGTH = 10 * 1024 * 1024; // 10MB
+  static constexpr int32 MAX_ELEMENT_COUNT = 1000000; // 1M elements
   static constexpr int32 MAX_RECURSION_DEPTH = 64;
   int32 recursionDepth{0};
 
@@ -30,7 +31,7 @@ public:
   }
   void WriteMessageEnd() override {}
 
-  void WriteStructBegin(const DpRecord& record) override {}
+  void WriteStructBegin(const DpRecord&) override {}
   void WriteStructEnd() override {}
 
   void WriteFieldBegin(const DpColumn& column) override {
@@ -136,6 +137,7 @@ public:
     uint8 kt = ReadByte();
     uint8 vt = ReadByte();
     int32 count = ReadI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid map count");
     return {static_cast<DpWireType>(kt), static_cast<DpWireType>(vt), count};
   }
   void ReadMapEnd() override {}
@@ -143,6 +145,7 @@ public:
   DpList ReadListBegin() override {
     uint8 et = ReadByte();
     int32 count = ReadI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid list count");
     return {static_cast<DpWireType>(et), count};
   }
   void ReadListEnd() override {}
@@ -150,6 +153,7 @@ public:
   DpSet ReadSetBegin() override {
     uint8 et = ReadByte();
     int32 count = ReadI32();
+    if (count < 0 || count > MAX_ELEMENT_COUNT) throw std::runtime_error("Invalid set count");
     return {static_cast<DpWireType>(et), count};
   }
   void ReadSetEnd() override {}
@@ -187,9 +191,9 @@ public:
   }
   std::string ReadString() override {
     int32 len = ReadI32();
-    if (len <= 0) return {};
-    if (len > MAX_SAFE_LENGTH) {
-        throw std::runtime_error("Invalid string/binary length: string too long");
+    if (len == 0) return {};
+    if (len < 0 || len > MAX_SAFE_LENGTH) {
+        throw std::runtime_error("Invalid string/binary length: string too long or negative");
     }
     std::string s(len, '\0');
     if (input) input->read(&s[0], len);

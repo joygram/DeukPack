@@ -17,6 +17,7 @@ public class DpPackProtocol implements DpProtocol {
     private final Stack<Integer> fieldCounts = new Stack<>();
 
     private static final int MAX_SAFE_LENGTH = 10 * 1024 * 1024;
+    private static final int MAX_ELEMENT_COUNT = 1000000;
     private static final int MAX_RECURSION_DEPTH = 64;
     private int recursionDepth = 0;
 
@@ -50,7 +51,7 @@ public class DpPackProtocol implements DpProtocol {
         writeTag(PackTag.Array);
         writeRawI32(3);
         writeString(message.Name);
-        writeByte((byte) message.Type);
+        writeByte(message.Type);
         writeI32(message.SeqID);
     }
 
@@ -218,6 +219,7 @@ public class DpPackProtocol implements DpProtocol {
         PackTag tag = PackTag.findByValue(readRawByte());
         if (tag != PackTag.Array) throw new RuntimeException("Expected Array tag");
         int count = readRawI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Safe Len");
         return new DpMessage(readString(), readByte(), readI32());
     }
 
@@ -230,6 +232,7 @@ public class DpPackProtocol implements DpProtocol {
         PackTag tag = PackTag.findByValue(readRawByte());
         if (tag != PackTag.Object) throw new RuntimeException("Expected Object tag");
         int count = readRawI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Safe Len");
         fieldCounts.push(count);
         return new DpRecord();
     }
@@ -263,7 +266,9 @@ public class DpPackProtocol implements DpProtocol {
     @Override
     public DpDict readMapBegin() {
         if (PackTag.findByValue(readRawByte()) != PackTag.Map) throw new RuntimeException("Expected Map tag");
-        return new DpDict(DpWireType.Stop, DpWireType.Stop, readRawI32());
+        int count = readRawI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Safe Len");
+        return new DpDict(DpWireType.Stop, DpWireType.Stop, count);
     }
 
     @Override
@@ -272,7 +277,9 @@ public class DpPackProtocol implements DpProtocol {
     @Override
     public DpList readListBegin() {
         if (PackTag.findByValue(readRawByte()) != PackTag.Array) throw new RuntimeException("Expected Array tag");
-        return new DpList(DpWireType.Stop, readRawI32());
+        int count = readRawI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Safe Len");
+        return new DpList(DpWireType.Stop, count);
     }
 
     @Override
@@ -281,7 +288,9 @@ public class DpPackProtocol implements DpProtocol {
     @Override
     public DpSet readSetBegin() {
         if (PackTag.findByValue(readRawByte()) != PackTag.Array) throw new RuntimeException("Expected Array tag");
-        return new DpSet(DpWireType.Stop, readRawI32());
+        int count = readRawI32();
+        if (count < 0 || count > MAX_ELEMENT_COUNT) throw new RuntimeException("Safe Len");
+        return new DpSet(DpWireType.Stop, count);
     }
 
     @Override

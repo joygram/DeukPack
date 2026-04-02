@@ -52,8 +52,15 @@ namespace DeukPack.Protocol
             {
                 using (var sr = new StreamReader(stream, _utf8, false, 4096, true))
                 {
-                    var json = sr.ReadToEnd();
-                    _rootRead = JsonProtocolParse(json);
+                    var sb = new StringBuilder();
+                    char[] buffer = new char[4096];
+                    int read;
+                    while ((read = sr.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        sb.Append(buffer, 0, read);
+                        if (sb.Length > 10 * 1024 * 1024) throw new Exception("Protocol buffer overflow: json exceeds max size 10MB");
+                    }
+                    _rootRead = JsonProtocolParse(sb.ToString());
                 }
             }
             else

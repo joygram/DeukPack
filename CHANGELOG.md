@@ -4,6 +4,17 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.7.0] — 2026-04-03
+
+### Core: Elixir Support & Unified Protocol Security Shield
+
+- **Elixir (Erlang BEAM) Runtime Engine**: Delivered complete native protocol support for Elixir, utilizing Erlang's high-performance binary pattern matching (`<<tag::integer, ...>>`). Fully verified through the cross-language matrix test pipeline.
+- **Universal OOM Defense (Protocol Security)**: Hardened all five backend engines (JS, C#, C++, Java, Elixir) against network-layer malicious payloads (DDoS / Memory Bombs). Enforced strict fail-fast `MAX_SAFE_LENGTH` (10MB) and `MAX_ELEMENT_COUNT` (1,000,000) bounds directly within stream decoders to discard invalid allocations instantaneously.
+- **JSON Buffer Flood Protection**: Refactored JSON streaming layers across Java, C++ and C# protocols to incrementally evaluate payload limits, permanently neutralizing unbounded chunk accumulation vulnerabilities.
+- **DDoS Fuzzer Automation**: Deployed `test-fuzz-oom.js` to continuously simulate giant lists, infinite maps, and >2GB string payloads against all language parsers, asserting complete operational defense during CI roundtrips.
+
+---
+
 ## [1.6.0] — 2026-04-01
 
 ### Core: Data Parser Architecture Shift (Zero-Allocation & V8 JIT Codegen)
@@ -11,11 +22,6 @@ Notable changes to the `deukpack` npm package by release.
 - **JavaScript JIT-Friendly Codegen**: Deprecated the dynamic AST reflection parser across Node.js/Web environments. Now fully generates pre-compiled, statically injected inline parsing functions (`_readPack`, `_readBin`). This quantum leap improves JSON parsing equivalence speeds by 250% while resolving severe Heap Allocation GC blockings.
 - **C# / Unity Zero-GC Architecture**: Upgraded the Unity client serialization pipeline to operate exclusively via strictly-sized Value Types (`[StructLayout]`) and static lambda generators, achieving a literal 0-byte memory allocation during million-iteration load tests.
 
-### Target Roadmap (Future Version 1.7.0 / Minor)
-
-- **Elixir (Erlang BEAM) Support Planned**: Previously slated for a 1.6 patch cycle, native Elixir support via `<<tag::integer, rest::binary>>` binary pattern matching has been promoted to a full v1.7.0 feature milestone due to the immense architectural shift.
-
----
 
 ### Core: C++ Optimization & DDL Generator
 

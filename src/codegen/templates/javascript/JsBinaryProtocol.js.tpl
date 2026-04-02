@@ -96,6 +96,7 @@ function _jsBinReadDouble(p) {
 function _jsBinReadString(p) {
   var len = _jsBinReadI32(p);
   if (len === 0) return "";
+  if (len < 0 || p.off + len > p.view.buffer.byteLength) throw new Error("[DeukPack] string length out of bounds");
   var s;
   if (typeof TextDecoder !== "undefined") {
     s = new TextDecoder().decode(new Uint8Array(p.view.buffer, p.view.byteOffset + p.off, len));
@@ -151,6 +152,7 @@ function _jsBinReadValue(p, type, typeName, schemas) {
     case 11: // String or Binary
       if (type === "binary" || typeName === "binary") {
         var len = _jsBinReadI32(p);
+        if (len < 0 || p.off + len > p.view.buffer.byteLength) throw new Error("[DeukPack] binary length out of bounds");
         var buf = new Uint8Array(p.view.buffer, p.view.byteOffset + p.off, len);
         p.off += len;
         return new Uint8Array(buf); // Copy to avoid side effects
@@ -162,6 +164,7 @@ function _jsBinReadValue(p, type, typeName, schemas) {
       var emWtK = p.view.getUint8(p.off++);
       var emWtV = p.view.getUint8(p.off++);
       var lenM = _jsBinReadI32(p);
+      if (lenM < 0 || lenM > 1000000) throw new Error("[DeukPack] map count out of bounds");
       var objM = {};
       var mm = (typeName.match(/map<([^,]+),(.+)>/i) || []);
       var kt = mm[1] ? mm[1].trim() : "string";
@@ -177,6 +180,7 @@ function _jsBinReadValue(p, type, typeName, schemas) {
     case 15: // List
       var emWt = p.view.getUint8(p.off++);
       var len = _jsBinReadI32(p);
+      if (len < 0 || len > 1000000) throw new Error("[DeukPack] collection count out of bounds");
       var arr = [];
       var em = (typeName.match(/^(?:list|set)<(.+)>$/i) || [])[1] || "int32";
       var eet = _elemType(em);

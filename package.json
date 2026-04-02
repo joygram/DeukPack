@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "DeukPack — Universal schema multi-hub for Protobuf, Thrift, OpenAPI, and .deuk. Protobuf-aligned wire; fast C#/C++/JS codegen.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

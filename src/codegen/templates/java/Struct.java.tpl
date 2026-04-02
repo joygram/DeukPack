@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
  * @@DOC_COMMENT@@
  * @generated
  */
+@SuppressWarnings("serial")
 public class @@STRUCT_NAME@@@@EXTENDS@@ implements IDeukPack, Serializable, Cloneable {
     private static final long serialVersionUID = 1L;
 

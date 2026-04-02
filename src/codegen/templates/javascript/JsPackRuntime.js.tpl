@@ -307,6 +307,7 @@ function _packReadValue(r, f, schemas) {
   if (tag === _PackTag.Binary) return _prBinary(r);
   if (tag === _PackTag.Array) {
     var n = _prI32(r);
+    if (n < 0 || n > 1000000) throw new Error("[DeukPack] pack array max elements");
     var em = f && f.typeName ? (f.typeName.match(/^(?:list|set)<(.+)>$/i) || [])[1] : "";
     em = em ? em.trim() : "";
     var fake = em ? { type: _packElemWireType(em), typeName: em, required: true } : null;
@@ -316,6 +317,7 @@ function _packReadValue(r, f, schemas) {
   }
   if (tag === _PackTag.Map) {
     var m = _prI32(r);
+    if (m < 0 || m > 1000000) throw new Error("[DeukPack] pack map max elements");
     var mm = f && f.typeName ? (f.typeName.match(/^map<([^,]+),(.+)>$/i) || []) : [];
     var vt = mm[2] ? mm[2].trim() : "";
     var fv = vt ? { type: _packElemWireType(vt), typeName: vt, required: true } : null;
@@ -329,15 +331,24 @@ function _packReadValue(r, f, schemas) {
   }
   if (tag === _PackTag.Object) {
     var cnt = _prI32(r);
+    if (cnt < 0 || cnt > 1000000) throw new Error("[DeukPack] pack object max fields");
     var o2 = {};
+    var sch = (f && f.type === "struct" && schemas && schemas[f.typeName]) ? schemas[f.typeName] : null;
     for (var k = 0; k < cnt; k++) {
       var key = _prString(r);
       var subf = null;
-      if (f && f.type === "struct" && schemas && schemas[f.typeName]) {
-        var sch = schemas[f.typeName];
+      if (sch) {
         for (var fid in sch.fields) if (sch.fields[fid].name === key) subf = sch.fields[fid];
       }
       o2[key] = _packReadValue(r, subf, schemas);
+    }
+    if (sch) {
+      for (var fid2 in sch.fields) {
+        var f2 = sch.fields[fid2];
+        if (o2[f2.name] === undefined && f2.defaultValue !== undefined && f2.defaultValue !== null) {
+          o2[f2.name] = f2.defaultValue;
+        }
+      }
     }
     return o2;
   }

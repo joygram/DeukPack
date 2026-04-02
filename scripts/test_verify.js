@@ -34,7 +34,12 @@ function verify(protocol, finalFile) {
         nested: {
             inner_val: "nested_world",
             numbers: [1, 1, 2, 3, 5]
-        }
+        },
+        empty_nested: {
+            inner_val: "",
+            numbers: []
+        },
+        null_nested: { inner_val: "inner", numbers: [] }
     };
 
     // Deep comparison

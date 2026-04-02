@@ -137,6 +137,7 @@ public class DpJsonProtocol implements DpProtocol {
                     if (ch == ',') commas++;
                     else if (!Character.isWhitespace(ch)) hasToken = true;
                 }
+                if (consumed.length() > MAX_SAFE_LENGTH) throw new RuntimeException("Protocol buffer overflow: unread buffer too large (OOM Guard)");
             }
 
             if (consumed.length() > 0) {
@@ -189,6 +190,7 @@ public class DpJsonProtocol implements DpProtocol {
                     if (ch == ',') commas++;
                     else if (!Character.isWhitespace(ch)) hasToken = true;
                 }
+                if (consumed.length() > MAX_SAFE_LENGTH) throw new RuntimeException("Protocol buffer overflow: unread buffer too large (OOM Guard)");
             }
 
             if (consumed.length() > 0) {
@@ -200,7 +202,7 @@ public class DpJsonProtocol implements DpProtocol {
         }
     }
     private void expect(char exp) { try { char c = skipWS(); if (c != exp) throw new RuntimeException("Expected " + exp + ", got " + c); } catch (IOException e) { throw new RuntimeException(e); } }
-    private String readQuoted() throws IOException { expect('\"'); StringBuilder sb = new StringBuilder(); int c; while ((c = _reader.read()) != -1 && c != '\"') { if (c == '\\') { c = _reader.read(); } sb.append((char)c); } String s = sb.toString(); if (s.length() > MAX_SAFE_LENGTH) throw new RuntimeException("Safe Len"); return s; }
+    private String readQuoted() throws IOException { expect('\"'); StringBuilder sb = new StringBuilder(); int c; while ((c = _reader.read()) != -1 && c != '\"') { if (c == '\\') { c = _reader.read(); } sb.append((char)c); if (sb.length() > MAX_SAFE_LENGTH) throw new RuntimeException("Protocol buffer overflow: string too long"); } return sb.toString(); }
     private void expectKey(String key) { try { String k = readQuoted(); if (!k.equals(key)) throw new RuntimeException("Expected key " + key + ", got " + k); expect(':'); } catch (IOException e) { throw new RuntimeException(e); } }
 
     @Override public DpMessage readMessageBegin() { expect('['); String name = null; try { name = readQuoted(); } catch(Exception e){} expect(','); String typeStr = readSimpleValue(); expect(','); String seqStr = readSimpleValue(); expect(','); return new DpMessage(name, (byte)Integer.parseInt(typeStr), Integer.parseInt(seqStr)); }
