@@ -13,8 +13,8 @@ const COMPILERS = {
     JAVAC: 'javac',
     JAVA: 'java',
     DOTNET: 'dotnet',
-    WSL_GXX: 'wsl g++',
-    ELIXIR: 'wsl elixir'
+    WSL_GXX: process.platform === 'win32' ? 'wsl g++' : 'g++',
+    ELIXIR: process.platform === 'win32' ? 'wsl elixir' : 'elixir'
 };
 
 function runCmd(cmd, args = [], options = {}) {
@@ -27,6 +27,7 @@ function runCmd(cmd, args = [], options = {}) {
 }
 
 function toWslPath(p) {
+    if (process.platform !== 'win32') return p;
     return p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (m, drive) => `/mnt/${drive.toLowerCase()}`);
 }
 
@@ -123,12 +124,12 @@ const callBridge = {
         const cppBridgeBin = path.join(binDir, 'CppBridge');
         if (fs.existsSync(cppBridgeBin)) {
             const inFile = inStep === 'init' ? 'init' : toWslPath(path.join(root, `step${inStep}.bin`));
-            runCmd('wsl', [
-                toWslPath(cppBridgeBin),
-                protocol,
-                inFile,
-                toWslPath(path.join(root, `step${outStep}.bin`))
-            ]);
+            const execCmd = process.platform === 'win32' ? 'wsl' : toWslPath(cppBridgeBin);
+            const execArgs = process.platform === 'win32' 
+                ? [toWslPath(cppBridgeBin), protocol, inFile, toWslPath(path.join(root, `step${outStep}.bin`))]
+                : [protocol, inFile, toWslPath(path.join(root, `step${outStep}.bin`))];
+
+            runCmd(execCmd, execArgs);
         } else {
             console.log('[C++] Bridge binary missing, passing passthrough');
             if (inStep === 'init') throw new Error("C++ cannot be initiator if bridge is missing");

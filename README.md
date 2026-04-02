@@ -61,8 +61,8 @@ DeukPack increments the **Minor** version for each new language or platform supp
 | **v1.4.0** | MCP Protobuf expansion, C#/C++/JS core runtime stabilization | **DONE** |
 | **v1.5.0** | **Java & Core Parity**: Inheritance support, Compact/TJSON protocols, Universal security guards, and **MCP Core Decoupling** | **DONE** |
 | **v1.5.1** | **C++ Zero-Alloc Optimization**: Arena allocator for wire serialization, **C++ DDL Generator** (MySQL, PostgreSQL, SQLite) | **DONE** |
-| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: Ultimate JS/C# memory optimizations and benchmark matrix | **Current** |
-| **v1.7.0** | **Elixir Expansion Pilot**: BEAM-based distributed backend support | **Teaser** |
+| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: Ultimate JS/C# memory optimizations and benchmark matrix | **DONE** |
+| **v1.7.0** | **Elixir Engine Support**: Native Erlang BEAM pattern matching & **Universal Protocol Security Shield** | **Current** |
 
 ---
 
@@ -87,14 +87,14 @@ Current support status and plans for each target platform.
 
 | Category | Feature | TS / JS | C# / Unity | C++ | Java | Elixir |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.7) |
-| **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | 🚧 (v1.7) |
-| **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.7) |
+| **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
+| **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
 | | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
-| **Optimizations**| Zero-Alloc Parsing / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | 🚧 (BEAM) |
+| **Optimizations**| Zero-Alloc Parsing / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) |
 | | `Write` Logic Overrides | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | **Data/Meta** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | DB Interop (EF / SQL) | ⚠️ (1) | ⚠️ (2) | ⚠️ (3) | 🚧 (v1.5) | - |
@@ -190,6 +190,8 @@ DeukPack is designed for **extreme scalability** and **low-latency engineering**
 | | Memory | Continuous | Large Objects | **+2.1 MB (Min)** |
 | **JavaScript (V8)** | Speed | ~ 54 ms | ~ 190 ms | **~ 158 ms** |
 | | Memory | +4.2 MB | -1.9 MB | **Immediate Reclaim** |
+| **Elixir (BEAM)** | Speed | - | - | **~ 31 ms** |
+| | Memory | - | - | **0 MB (Native Match)** |
 
 > [!TIP]
 > Figures are based on decoding a 10,000-row payload and may vary depending on the user environment.  

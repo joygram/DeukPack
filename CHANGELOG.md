@@ -4,6 +4,10 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.7.1] — 2026-04-03
+
+- **Support Matrix Update**: Promoted Elixir capabilities (IDL Core, protocols, inheritance) from pilot (`🚧`) to fully supported (`✅`) reflecting the v1.7.0 delivery.
+
 ## [1.7.0] — 2026-04-03
 
 ### Core: Elixir Support & Unified Protocol Security Shield
