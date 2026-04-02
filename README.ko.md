@@ -61,8 +61,8 @@ npx deukpack init
 | **v1.4.0** | MCP Protobuf 확장, C#/C++/JS 코어 런타임 안정화 | **DONE** |
 | **v1.5.0** | **Java & Core Parity**: 상속 지원, Compact/TJSON 추가, 전수 보안 가드 및 **MCP 코어 분리** | **DONE** |
 | **v1.5.1** | C++ 저지연(Zero-Alloc) 최적화 및 DDL 생성기 보강 | **DONE** |
-| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc 아키텍처**: JS/C# 전수 메모리 최적화 및 벤치마크 공개 | **Current** |
-| **v1.7.0** | **Elixir Expansion Pilot**: BEAM 기반 분산 백엔드 타겟 | **Teaser** |
+| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc 아키텍처**: JS/C# 전수 메모리 최적화 및 벤치마크 공개 | **DONE** |
+| **v1.7.0** | **Elixir Engine Support**: 네이티브 Erlang BEAM 패턴 매칭 및 **유니버설 OOM 보안망 구축** | **Current** |
 
 ---
 
@@ -84,14 +84,14 @@ npx deukpack init
 
 | 카테고리 | 기능 | TS / JS | C# / Unity | C++ | Java | Elixir |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.7) |
-| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | 🚧 (v1.7) |
-| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | 🚧 (v1.7) |
+| **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
+| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
 | | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
-| **최적화**| Zero-Alloc 파싱 / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | 🚧 (BEAM) |
+| **최적화**| Zero-Alloc 파싱 / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) |
 | | `Write` 로직 오버라이드 | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | **데이터/메타** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | DB 연동 (EF / SQL) | ⚠️ (1) | ⚠️ (2) | ⚠️ (3) | 🚧 (v1.5) | - |
@@ -185,6 +185,8 @@ npm install ./deukpack-x.y.z.tgz
 | | 메모리 | 지속 할당 | 대규모 객체 | **+2.1 MB (최소)** |
 | **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | **~ 158 ms** |
 | | 메모리 | +4.2 MB | -1.9 MB | **즉시 회수** |
+| **Elixir (BEAM)** | 속도 | - | - | **~ 31 ms** |
+| | 메모리 | - | - | **0 MB (Native Match)** |
 
 > [!TIP]
 > 위 수치는 10,000 Rows Payload 디코딩 기준이며, 사용자 환경에 따라 차이가 있을 수 있습니다.  
