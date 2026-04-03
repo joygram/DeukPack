@@ -21,11 +21,11 @@ namespace TutorialSample
             // 2) Round-trip Write/Read (binary)
             using (var ms = new MemoryStream())
             {
-                var oprot = DeukPackSerializer.OpenBinaryPack(ms);
+                var oprot = DeukPackCodec.OpenBinaryPack(ms);
                 u.Write(oprot);
                 oprot.Dispose();
                 ms.Position = 0;
-                var iprot = DeukPackSerializer.OpenBinaryUnpack(ms);
+                var iprot = DeukPackCodec.OpenBinaryUnpack(ms);
                 var u2 = new tutorial.DemoUser();
                 u2.Read(iprot);
                 Console.WriteLine($"[Round-trip Binary] Id={u2.Id} Name={u2.Name}");
@@ -44,6 +44,21 @@ namespace TutorialSample
             // 4) extends: UserFull
             var fullUser = new tutorial.UserFull { Id = 1, Tag = "dev", Level = 42 };
             Console.WriteLine($"[extends UserFull] Id={fullUser.Id} Tag={fullUser.Tag} Level={fullUser.Level}");
+
+            // --- Pack / Unpack 2-Method API ---
+            tutorial.DemoUser cachedHero = new tutorial.DemoUser(); // Allocated ONCE
+            byte[] inputData = new byte[] { /* mock */ };
+
+            // Zero-Alloc Unpack: deserialize into existing instance (no GC)
+            try { tutorial.DemoUser.Unpack(cachedHero, inputData); } catch (Exception) { /* catch dummy data exception */ }
+            Console.WriteLine($"Hero: {cachedHero.Name}, HP: {cachedHero.Id}");
+
+            // Pack: serialize to binary (default) or JSON
+            cachedHero.Id = 99;
+            byte[] outputData = cachedHero.Pack();
+            string jsonData   = System.Text.Encoding.UTF8.GetString(cachedHero.Pack(DpFormat.Json));
+            Console.WriteLine($"JSON: {jsonData}");
+            // ----------------------------------
 
             Console.WriteLine("OK");
         }

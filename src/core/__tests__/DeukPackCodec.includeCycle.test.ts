@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { DeukPackEngine } from '../DeukPackEngine';
+import { DeukPackCodec } from '../DeukPackCodec';
 
 describe('parseFileWithIncludes — include graph', () => {
   it('terminates on mutual includes (A ↔ B) without infinite recursion', async () => {
@@ -18,7 +18,7 @@ describe('parseFileWithIncludes — include graph', () => {
       `namespace n;\ninclude "a.deuk"\nrecord Rb { 1> int32 y; }\n`,
       'utf8'
     );
-    const engine = new DeukPackEngine();
+    const engine = new DeukPackCodec();
     const ast = await engine.parseFileWithIncludes(a, { includePaths: [dir] });
     expect(ast.filesProcessed).toBe(2);
     const names = ast.structs.map((s) => s.name).sort();
@@ -42,7 +42,7 @@ describe('parseFileWithIncludes — include graph', () => {
       `namespace n;\ninclude "../a.deuk"\nrecord Rb { 1> int32 y; }\n`,
       'utf8'
     );
-    const engine = new DeukPackEngine();
+    const engine = new DeukPackCodec();
     const ast = await engine.parseFileWithIncludes(a, { includePaths: [dir] });
     expect(ast.filesProcessed).toBe(2);
   });

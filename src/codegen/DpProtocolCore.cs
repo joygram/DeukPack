@@ -109,7 +109,7 @@ namespace DeukPack.Protocol
 
     /// <summary>
     /// DeukPack.Protocol 런타임 직렬화 스트림 포맷. 레거시 JSON(<see cref="DpFormat.Json"/>)과 Deuk 값만 JSON·YAML(<see cref="DpFormat.DeukJson"/>, <see cref="DpFormat.DeukYaml"/>)은 스펙이 다르다.
-    /// <see cref="DeukPackSerializer"/>·프로토콜 구현체가 공통으로 참조한다.
+    /// <see cref="DeukPackCodec"/>·프로토콜 구현체가 공통으로 참조한다.
     /// </summary>
     public enum DpFormat
     {

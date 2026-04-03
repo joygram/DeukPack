@@ -1,12 +1,12 @@
 {
-  "version": "1.7.3",
+  "version": "1.8.0",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce": "<strong>득팩 코어 1.6.0</strong> — JavaScript V8 JIT Codegen · C# 무할당(Zero-Alloc) 아키텍처 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약 (KO/EN)</a>",
-  "announce_ko": "<strong>득팩 코어 1.6.0</strong> — JavaScript V8 JIT Codegen · C# 완전 무할당(Zero-Alloc) · 크로스 랭귀지 벤치마크 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>",
-  "announce_en": "<strong>DeukPack Core 1.6.0</strong> — JavaScript V8 JIT Codegen · C# Zero-Alloc architecture · Cross-language benchmark —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
-  "landing_ko": "**득팩 코어 1.6.0** — JavaScript(Node.js/Web) 환경에 사전 컴파일 기반 정적 **V8 JIT Codegen**을 도입하여 동역 파싱 대비 속도를 250% 높이고 힙 할당을 즉시 회수합니다. 또한 C#(Unity) 파이프라인을 `[StructLayout]` 기반의 **완전 무할당(Zero-Alloc) 구조**로 격상시켜 백만 회 로딩에도 0바이트의 가비지를 보장합니다. 퍼포먼스가 중요한 모든 레이어에 업계 최상위권의 속도와 메모리 안정성을 제공합니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
-  "landing_en": "**DeukPack core 1.6.0** — Introduced pre-compiled **V8 JIT Codegen** for JavaScript (Node.js/Web), achieving a 250% parsing speed boost and zero GC spikes. Upgraded the C# (Unity) pipeline to a strictly-sized `[StructLayout]` **Zero-Alloc architecture**, guaranteeing 0-byte heap allocation across over a million operations. Delivers industry-leading latency and absolute memory stability to all critical execution layers. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
+  "announce": "<strong>득팩 코어 1.8.0</strong> — Elixir Dialyzer 자동화 · Static API 통일 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약 (KO/EN)</a>",
+  "announce_ko": "<strong>득팩 코어 1.8.0</strong> — Elixir Dialyzer 자동화 · 크로스 랭귀지 Static API 통일 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>",
+  "announce_en": "<strong>DeukPack Core 1.8.0</strong> — Elixir Dialyzer Automation · Unified Static APIs —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
+  "landing_ko": "**득팩 코어 1.8.0** — Elixir `Dialyzer` 타입 추론을 완벽하게 통과하는 런타임 제네레이터를 도입하고, C#과 C++의 메모리 재활용 패턴을 전 언어권에 걸쳐 일관된 **정적(Static) API** 로 통일했습니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.8.0** — Implemented an Elixir runtime generator that perfectly passes `Dialyzer` type inference, and unified memory-pooling patterns from C# and C++ into consistent **Static APIs** across all runtime languages. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
   "product_notices": [
     {
       "date": "2026-04-01",
@@ -53,8 +53,8 @@
       ],
       "title_ko": "1.2.6 — 스키마 표준·C# 코드젠·C++ CI·verify",
       "title_en": "1.2.6 — schema strings, C# codegen, C++ CI, verify",
-      "body_ko": "- **스키마**: `struct`/`enum`/`int32` 등 득팩 표준; JSON 와이어 `{i32}` 등 키는 그대로.\n- **C#**: `DpSchemaType` `Int16`/`Int32`/`Int64`, 생성 타입 기본 초기화.\n- **CI**: Ubuntu·Windows에서 C++ `ctest`.\n- **도구**: `npm run verify`.",
-      "body_en": "- **Schema**: DeukPack **`type`** strings; **JSON wire** keys (`i32`, `tf`, …) unchanged.\n- **C#**: **`DpSchemaType`** **`Int16`/`Int32`/`Int64`**, codegen property defaults.\n- **CI**: C++ **`ctest`** on Ubuntu and Windows.\n- **Tooling**: **`npm run verify`**."
+      "body_ko": "- **스키마**: `struct`/`enum`/`int32` 등 득팩 표준; JSON 와이어 `{int32}` 등 키는 그대로.\n- **C#**: `DpSchemaType` `Int16`/`Int32`/`Int64`, 생성 타입 기본 초기화.\n- **CI**: Ubuntu·Windows에서 C++ `ctest`.\n- **도구**: `npm run verify`.",
+      "body_en": "- **Schema**: DeukPack **`type`** strings; **JSON wire** keys (`int32`, `tf`, …) unchanged.\n- **C#**: **`DpSchemaType`** **`Int16`/`Int32`/`Int64`**, codegen property defaults.\n- **CI**: C++ **`ctest`** on Ubuntu and Windows.\n- **Tooling**: **`npm run verify`**."
     },
     {
       "date": "2026-03-27",

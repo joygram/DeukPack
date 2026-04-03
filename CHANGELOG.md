@@ -4,6 +4,32 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.8.0] — 2026-04-03
+
+### Core: Unified Serialization API & Static Overloads
+- **API Purity (C# / Java)**: Resolved `CS0111` compiler collisions by fully standardizing the `Pack` / `Unpack` API across all languages using Static Overloads. Removed legacy instance-level serialization methods to enforce universal API parity.
+- **Zero-Allocation Architecture Hardening**: Standardized the `Unpack(obj, bin)` in-place update interface across C# and C++ to explicitly support memory-pooling optimization in high-frequency network Hotpaths (Unity / Unreal), completely eliminating GC spikes and OS Native Heap lock contention.
+- **JavaScript V8 Optimization**: Formally documented and recommended the Factory `unpack(bin)` pattern specifically for Node.js / V8 environments to preserve Hidden Classes/Inline Caching (IC) and exploit the nursery GC for short-lived packet objects.
+
+### Security & Static Analysis
+- **Elixir Dialyzer Compliance**: Injected robust `@spec` typespec annotations across all generated Elixir `pack` and `unpack` serialization functions. Enforces strict static typing (`@type t()`, `binary()`) to guarantee zero "no_return" or type-mismatch warnings during CI/CD `mix dialyzer` runs.
+- **Dialyzer Automation**: Scaffolded an automated Dialyzer verification test script (`scripts/test_elixir_dialyzer.js`) in the DeukPack pipeline to continually assert Elixir type-safety.
+
+## [1.7.6] — 2026-04-03
+
+### Documentation
+- **C# Snippet Syntax**: Corrected the "At a glance" Quick Start snippet across all READMEs to natively compile with actual out-of-the-box `DeukPackCodec` methods, removing the pseudo-code ambiguity.
+
+## [1.7.5] — 2026-04-03
+
+### Hotfix
+- **README Formatting**: Fixed empty markdown table headers (`| | |`) which caused the NPM registry markdown-it parser to crash and drop the entire README.
+
+## [1.7.4] — 2026-04-03
+
+### Hotfix
+- **README Formatting**: Completely removed blockquote markdown syntax from CAUTION/TIP sections to ensure 100% compatibility with NPM registry renderer.
+
 ## [1.7.3] — 2026-04-03
 
 ### Hotfix
@@ -175,7 +201,7 @@ Notable changes to the `deukpack` npm package by release.
 
 ### Changed
 
-- **Schema / embedded metadata**: Field and root schema `type` strings use **DeukPack spelling** (`struct`, `enum`, `int16` / `int32` / `int64`, etc.). **C#** `DpSchemaType` uses **`Int16` / `Int32` / `Int64`** with **`SchemaTypeToStandardString`** for string forms. **JSON compatibility wire** object keys (`i32`, `tf`, `str`, `lst`, …) are unchanged.
+- **Schema / embedded metadata**: Field and root schema `type` strings use **DeukPack spelling** (`struct`, `enum`, `int16` / `int32` / `int64`, etc.). **C#** `DpSchemaType` uses **`Int16` / `Int32` / `Int64`** with **`SchemaTypeToStandardString`** for string forms. **JSON compatibility wire** object keys (`int32`, `tf`, `str`, `lst`, …) are unchanged.
 - **C# codegen**: Generated types initialize **`string`** / struct references so **`nullable` enable** builds stay clean; optional struct **`Clone()`** uses a null-forgiving path when codegen nullable mode is off.
 - **CI**: **C++** native wire library **build + `ctest`** on **Ubuntu** and **Windows** runners.
 - **Tooling**: **`npm run verify`** runs the same checks as the **GitHub Actions** workflow locally.

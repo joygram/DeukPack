@@ -5,7 +5,7 @@
  * - DpProtocolCore.cs      인터페이스·와이어 타입·스키마·DpTypeNames
  * - DpBinaryProtocol.cs   바이너리 프로토콜 (ArrayPool·최적화)
  * - DpJsonProtocol.cs     JSON 프로토콜
- * - DeukPackSerializer.cs 직렬화 헬퍼 (WriteValue, ReadValue, WriteList, ReadList 등)
+ * - DeukPackCodec.cs 직렬화 헬퍼 (WriteValue, ReadValue, WriteList, ReadList 등)
  * - DpProtocolUtil.cs     Skip 등 유틸
  * - TBinaryProtocol.cs    Thrift 호환 별도 구현
  *

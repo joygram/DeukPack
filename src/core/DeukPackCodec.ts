@@ -92,7 +92,7 @@ function pickSourceFileForForwardRefEnum(
   return entryFile;
 }
 
-export class DeukPackEngine {
+export class DeukPackCodec {
   private parser: IdlParser;
   private deukParser: DeukParser;
   private protoParser: ProtoParser;

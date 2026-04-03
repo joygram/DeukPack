@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { DeukPackEngine } from '../../core/DeukPackEngine';
+import { DeukPackCodec } from '../../core/DeukPackCodec';
 import { CppGenerator } from '../cpp';
 import type { GenerationOptions } from '../../types/DeukPackTypes';
 
@@ -16,7 +16,7 @@ describe('CppGenerator — output names and umbrella headers', () => {
       `namespace g;\nrecord R { 1> int32 x; }\n`,
       'utf8'
     );
-    const engine = new DeukPackEngine();
+    const engine = new DeukPackCodec();
     const ast = await engine.parseFileWithIncludes(stub, { includePaths: [dir] });
     const gen = new CppGenerator();
     const files = await gen.generate(ast, {} as GenerationOptions);

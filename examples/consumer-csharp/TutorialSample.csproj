@@ -23,7 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\DeukPack.Protocol\DeukPack.Protocol.csproj" />
-    <Compile Include="..\generated\csharp\**\*.cs" />
+    <Compile Include="..\generated\csharp\net8.0\*.cs" Condition="'$(TargetFramework)' != 'netstandard2.0'" />
+    <Compile Include="..\generated\csharp\netstandard2.0\*.cs" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
     <Compile Remove="..\generated\csharp\*.proto.cs" />
   </ItemGroup>
 

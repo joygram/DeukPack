@@ -6,7 +6,7 @@
  * Supports single-file mode and --pipeline <config.json> for multi-job + copy steps.
  */
 
-const { DeukPackEngine } = require('../dist/index');
+const { DeukPackCodec } = require('../dist/index');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -217,7 +217,7 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
     const langOutputSubdirs = mergeLangOutputSubdirs(options.langOutputSubdirs);
     options = { ...options, langOutputSubdirs };
     await fs.mkdir(outputDir, { recursive: true });
-    const engine = new DeukPackEngine();
+    const engine = new DeukPackCodec();
     const defineVersionFile = path.join(path.dirname(path.resolve(thriftFile)), 'define_version.txt');
 
     console.log('📖 Parsing IDL files...');

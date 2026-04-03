@@ -5,7 +5,7 @@
 
 import { getDeukPackPackageVersion } from './deukpackVersion';
 
-export * from './core/DeukPackEngine';
+export * from './core/DeukPackCodec';
 export * from './core/IdlParser';
 export * from './core/DeukParser';
 export * from './core/ProtoParser';
@@ -32,7 +32,7 @@ export type { EmbeddedPackSchemaField, EmbeddedPackStructSchema } from './serial
 export * from './ai/AiContextGenerator';
 
 // Native bindings
-export { NativeDeukPackEngine } from './native/NativeDeukPackEngine';
+export { NativeDeukPackCodec } from './native/NativeDeukPackCodec';
 
 // Version info (package.json)
 export const VERSION = getDeukPackPackageVersion();

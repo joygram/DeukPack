@@ -4,7 +4,7 @@
 
 import { DeukPackAST, DeukPackEnum, DeukPackField, DeukPackStruct, GenerationOptions } from '../../types/DeukPackTypes';
 import { CodeGenerator } from '../CodeGenerator';
-import { DeukPackEngine } from '../../core/DeukPackEngine';
+import { DeukPackCodec } from '../../core/DeukPackCodec';
 import { CodegenTemplateHost } from '../codegenTemplateHost';
 import { csharpSuffixFromProfile, filterStructFieldsForProfile } from '../WireProfileSubset';
 import { buildEmbeddedStructSchema, getEmbeddedSchemaTypeInfo } from '../embeddedStructSchema';
@@ -13,7 +13,7 @@ export class JavaScriptGenerator extends CodeGenerator {
   private readonly _tpl = new CodegenTemplateHost('javascript');
 
   async generate(ast: DeukPackAST, options: GenerationOptions): Promise<{ [filename: string]: string }> {
-    DeukPackEngine.resolveExtends(ast);
+    DeukPackCodec.resolveExtends(ast);
 
     const lines: string[] = [];
     const preamble = this._tpl.render('JsFilePreamble.js.tpl', {

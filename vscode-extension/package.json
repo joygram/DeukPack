@@ -2,7 +2,7 @@
   "name": "deuk-idl",
   "displayName": "Deuk IDL",
   "description": "득팩(DeukPack) IDL용 문법 하이라이트, 린트, 포매터. .deuk 기본 지원, .thrift 호환.",
-  "version": "0.1.0",
+  "version": "1.7.6",
   "publisher": "deukpack",
   "engines": {
     "vscode": "^1.85.0"

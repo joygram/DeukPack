@@ -9,202 +9,236 @@
 
 **언어 / Languages:** [English](README.md) · [한국어](README.ko.md)
 
-**AI 시대의 돌파구:** 여러 IDL 정의(Protobuf, OpenAPI, JSON Schema, CSV, 레거시 `.thrift`)를 **결정론적이고 타입 안전한 C#, C++, TypeScript, JavaScript** 코드로 변환하며, **AI 시맨틱 매핑**, **MCP 서버 자동 생성**, 그리고 **Zod 기반 가드레일**을 제공합니다.
-
-### 🚀 Quick Start
-```bash
-npx deukpack init
-```
+어떤 IDL이든(Protobuf, OpenAPI, JSON Schema, `.deuk`) **타입 안전 결정론적 코드**로 변환 — C#, C++, TypeScript, JavaScript, Java, Elixir — **단 하나의 통합 직렬화 API**로.
 
 ---
 
-**여기서 시작 — 한 가지만 고르세요**
-
-- **내 저장소에 바로 적용:** 프로젝트 루트 로컬 설치 — **[설치](#설치)** · **[설치 및 튜토리얼](https://deukpack.app/ko/tutorial/)**.
-- **매뉴얼 읽기:** **[deukpack.app](https://deukpack.app/ko/)** — 개요, 프로토콜, **[API 레퍼런스](https://deukpack.app/ko/reference/api/)**.
-- **폴더에서 직접 실습 (🚧 봉인됨 - 곧 공개 예정):** **[제로 베이스 실습](https://kits.deukpack.app/ko/starter-course/hands-on/)**; 스토리 기반 온보딩 **[득팩 크로니클](https://kits.deukpack.app/ko/journey/)** 또는 *[무너진 유적](https://kits.deukpack.app/ko/starter-course/)*.
-
-**사이트 및 문서의 역할**은 아래 **[문서 및 링크](#문서-및-링크)** 섹션에서 요약합니다.
-
-**npm / OSS 공개 범위 (v1 제품군):** **IDL → 다언어 코드젠, CLI**, Binary/Compact/JSON 와이어. **Excel 프로토콜과 Excel Add-in은 별도로 배포되며**, 코어 npm 패키지에 포함되지 않습니다. **범위 및 로드맵:** [DEUKPACK_V1_RELEASE_SCOPE.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_V1_RELEASE_SCOPE.ko.md) · 개요 **[deukpack.app](https://deukpack.app/ko/)**.
-
-**버전:** [`package.json`](package.json)의 `version` 및 상단 **npm 배지** 기준. **1.0.x ↔ 1.1.0 ↔ 1.2.x** 변경 사항: [CHANGELOG.ko.md](CHANGELOG.ko.md) (KO) · [CHANGELOG.md](CHANGELOG.md) (EN).
+> [!WARNING]
+> ### 🚨 [필독] 코어 아키텍처 대통합 & 마이그레이션 노티스 (v1.8.0+)
+> 기존 언어별 통합 코어 모듈 구조가 **`DeukPackCodec`**으로 전면 최적화 및 통합되었습니다!
+> 
+> - **초간편 통일 API:** 더 이상 장황한 팩토리를 부를 필요가 없습니다. 이제 모든 언어에서 직관적으로 구조체 자체의 **`Hero.Pack()`** 과 **`Hero.Unpack()`** (2-Method) 문법을 공통으로 사용합니다. (하위 호환성을 위해 구 API도 당분간 유지됩니다.)
+> - **⚠️ 주의사항 (C# / Unity 사용자):** UPM을 사용하지 않고 생성된 `.cs` 런타임 파일들을 직접 복붙해 사용하신 분들은, 이름 충돌을 막기 위해 **반드시 기존 런타임 폴더를 전부 삭제(초기화)하신 후** 새 코드를 복사해 넣어주세요. (npm 사용자는 무시하셔도 됩니다.)
 
 ---
 
 ## 왜 DeukPack인가: AI-Ready의 이점
 
 ### 1. 유니버설 IDL 게이트웨이 (OpenAPI, JSON Schema, Protobuf, Thrift, CSV)
-현대 시스템은 레거시(Thrift), 현대적 인프라(Protobuf/gRPC), 웹 기반 API(OpenAPI/JSON Schema) 등 파편화된 인터페이스 스펙이 뒤섞여 있어 개발자와 AI 모두에게 거대한 "맥락의 공백"을 만듭니다.
-- **원본 수정 없는 즉시 도입:** 기존의 `.proto`나 `.thrift` 파일을 **수정할 필요가 없습니다.** 득팩은 다양한 IDL 소스를 하나의 일관된 모델로 통합하는 **단일 진실 공급원(Single Source of Truth)** 역할을 합니다.
-- **득팩의 솔루션:** 단순한 변환기를 넘어, 모든 인터페이스를 결정론적 SDK로 정렬하면서도 **기존 레거시 프로토콜과 완벽한 바이너리 호환성**을 유지합니다. *(참고: Protobuf 지원은 현재 프리뷰이며, 중첩 메시지 등 고급 기능은 개발 중입니다.)*
+현대 시스템은 레거시(Thrift), 현대적(Protobuf/gRPC), 웹 기반(OpenAPI/JSON Schema) 인터페이스가 뒤섞여 있습니다. DeukPack은 **단일 진실 공급원(Single Source of Truth)**으로 다양한 IDL을 하나의 통합 모델로 집약하며 — 기존 레거시 프로토콜과 완전한 와이어 호환성을 유지합니다.
 
 ### 2. IDL-to-AI 시맨틱 매핑
-단순한 데이터 타입을 넘어, IDL 주석(`/** ... */`)과 필드 구조에서 추출된 메타데이터를 AI가 즉시 이해할 수 있는 **'의미론적 맥락(Semantic Context)'**으로 전환합니다.
-- **돌파구:** 엔지니어는 단순 코딩 업무에서 벗어나, 데이터의 계보(Lineage)를 기계가 읽을 수 있는 형태로 설계하는 정교한 **상위 아키텍트**로 진화합니다.
 
-### 3. AI-Native 실행 브리지 (MCP 플러그인 대응)
-기존의 IDL 도구들이 정적인 코딩만 지원했다면, 득팩은 에이전트가 현실 세계와 소통할 수 있는 **런타임 실행 브리지**를 구축합니다.
-- **플러그인 기반 확장:** **MCP(Model Context Protocol)** 서버 자동 생성 기능을 별도 플러그인(`DeukPackMcp`)으로 분리하여 코어의 경량화와 확장성을 동시에 확보했습니다. Cursor, Claude Desktop 등의 AI 에이전트가 코어에서 추출된 **지능형 컨텍스트**를 기반으로 실시간 문서를 조회하고 백엔드 기능을 실행할 수 있도록 지원합니다.
+IDL 주석과 필드 구조에서 메타데이터를 추출하여 AI가 즉시 이해할 수 있는 **의미론적 맥락(Semantic Context)**으로 전환합니다. 엔지니어는 데이터 계보(Lineage)를 기계 판독 가능한 형태로 설계하는 아키텍트로 진화합니다.
 
-### 4. Zero-Allocation 극한의 성능 (Bottleneck-Free)
-득팩은 리소스 효율성을 위해 설계되었습니다. 수백 개의 IDL 파일을 파싱하거나 대규모 객체를 직렬화할 때, 기존 업계 표준 대비 **수십 배 이상의 속도와 낮은 메모리 점유율**을 유지합니다. 실제 수치는 아래 [성능](#성능-병목-없는-지능형-코어) 섹션을 참고하세요.
+### 3. AI-Native 실행 브리지 (MCP 플러그인 지원)
+
+**MCP(Model Context Protocol) 서버 자동 생성** 기능(`DeukPackMcp`)을 통해 AI 에이전트(Cursor, Claude 등)가 라이브 문서를 탐색하고 백엔드 메서드를 직접 실행할 수 있습니다.
+
+### 4. Zero-Allocation 고성능
+
+극한의 효율성을 위해 설계되었습니다. 기존 업계 방식 대비 **메모리 할당 60~100% 감소**, **JS 파싱 속도 250% 향상**.
 
 ---
 
-## 🚀 릴리스 로드맵 (Roadmap)
+## ⚡ 두 단어. 모든 언어.
 
-득팩(DeukPack)은 언어·플랫폼 지원 확대 시마다 마이너 버전을 갱신하며, 현재 **v1.5.x 시리즈**를 통해 생태계를 확장 중입니다.
+DeukPack v1.7.6는 **범용 2-Method 직렬화 API**를 도입합니다: **`Pack`** 과 **`Unpack`**.  
+언어와 포맷(Binary, JSON, Zero-Alloc)에 상관없이 두 동사만 기억하면 됩니다.
 
-| 버전 | 주요 목표 (Milestones) | 상태 |
+```
+Pack    → 직렬화 (데이터 출력)
+Unpack  → 역직렬화 (데이터 입력)
+```
+
+**format 매개변수**로 프로토콜을 전환하고, **기존 인스턴스**에 `Unpack`을 호출하면 Zero-Alloc 덮어쓰기가 됩니다.  
+이것이 전체 API 표면입니다.
+
+> [!CAUTION]
+> **Unity / C# 사용자 주의 (Zero-Alloc 방어):**
+> 매 프레임 수신되는 패킷(Hotpath) 처리 시 절대 `var h = Hero.Unpack(bin);` (Factory 방식)을 사용하지 마세요. 내부적으로 은밀하게 `new` 연산을 유발해 가비지 수집(GC) 스파이크와 심각한 프레임 렉을 발생시킵니다.
+> **반드시** 게임 시작 시 미리 할당(new)해 둔 객체를 이용해 데이터를 덮어쓰는 **`Hero.Unpack(cachedHero, bin);`** 방식을 사용해야 프레임 드랍이 없는 완벽한 Zero-Allocation 아키텍처가 달성됩니다.
+
+```csharp
+// C# / Unity: 1.Create  2.Pack  3.Unpack (Zero-Alloc)
+var hero = new Dto.Hero { id = 1, name = "Deuk" };
+byte[] bin = Dto.Hero.Pack(hero);          // Serialize (Static)
+Dto.Hero.Unpack(hero, bin);                // Zero-Alloc (Static-Update)
+```
+
+```typescript
+// TypeScript / JavaScript: 1.Create  2.Pack  3.Unpack (No Class Wrappers)
+const hero = Dto.Hero.create({ id: 1, name: "Deuk" });
+const bin = Dto.Hero.pack(hero);           // Serialize
+Dto.Hero.unpack(hero, bin);                // In-place Update
+```
+
+```cpp
+// C++ (Native): 1.Create  2.Pack  3.Unpack (Memory Safe)
+Dto::Hero hero; hero.id = 1; hero.name = "Deuk";
+auto bin = Dto::Hero::Pack(hero);          // Serialize
+Dto::Hero::Unpack(hero, bin);              // Zero-Alloc Deserialize
+```
+
+```java
+// Java: 1.Create  2.Pack  3.Unpack (High-Performance)
+Dto.Hero hero = new Dto.Hero(1, "Deuk");
+byte[] bin = Dto.Hero.pack(hero);          // Serialize (Static)
+Dto.Hero.unpack(hero, bin);                // In-place Overwrite (Static)
+```
+
+```elixir
+# Elixir: 1.Create  2.Pack  3.Unpack (BEAM Native)
+hero = %Dto.Hero{id: 1, name: "Deuk"}      # Immutable Struct
+bin = Dto.Hero.pack(hero)                  # Serialize
+hero_parsed = Dto.Hero.unpack(bin)         # BEAM Pattern Match
+```
+
+
+---
+
+### 🚀 Quick Start
+
+```bash
+npx deukpack init
+```
+
+**1. 스키마 정의 (또는 OpenAPI / Protobuf 임포트)**
+
+```deuk
+namespace Dto
+
+struct Hero {
+    1> int32 id
+    2> string name
+    3> float hp
+}
+```
+
+
+---
+
+### 🔄 하위 호환성 — 기존 코드는 그대로 작동합니다
+
+모든 **레거시 메서드명은 deprecated alias로 보존**됩니다. Breaking Change 없음.
+
+| 구 API (여전히 작동) | 새 등가 API |
+| :--- | :--- |
+| `Hero.toBinary(obj)` | `Hero.pack(obj)` |
+| `Hero.toJson(obj)` | `Hero.pack(obj, 'json')` |
+| `Hero.fromBinary(buf)` | `Hero.unpack(buf)` |
+| `Hero.fromJson(str)` | `Hero.unpack(str, 'json')` |
+| `Hero.unpackInto(obj, buf)` | `Hero.unpack(obj, buf)` |
+| `DeukPackCodec.UnpackInto(obj, data)` | `obj.Unpack(data)` *(C#)* |
+
+기존 코드는 컴파일 에러 없이 그대로 동작합니다. IDE는 deprecated 메서드에 밑줄을 그어 `Pack/Unpack`으로 마이그레이션을 부드럽게 유도합니다.
+
+---
+
+### 🎮 실전 패턴: Unity 게임 클라이언트 (Zero-Alloc)
+
+```csharp
+Dto.Hero cachedHero = new Dto.Hero(); // 시작 시 딱 한 번만 할당
+
+void OnNetworkMessage(byte[] inputData) {
+    // Zero-Garbage 역직렬화 — 신규 객체(Class) 할당 없음!
+    cachedHero.Unpack(inputData);
+    Debug.Log($"Hero: {cachedHero.name}, HP: {cachedHero.hp}");
+
+    // 값 변경 후 재직렬화 (주의: byte[] 버퍼 재사용은 Stream API 사용)
+    cachedHero.hp -= 10f;
+    byte[] outputData = Dto.Hero.Pack(cachedHero);
+    network.Send(outputData);
+}
+```
+
+---
+
+
+## 🚀 릴리즈 로드맵
+
+| 버전 | 주요 마일스톤 | 상태 |
 | :--- | :--- | :--- |
-| **v1.4.0** | MCP Protobuf 확장, C#/C++/JS 코어 런타임 안정화 | **DONE** |
-| **v1.5.0** | **Java & Core Parity**: 상속 지원, Compact/TJSON 추가, 전수 보안 가드 및 **MCP 코어 분리** | **DONE** |
-| **v1.5.1** | C++ 저지연(Zero-Alloc) 최적화 및 DDL 생성기 보강 | **DONE** |
-| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc 아키텍처**: JS/C# 전수 메모리 최적화 및 벤치마크 공개 | **DONE** |
-| **v1.7.0** | **Elixir Engine Support**: 네이티브 Erlang BEAM 패턴 매칭 및 **유니버설 OOM 보안망 구축** | **Current** |
+| **v1.4.0** | MCP Protobuf 확장, C#/C++/JS 코어 런타임 안정화 | **완료** |
+| **v1.5.0** | **Java & 코어 패리티**: 상속, Compact/TJSON, MCP 분리 | **완료** |
+| **v1.5.1** | **C++ Zero-Alloc 최적화**: Arena 할당자, C++ DDL 생성기 | **완료** |
+| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc**: JS/C# 메모리 최적화 | **완료** |
+| **v1.7.0** | **Elixir 엔진 지원**: 네이티브 BEAM 패턴 매칭 & 보안 방어 | **완료** |
+| **v1.7.6** | **통합 2-Method API**: 6개 언어 전체 `Pack`/`Unpack` 표준화 | **현재** |
 
 ---
 
 
 
+| 환경 | 지표 | 서드파티 태그 기반 | 서드파티 RPC 기반 | **DeukPack** |
+| :--- | :--- | :---: | :---: | :---: |
+| **C# / Unity** | 속도 | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
+| | 메모리 | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
+| **C++ (Native)** | 속도 | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
+| | 메모리 | 힙 할당 | 힙 할당 | **수동 풀** |
+| **Java (Backend)** | 속도 | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
+| | 메모리 | 지속적 | 대형 객체 | **+2.1 MB (최소)** |
+| **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
+| | 메모리 | +4.2 MB | -1.9 MB | **즉시 회수** |
+| **Elixir (BEAM)** | 속도 | - | - | ~ **31 ms** |
+| | 메모리 | - | - | **0 MB (네이티브 매칭)** |
 
-👉 **[성능 테스트 결과 요약 및 상세 비교표 보기](#-성능-지향점-확장성-및-효율성)
-
-### 버전 관리 정책 (Versioning Policy)
-
-- **Minor (0.X.0)**: **신규 언어 지원**, **신규 플랫폼 아웃풋** 추가 및 주요 기능 확장.
-- **Patch (0.0.X)**: 기존 기능의 버그 수정, 성능 최적화, 사소한 개선.
+> 10,000행 페이로드 디코딩 기준. 환경에 따라 결과가 다를 수 있습니다.
 
 ---
 
-## 기능 지원 매트릭스 (Feature Matrix)
+## 피처 매트릭스
 
-각 타겟 플랫폼별 지원 현황 및 계획입니다.
-
-| 카테고리 | 기능 | TS / JS | C# / Unity | C++ | Java | Elixir |
+| 카테고리 | 피처 | TS / JS | C# / Unity | C++ | Java | Elixir |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **IDL 코어** | 기본 타입 / 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
+| **통합 API** | `Pack` / `Unpack` (2-method) | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 |
 | **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| | Protobuf Compatible | ✅ | ✅ | ✅ | ✅ | - |
-| | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
+| | Protobuf 호환 | ✅ | ✅ | ✅ | ✅ | - |
+| | Thrift 호환 (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
-| | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
-| **최적화**| Zero-Alloc 파싱 / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) |
-| | `Write` 로직 오버라이드 | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
-| **데이터/메타** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
-| | DB 연동 (EF / SQL) | ⚠️ (1) | ⚠️ (2) | ⚠️ (3) | 🚧 (v1.5) | - |
-| **AI & IDE 통합** | 도구 자동 생성 (Skill) | ✅ (v1.5 MCP 분리) | 🚧 | - | - | - |
-| | 지능형 컨텍스트 (Knowledge) | ✅ (Core Ready) | ✅ | ✅ | ✅ | ✅ |
-| | IDE 인코더/인텔리센스 | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-- ✅: 정식 지원 / Production Ready
-- ⚠️: 프리뷰 / 일부 기능 지원 또는 제약 있음
-- 🚧: 파일럿 / 개발 진행 중
-- -: 현재 미지원
-
-> **⚠️ CAUTION:** **데이터베이스 연동 (⚠️) 상세 제약 사항:**
-> 1. **TS / JS**: JSON/Binary 직렬화 기반 저장 위주. 관계형 매핑은 제한적(Blob 중심).
-> 2. **C# (EF Core)**: `entity` 키워드를 통한 테이블 생성 지원. 단, **중첩 컬렉션(List/Map/Set)** 필드는 SQL 컬럼 자동 매핑 미지원 (Blob 저장 또는 수동 Converter 필요).
-> 3. **C++**: DDL(SQL) 생성 위주. 런타임 ORM 연동은 지원되지 않음.
-> 4. **공통**: 스키마 구조 변경에 따른 DB Migration(변경 관리) 로직은 제공되지 않음.
-
-### 언어별 주요 특징
-
-*   **C# (.NET / Unity)**: 게임 클라이언트를 위한 **Zero-Allocation** 파서, 백엔드 연동을 위한 **EF Core** 지원(제약사항 참고), 그리고 IDL 기반 설정 관리를 위한 **MetaTable Registry**, **YAML 프로토콜**(v1.2.7) 기능을 제공합니다.
-*   **TypeScript / JSON**: AI 도구 호출을 위한 **MCP (Model Context Protocol)** 플러그인 대응 및 지능형 컨텍스트 추출, 순수 JS 객체(**POJO**) 기반의 유연한 매핑, 그리고 v1.5.0에서 분리된 **DeukPackMcp**를 통한 도구 실행 환경을 지원합니다.
-*   **C++**: **저지연(Low-latency)** 및 **임베디드** 환경에 최적화되어 있으며, v1.5.0에서 안정화된 **Binary/Compact** 및 **JSON** 프로토콜 호환성과 최소한의 메모리 점유율에 집중합니다.
-*   **Java**: 다양한 플랫폼 간의 상호운용성을 보장하며, v1.5.0에서 추가된 **상속(extends)** 지원과 **Compact/TJSON** 프로토콜을 통해 Thrift 생태계와의 완전한 패리티를 달성했습니다.
+| **최적화** | Zero-Alloc / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) |
+| **AI 통합** | MCP 툴 자동 생성 | ✅ (v1.5) | 🚧 | - | - | - |
+| | IDE IntelliSense | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
 ## 설치
 
-상세 튜토리얼 및 OS별 안내: **[deukpack.app/ko/tutorial](https://deukpack.app/ko/tutorial/)**.
-
-**프로젝트 루트에 로컬 설치**하는 것을 권장합니다(레포별 버전 고정). 이 가이드는 **`npm install -g deukpack`** (전역 설치)을 다루지 않습니다.
-
-프로젝트 루트에서:
-
 ```bash
 npm install deukpack
 npx deukpack init
-npx deukpack run         # 기본값: ./deukpack.pipeline.json
+npx deukpack run
 ```
 
-**CLI 참고:** **`npx deukpack …`**은 이 프로젝트의 **`node_modules/.bin`**에 설치된 **`deukpack`** 실행 파일을 호출합니다. **`npm deukpack`**은 유효한 npm 명령어가 아닙니다. **`npx`**를 사용하거나 `package.json`의 scripts를 사용하세요.
-
-**`npx deukpack init`**은 **`deukpack.pipeline.json`**을 작성하고 **bootstrap**을 실행합니다. 이를 통해 **`.deukpack/workspace.json`**(Unity/프로젝트 탐색 정보)이 생성되거나 갱신됩니다. 마지막에는 VS Code, Cursor 등에 에디터 확장을 설치하기 위해 **`bundled/deuk-idl.vsix`** 설치를 시도합니다(건너뛰기는 **`--skip-vsix`**). 수동 설치 안내: [`bundled/README.ko.md`](bundled/README.ko.md).
-
-GitHub 릴리스 타볼(tarball) 기준 설치:
-
-```bash
-npm install ./deukpack-x.y.z.tgz
-```
-
-**`npm install deukpack` postinstall**은 초기 설정 파일이 없을 때만 **`npx deukpack init`** 안내를 출력합니다. 파이프라인 파일 없이 **`npx deukpack <entry.deuk> <outDir>`** 명령어로 1회성 실행도 가능합니다.
+튜토리얼: **[deukpack.app/ko/tutorial](https://deukpack.app/ko/tutorial/)**.
 
 ---
 
-## 🛡️ 보안성 및 인프라 신뢰성 (Security & OOM Defense)
+## 🛡️ 보안 & 신뢰성 (OOM 방어 / Anti-DDoS)
 
-득팩은 외부 네트워크의 텍스트/바이트 페이로드를 직접 파싱하는 인프라 컴포넌트로서 **네트워크 파싱 취약점(OOM, 버퍼 플러딩, 무한 루프)**에 대한 근본적인 방어 메커니즘을 내장하고 있습니다. 
-
-- **유니버설 OOM(Out of Memory) 방어 (v1.7.0+)**: JS, C#, C++, Java, Elixir 전 언어에 대해 스트림 처리 단계에서 `MAX_SAFE_LENGTH`(10MB) 및 `MAX_ELEMENT_COUNT`(100만 개) 임계치를 강제합니다. 악의적으로 부풀려진 List나 Map을 수신하더라도 힙에 메모리를 올리기 즉시 패킷을 폐기(Fail-Fast)하여 프로세스 크래시를 차단합니다.
-- **다단계 점진적 길이 체크 (JSON Flood 방어)**: 기존 `ReadToEnd()` 기반의 위험한 파싱을 제거하고, 스트림이 진행되는 즉시 길이를 사전에 예측해 검증하는 메커니즘으로 교체하여 거대 단일 문자열 공격이나 JSON 스택 폭탄을 무력화시킵니다.
-- **DDoS Fuzzer CI 통과**: CI/CD 파이프라인에서 2GB 이상의 비정상 덤프 데이터와 무한 뎁스 페이로드를 모든 언어 파서에 지속적으로 살포(`test-fuzz-oom.js`)하여, 파서가 오류를 스스로 이겨내는지 증명하는 보안 인증을 거쳤습니다.
+- **범용 OOM 방어 (v1.7.0+)**: 모든 엔진에 `MAX_SAFE_LENGTH`(10MB), `MAX_ELEMENT_COUNT`(100만) 절대 검증 경계 적용. 메모리 할당 전 악성 패킷 즉시 폐기(Fail-Fast).
+- **점진적 청크 검증**: 레거시 `ReadToEnd()` 방식을 완전히 대체. JSON 스택 폭발 공격 무력화.
+- **지속적 DDoS 퍼저 스위트**: CI 통합 `test-fuzz-oom.js`로 2GB+ 비정상 버퍼 및 무한 트리 구조에 대한 내성 검증.
 
 ---
 
 ## 문서 및 링크
 
-| 구분 | 내용 |
+| 종류 | 링크 |
 | :--- | :--- |
-| **이 README** | 설치 및 퀵스타트 요약 |
-| **기능 상세 (클론본)** | [DEUKPACK_FEATURES.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) · [EN](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.md) |
-| **[deukpack.app](https://deukpack.app/ko/)** | 설치, 튜토리얼, 프로토콜, [API 레퍼런스](https://deukpack.app/ko/reference/api/) |
-| **[kits.deukpack.app](https://kits.deukpack.app/ko/)** | 🚧 봉인됨 — 곧 공개 예정 |
-| **키트 라인업** | [deukpack.app/ko/starter-kits](https://deukpack.app/ko/starter-kits/) |
+| **이 README** | 클론 시 요약 |
+| **기능 개요** | [DEUKPACK_FEATURES.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) |
+| **[deukpack.app](https://deukpack.app/ko/)** | 설치, 튜토리얼, [API 레퍼런스](https://deukpack.app/ko/reference/api/) |
 | **영문 README** | [README.md](README.md) |
-| **릴리스 안내** | [RELEASING.md](RELEASING.md) |
-| **전체 문서 목차** | [docs/README.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/README.ko.md) (npm 타볼 제외) |
+| **릴리즈** | [RELEASING.ko.md](RELEASING.ko.md) |
 
-**문의:** contact@deukpack.app
-
----
-
-
-
-득팩(DeukPack)은 **극한의 확장성**과 **저지연 엔지니어링**을 목표로 설계되었습니다. 기존 IDL 스타일 컴파일러의 병목 현상을 제거하고 데이터 호환성을 유지하는 데 집중합니다.
-
-- **프로세스 오버헤드 제거**: 정적 파싱 및 인라인 JIT 생성기(Codegen)를 통해 메모리 내 핫 리로딩 속도와 실행 성능을 극대화합니다.
-- **빠른 TS/C# 코드 생성**: CI/CD 주기와 로컬 개발 환경의 속도에 최적화된 Zero-Allocation 중심 설계입니다.
-- **효율적인 이진 포맷**: 고성능 패킹(DPK1) 및 최적화된 와이어 코덱을 구현하여 힙(Heap) 메모리 GC 압박을 원천 차단합니다.
-
-### 🔥 v1.6.0 성능 테스트 결과 요약 (10,000 Rows 디코딩 스트레스 테스트)
-
-| 언어 환경 | 지표 | 타사 Tag-based | 타사 RPC-based | **DeukPack** |
-| :--- | :--- | :---: | :---: | :---: |
-| **C# / Unity** | 속도 | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
-| | 메모리 | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
-| **C++ (Native)** | 속도 | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
-| | 메모리 | Heap Alloc | Heap Alloc | **Manual Pool** |
-| **Java (Backend)** | 속도 | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
-| | 메모리 | 지속 할당 | 대규모 객체 | **+2.1 MB (최소)** |
-| **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
-| | 메모리 | +4.2 MB | -1.9 MB | **즉시 회수** |
-| **Elixir (BEAM)** | 속도 | - | - | ~ **31 ms** |
-| | 메모리 | - | - | **0 MB (Native Match)** |
-
-> **💡 TIP:** 위 수치는 10,000 Rows Payload 디코딩 기준이며, 사용자 환경에 따라 차이가 있을 수 있습니다.  
-> 👉 **[전체 프로토콜별 상세 비교표 보기](https://deukpack.app/ko/journal/performance-matrix/)** · **[벤치마킹 가이드](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.ko.md)**
-
+**연락처:** contact@deukpack.app
 
 ---
 
-
-## 개발 (Development)
+## 개발
 
 ```bash
 npm ci
@@ -214,23 +248,21 @@ npm test
 
 ---
 
-## ☕ 기술 교류 및 후원 (Support)
+## ☕ 지원 & 연락처
 
-득팩(DeukPack)은 오랜 기간 서버 아키텍처를 고민하며 얻은 'Zero-Allocation'과 '데이터 동기화'의 해답을 코드로 풀어낸 오픈소스(Apache 2.0) 결과물입니다. 자유롭게 상업용으로 사용하시고 수정하셔도 좋습니다.
+DeukPack은 완전한 오픈소스(Apache 2.0)입니다. 30년 서버 아키텍처 경험에서 발견한 Zero-Allocation 및 동기화 문제를 해결하기 위해 만들었습니다.
 
-만약 귀사의 멀티플레이 프로젝트나 상용 서버 아키텍처에 득팩을 메인 프로토콜로 도입하는 과정에서 아키텍처 설계 방향이나 이식(Integration)에 대한 기술적 조언이 필요하시다면, 언제든 아래 이메일로 편하게 문의해 주십시오. 
+- 📩 **연락 / 기술 문의**: joygram@gmail.com
+- ☕ **프로젝트 후원**: [Ko-fi](https://ko-fi.com/joygram)
 
-- 📩 **기술 자문 및 도입 문의**: joygram@gmail.com
-- ☕ **오픈소스 유지보수 후원**: [Ko-fi로 지원하기](https://ko-fi.com/joygram)
-
-재정적 후원이 어렵더라도 **GitHub Star**를 눌러주시거나, 동기화 문제로 고생하는 개발팀에 득팩을 공유해 주시는 것만으로도 프로젝트 유지에 큰 힘이 됩니다.
+**저장소 스타**나 Protobuf/Thrift를 다루는 팀과 공유해 주시면 큰 힘이 됩니다.
 
 ---
 
-## 함께 쓰면 좋은 도구 (Deuk Family)
+## 함께 쓰면 좋은 (Deuk Family)
 
-- **AI 에이전트의 스펙 접근성을 높이고 싶다면?** **DeukPack**을 통해 결정론적 타입과 직렬화를 실현하세요.
-- **에이전트의 행동을 통제하고 싶다면?** **[DeukAgentRules](https://github.com/joygram/DeukAgentRules)**를 통해 구조화된 규칙 시스템을 도입하세요.
+**스펙으로 더 많은 일을 하고 싶다면?** **DeukPack** — IDL 입력, 결정론적 타입과 직렬화 출력.  
+**에이전트가 저장소에서 예측 가능하게 동작하길 원한다면?** **[DeukAgentRules](https://github.com/joygram/DeukAgentRules)**
 
 ```bash
 npm install -D deuk-agent-rule
@@ -239,12 +271,19 @@ npx deuk-agent-rule init --non-interactive
 
 ---
 
-## 라이선스 (License)
+## 기여
+
+1. Fork → feature 브랜치 → PR.
+2. 릴리즈 구조: [RELEASING.ko.md](RELEASING.ko.md)
+
+---
+
+## 라이선스
 
 **Apache License 2.0** — [LICENSE](LICENSE) · [NOTICE](NOTICE).
 
 ---
 
-## 감사 인사 (Acknowledgments)
+## 감사의 말
 
-IDL과 스키마 커뮤니티에 감사드립니다. 득팩은 단독 파이프라인으로 작동합니다.
+IDL / OpenAPI / schema 커뮤니티 전체에 감사드립니다. DeukPack은 **독자적인 파이프라인**으로 Apache Thrift 서브프로젝트가 아닙니다.

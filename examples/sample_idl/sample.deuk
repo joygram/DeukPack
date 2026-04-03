@@ -1,0 +1,31 @@
+// Minimal IDL for examples — C# / C++ / JS codegen smoke test
+// DemoUser: Pack. UserRecord: Pack. UserBase/UserFull: extends.
+namespace tutorial
+
+struct DemoPoint {
+  1> int32 x
+  2> int32 y
+}
+
+struct DemoUser {
+  1> int32 id
+  2> string name
+  3> DemoPoint home
+}
+
+// Pack sample: project a subset of fields at runtime
+struct UserRecord {
+  1> int32 id
+  2> string displayName
+  3> int32 level
+  4> string avatarUrl
+}
+
+// extends sample: parent fields merged into child at codegen
+struct UserBase {
+  1> int32 id
+  2> string tag
+}
+struct UserFull extends UserBase {
+  3> int32 level
+}
