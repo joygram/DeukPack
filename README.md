@@ -107,8 +107,7 @@ Current support status and plans for each target platform.
 - 🚧: Pilot / Development in Progress
 - -: Not Currently Supported
 
-> [!CAUTION]
-> **Database Integration (⚠️) Detailed Constraints:**
+> **⚠️ CAUTION:** **Database Integration (⚠️) Detailed Constraints:**
 > 1. **TS / JS**: Primarily JSON/Binary serialization-based storage. Relational mapping is limited (Blob-centric).
 > 2. **C# (EF Core)**: Supports table generation via `entity` keyword. However, **Nested Collections (List/Map/Set)** are NOT automatically mapped to SQL columns (requires Blob storage or manual Converter).
 > 3. **C++**: Primarily DDL (SQL) generation. Runtime ORM integration is not provided.
@@ -203,8 +202,7 @@ DeukPack is designed for **extreme scalability** and **low-latency engineering**
 | **Elixir (BEAM)** | Speed | - | - | ~ **31 ms** |
 | | Memory | - | - | **0 MB (Native Match)** |
 
-> [!TIP]
-> Figures are based on decoding a 10,000-row payload and may vary depending on the user environment.  
+> **💡 TIP:** Figures are based on decoding a 10,000-row payload and may vary depending on the user environment.  
 > 👉 **[View the detailed cross-language comparison matrix](https://deukpack.app/journal/performance-matrix/)** · **[Benchmarking Guide](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.md)**
 
 

@@ -4,6 +4,18 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.7.3] — 2026-04-03
+
+### Hotfix
+- **README Formatting**: Fixed broken rendering of GitHub Alerts (`> [!TIP]`, `> [!CAUTION]`) in npm registry.
+
+## [1.7.2] — 2026-04-03
+
+### Hotfix & Documentation
+- **Elixir CI Fix**: Resolved a runtime `CompileError` occurring during `ElixirBridge.exs` execution by replacing compile-time macros (`%Struct{}`) with dynamic `struct()` bindings, ensuring resilience over multi-version tests.
+- **Support Matrix Synchronization**: Updated the Protobuf compatibility indicator to "supported" (`✅`) for C#, C++, and TypeScript across all capability matrices to align with the core status.
+- **Security Posture Documentation**: Officially appended the robust OOM Defense methodology and DDoS Fuzzer strategies under a new "Security & Trust" segment across all READMEs.
+
 ## [1.7.1] — 2026-04-03
 
 - **Support Matrix Update**: Promoted Elixir capabilities (IDL Core, protocols, inheritance) from pilot (`🚧`) to fully supported (`✅`) reflecting the v1.7.0 delivery.

@@ -104,8 +104,7 @@ npx deukpack init
 - 🚧: 파일럿 / 개발 진행 중
 - -: 현재 미지원
 
-> [!CAUTION]
-> **데이터베이스 연동 (⚠️) 상세 제약 사항:**
+> **⚠️ CAUTION:** **데이터베이스 연동 (⚠️) 상세 제약 사항:**
 > 1. **TS / JS**: JSON/Binary 직렬화 기반 저장 위주. 관계형 매핑은 제한적(Blob 중심).
 > 2. **C# (EF Core)**: `entity` 키워드를 통한 테이블 생성 지원. 단, **중첩 컬렉션(List/Map/Set)** 필드는 SQL 컬럼 자동 매핑 미지원 (Blob 저장 또는 수동 Converter 필요).
 > 3. **C++**: DDL(SQL) 생성 위주. 런타임 ORM 연동은 지원되지 않음.
@@ -198,8 +197,7 @@ npm install ./deukpack-x.y.z.tgz
 | **Elixir (BEAM)** | 속도 | - | - | ~ **31 ms** |
 | | 메모리 | - | - | **0 MB (Native Match)** |
 
-> [!TIP]
-> 위 수치는 10,000 Rows Payload 디코딩 기준이며, 사용자 환경에 따라 차이가 있을 수 있습니다.  
+> **💡 TIP:** 위 수치는 10,000 Rows Payload 디코딩 기준이며, 사용자 환경에 따라 차이가 있을 수 있습니다.  
 > 👉 **[전체 프로토콜별 상세 비교표 보기](https://deukpack.app/ko/journal/performance-matrix/)** · **[벤치마킹 가이드](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.ko.md)**
 
 
