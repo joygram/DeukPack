@@ -4,6 +4,19 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
+## [1.7.3] — 2026-04-03
+
+### 핫픽스 (Hotfix)
+- **리드미 서식 교정**: npm 레지스트리 환경에서 깨지던 GitHub Alerts (`> [!TIP]`, `> [!CAUTION]`) 마크다운 교정.
+
+## [1.7.2] — 2026-04-03
+
+### 핫픽스 및 문서 (Hotfix & Docs)
+- **Elixir CI 빌드 보강**: `ElixirBridge.exs` 스크립트 실행 과정에서 컴파일타임 객체 바인딩(`%Struct{}`)으로 인해 발생하던 런타임 `CompileError`를 동적 `struct()` 초기화로 전환하여 해결.
+- **문서 마크다운 개선**: `deukpack.app` 렌더링 과정에서 `~` 첨자 기호와 굵은 글씨(`**`) 파서 모호성으로 깨지던 벤치마크 표 서식 오류 전면 수정.
+- **지원 매트릭스 동기화**: C#, C++, TypeScript 전 영역에 걸친 Protobuf 부분의 진행률 표기를 현재 코어 상태에 맞게 완료(`✅`) 처리.
+- **공식 홈페이지 보안 내역 등재**: README 전반에 OOM 방어 및 DDoS 퍼저 전략에 대한 "Security & Trust" 항을 명문화 적용.
+
 ## [1.7.1] — 2026-04-03
 
 ### 문서 (Documentation) & 벤치마크
