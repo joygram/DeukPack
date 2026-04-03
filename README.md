@@ -181,8 +181,8 @@ void OnNetworkMessage(byte[] inputData) {
 | | Memory | Continuous | Large Objects | **+2.1 MB (Min)** |
 | **JavaScript (V8)** | Speed | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
 | | Memory | +4.2 MB | -1.9 MB | **Immediate Reclaim** |
-| **Elixir (BEAM)** | Speed | - | - | ~ **31 ms** |
-| | Memory | - | - | **0 MB (Native Match)** |
+| **Elixir (BEAM)** | Speed | ~ 62 ms | ~ 98 ms | ~ **31 ms** |
+| | Memory | +12.8 MB | +14.5 MB | **0 MB (Native Match)** |
 
 > Figures based on decoding a 10,000-row payload. Results vary by environment.  
 > 👉 [Detailed cross-language matrix](https://deukpack.app/journal/performance-matrix/) · [Benchmarking Guide](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.md)
