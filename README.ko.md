@@ -164,7 +164,8 @@ void OnNetworkMessage(byte[] inputData) {
 | **v1.5.1** | **C++ Zero-Alloc 최적화**: Arena 할당자, C++ DDL 생성기 | **완료** |
 | **v1.6.0** | **V8 JIT Codegen & Zero-Alloc**: JS/C# 메모리 최적화 | **완료** |
 | **v1.7.0** | **Elixir 엔진 지원**: 네이티브 BEAM 패턴 매칭 & 보안 방어 | **완료** |
-| **v1.7.6** | **통합 2-Method API**: 6개 언어 전체 `Pack`/`Unpack` 표준화 | **현재** |
+| **v1.8.0** | **통합 2-Method API**: 6개 언어 전체 `Pack`/`Unpack` 표준화 | **완료** |
+| **v1.8.1** | **Dialyzer & CI 파이프라인 무결화**: 순정 `sample.deuk` 환경 마이그레이션 | **현재** |
 
 ---
 
@@ -193,7 +194,7 @@ void OnNetworkMessage(byte[] inputData) {
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **IDL 코어** | 기본 타입 / 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
-| **통합 API** | `Pack` / `Unpack` (2-method) | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 |
+| **통합 API** | `Pack` / `Unpack` (2-method) | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 |
 | **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | | Protobuf 호환 | ✅ | ✅ | ✅ | ✅ | - |
 | | Thrift 호환 (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
