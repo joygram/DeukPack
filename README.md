@@ -35,9 +35,9 @@ DeukPack extracts metadata from IDL comments and field structures, transforming 
 
 The **Model Context Protocol (MCP)** server auto-generation feature (`DeukPackMcp`) lets AI agents (Cursor, Claude, etc.) browse live documentation and execute backend methods directly.
 
-### 4. Zero-Allocation High Performance
+### 4. High-Performance In-place Reuse
 
-Engineered for extreme efficiency. **60–100% reduction in memory allocation** and **250% increase in JS parsing speed** vs. classic industry flows. See the [Performance](#-performance-the-zero-bottleneck-foundation) section for raw numbers.
+Engineered for extreme efficiency. By using the `Unpack(cached, data)` pattern to reuse existing instances, we achieve a **60–100% reduction in memory allocation** and a **250% increase in JS parsing speed** vs. classic industry flows.
 
 ---
 
@@ -57,7 +57,7 @@ That's the entire API surface.
 > [!CAUTION]
 > **Unity / C# Notice (Zero-Alloc Defense):**
 > NEVER use `var h = Hero.Unpack(bin);` (Factory method) for high-frequency network packets (Hotpath). It implicitly triggers `new` allocations, causing GC spikes and severe frame drops.
-> You MUST use **`Hero.Unpack(cachedHero, bin);`** to overwrite pre-allocated (pooled) objects if you want to achieve true Zero-Allocation architecture without stutters.
+> You MUST use **`Hero.Unpack(cachedHero, bin);`** to overwrite pre-allocated (pooled) objects to minimize allocations. (Note: While containers and root objects are reused, new instances may still be allocated for elements within nested struct lists unless custom pooling is implemented.)
 
 ```csharp
 // C# / Unity: 1.Create  2.Pack  3.Unpack (Zero-Alloc)
@@ -174,7 +174,7 @@ void OnNetworkMessage(byte[] inputData) {
 | Environment | Metric | 3rd-Party Tag-based | 3rd-Party RPC-based | **DeukPack** |
 | :--- | :--- | :---: | :---: | :---: |
 | **C# / Unity** | Speed | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
-| | Memory | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
+| | Memory | +4.5 MB | +12.0 MB | **0 MB (with Pooling*)** |
 | **C++ (Native)** | Speed | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
 | | Memory | Heap Alloc | Heap Alloc | **Manual Pool** |
 | **Java (Backend)** | Speed | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
@@ -185,7 +185,8 @@ void OnNetworkMessage(byte[] inputData) {
 | | Memory | +12.8 MB | +14.5 MB | **0 MB (Native Match)** |
 
 > Figures based on decoding a 10,000-row payload. Results vary by environment.  
-> 👉 [Detailed cross-language matrix](https://deukpack.app/journal/performance-matrix/) · [Benchmarking Guide](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.md)
+> *C# 0 MB: Based on reuse of top-level and collection container instances. (Nested struct elements within lists may still trigger allocations unless an object pool is used.)
+> 👉 [Detailed cross-language matrix](https://deukpack.app/journal/performance-matrix/) · [Benchmarking Guide](docs/DEUKPACK_BENCHMARKING.md)
 
 ---
 
@@ -237,11 +238,11 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 | Type | Link |
 | :--- | :--- |
 | **This README** | Clone-time summary |
-| **Feature overview** | [DEUKPACK_FEATURES.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.md) · [KO](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) |
+| **Feature overview** | [DEUKPACK_FEATURES.md](docs/DEUKPACK_FEATURES.md) · [KO](docs/DEUKPACK_FEATURES.ko.md) |
 | **[deukpack.app](https://deukpack.app/)** | Install, tutorials, protocol, [API reference](https://deukpack.app/reference/api/) |
 | **Korean README** | [README.ko.md](README.ko.md) |
 | **Releases** | [RELEASING.md](RELEASING.md) |
-| **Full doc index** | [docs/README.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/README.ko.md) |
+| **Full doc index** | [docs/README.ko.md](docs/README.ko.md) |
 
 **Contact:** contact@deukpack.app
 
@@ -253,6 +254,9 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 npm ci
 npm run build
 npm test
+npm run benchmark                     # Node serialize smoke
+npm run bench:format-parity           # parser comparison
+npm run bench:cross-lang              # Node vs .NET pack
 ```
 
 ---
