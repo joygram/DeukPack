@@ -24,7 +24,7 @@ defmodule ElixirBridge do
 
       compile_generated_files("dist-test/elixir")
 
-      model = %DeukPack.Generated.RoundtripModel{
+      model = struct(DeukPack.Generated.RoundtripModel, [
         b_val: true,
         i8_val: 123,
         i16_val: 1234,
@@ -37,19 +37,19 @@ defmodule ElixirBridge do
         i32_list: [10, 20, 30],
         s_list: ["a", "b", "c"],
         s_i32_map: %{"key1" => 100, "key2" => 200},
-        nested: %DeukPack.Generated.NestedStruct{
+        nested: struct(DeukPack.Generated.NestedStruct, [
            inner_val: "nested_world",
            numbers: [1, 1, 2, 3, 5]
-        },
-        empty_nested: %DeukPack.Generated.NestedStruct{
+        ]),
+        empty_nested: struct(DeukPack.Generated.NestedStruct, [
            inner_val: "",
            numbers: []
-        },
-        null_nested: %DeukPack.Generated.NestedStruct{
+        ]),
+        null_nested: struct(DeukPack.Generated.NestedStruct, [
            inner_val: "inner",
            numbers: []
-        }
-      }
+        ])
+      ])
 
       output_bin = apply(DeukPack.Generated.RoundtripModel, :encode, [model])
 
