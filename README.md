@@ -90,7 +90,7 @@ Current support status and plans for each target platform.
 | **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
 | **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
+| | Protobuf Compatible | ✅ | ✅ | ✅ | ✅ | - |
 | | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
@@ -155,6 +155,16 @@ Ad-hoc **`npx deukpack <entry.deuk> <outDir> …`** still runs without a pipelin
 
 ---
 
+## 🛡️ Security & Reliability (OOM Defense / Anti-DDoS)
+
+As a fundamental infrastructure component that constantly parses external network byte payloads, DeukPack implements strict defense-in-depth mechanisms against **network-layer parsing vulnerabilities (OOM, Buffer Flooding, Infinite Recursion)**.
+
+- **Universal OOM (Out-of-Memory) Defense (v1.7.0+)**: For all supported engines (JS, C#, C++, Java, Elixir), DeukPack enforces absolute validation boundaries during streaming—`MAX_SAFE_LENGTH` (10MB) and `MAX_ELEMENT_COUNT` (1,000,000) limits. Even if malicious clients transmit artificially pumped list headers, packets are instantly discarded (Fail-Fast) before any memory allocation takes place, preventing process crashing.
+- **Progressive Chunk Validation (JSON Flood Defense)**: Completely replacing legacy `ReadToEnd()` methods, stream endpoints now implement length pre-evaluations, neutralizing both giant string bombs and multi-bracket JSON stack flooding vulnerabilities in Node.js and Java backends.
+- **Continuous DDoS Fuzzer Suite**: Integrated seamlessly into the CI pipeline, the `test-fuzz-oom.js` automation bombards all parsers with 2GB+ abnormal buffers and unbounded structural trees to officially certify the library's resilience.
+
+---
+
 ## Documentation & links
 
 | | |
@@ -182,15 +192,15 @@ DeukPack is designed for **extreme scalability** and **low-latency engineering**
 
 | Environment | Metric | 3rd-Party Tag-based | 3rd-Party RPC-based | **DeukPack** |
 | :--- | :--- | :---: | :---: | :---: |
-| **C# / Unity** | Speed | ~ 45 ms | ~ 85 ms | **~ 28 ms** |
+| **C# / Unity** | Speed | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
 | | Memory | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
-| **C++ (Native)** | Speed | ~ 14 ms | ~ 22 ms | **~ 12 ms** |
+| **C++ (Native)** | Speed | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
 | | Memory | Heap Alloc | Heap Alloc | **Manual Pool** |
-| **Java (Backend)** | Speed | ~ 25 ms | ~ 38 ms | **~ 35 ms** |
+| **Java (Backend)** | Speed | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
 | | Memory | Continuous | Large Objects | **+2.1 MB (Min)** |
-| **JavaScript (V8)** | Speed | ~ 54 ms | ~ 190 ms | **~ 158 ms** |
+| **JavaScript (V8)** | Speed | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
 | | Memory | +4.2 MB | -1.9 MB | **Immediate Reclaim** |
-| **Elixir (BEAM)** | Speed | - | - | **~ 31 ms** |
+| **Elixir (BEAM)** | Speed | - | - | ~ **31 ms** |
 | | Memory | - | - | **0 MB (Native Match)** |
 
 > [!TIP]

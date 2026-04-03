@@ -87,7 +87,7 @@ npx deukpack init
 | **IDL 코어** | 기본 타입 / 타입 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
 | **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| | Protobuf Compatible | ✅ | ✅ | 🚧 (v1.4) | ✅ | - |
+| | Protobuf Compatible | ✅ | ✅ | ✅ | ✅ | - |
 | | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
 | | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
 | | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
@@ -148,6 +148,16 @@ npm install ./deukpack-x.y.z.tgz
 
 ---
 
+## 🛡️ 보안성 및 인프라 신뢰성 (Security & OOM Defense)
+
+득팩은 외부 네트워크의 텍스트/바이트 페이로드를 직접 파싱하는 인프라 컴포넌트로서 **네트워크 파싱 취약점(OOM, 버퍼 플러딩, 무한 루프)**에 대한 근본적인 방어 메커니즘을 내장하고 있습니다. 
+
+- **유니버설 OOM(Out of Memory) 방어 (v1.7.0+)**: JS, C#, C++, Java, Elixir 전 언어에 대해 스트림 처리 단계에서 `MAX_SAFE_LENGTH`(10MB) 및 `MAX_ELEMENT_COUNT`(100만 개) 임계치를 강제합니다. 악의적으로 부풀려진 List나 Map을 수신하더라도 힙에 메모리를 올리기 즉시 패킷을 폐기(Fail-Fast)하여 프로세스 크래시를 차단합니다.
+- **다단계 점진적 길이 체크 (JSON Flood 방어)**: 기존 `ReadToEnd()` 기반의 위험한 파싱을 제거하고, 스트림이 진행되는 즉시 길이를 사전에 예측해 검증하는 메커니즘으로 교체하여 거대 단일 문자열 공격이나 JSON 스택 폭탄을 무력화시킵니다.
+- **DDoS Fuzzer CI 통과**: CI/CD 파이프라인에서 2GB 이상의 비정상 덤프 데이터와 무한 뎁스 페이로드를 모든 언어 파서에 지속적으로 살포(`test-fuzz-oom.js`)하여, 파서가 오류를 스스로 이겨내는지 증명하는 보안 인증을 거쳤습니다.
+
+---
+
 ## 문서 및 링크
 
 | 구분 | 내용 |
@@ -177,15 +187,15 @@ npm install ./deukpack-x.y.z.tgz
 
 | 언어 환경 | 지표 | 타사 Tag-based | 타사 RPC-based | **DeukPack** |
 | :--- | :--- | :---: | :---: | :---: |
-| **C# / Unity** | 속도 | ~ 45 ms | ~ 85 ms | **~ 28 ms** |
+| **C# / Unity** | 속도 | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
 | | 메모리 | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
-| **C++ (Native)** | 속도 | ~ 14 ms | ~ 22 ms | **~ 12 ms** |
+| **C++ (Native)** | 속도 | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
 | | 메모리 | Heap Alloc | Heap Alloc | **Manual Pool** |
-| **Java (Backend)** | 속도 | ~ 25 ms | ~ 38 ms | **~ 35 ms** |
+| **Java (Backend)** | 속도 | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
 | | 메모리 | 지속 할당 | 대규모 객체 | **+2.1 MB (최소)** |
-| **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | **~ 158 ms** |
+| **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
 | | 메모리 | +4.2 MB | -1.9 MB | **즉시 회수** |
-| **Elixir (BEAM)** | 속도 | - | - | **~ 31 ms** |
+| **Elixir (BEAM)** | 속도 | - | - | ~ **31 ms** |
 | | 메모리 | - | - | **0 MB (Native Match)** |
 
 > [!TIP]
