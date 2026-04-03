@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { DeukPackEngine } from '../DeukPackEngine';
+import { DeukPackCodec } from '../DeukPackCodec';
 
 function norm(p: string): string {
   return path.normalize(p).replace(/\\/g, '/');
@@ -18,7 +18,7 @@ describe('parseFileWithIncludes — forward-ref placeholder enums', () => {
       `namespace g;\nrecord R { 1> g.placeholder_e kind; }\n`,
       'utf8'
     );
-    const engine = new DeukPackEngine();
+    const engine = new DeukPackCodec();
     const ast = await engine.parseFileWithIncludes(stub, { includePaths: [dir] });
     const ph = ast.enums.filter((e) => e.forwardRefPlaceholder === true && e.name === 'placeholder_e');
     expect(ph.length).toBe(1);

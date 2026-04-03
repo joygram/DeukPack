@@ -4,6 +4,32 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
+## [1.8.0] — 2026-04-03
+
+### Core: 직렬화 API 통일성 및 Static 오버로드 강제화
+- **API 규격 정규화 (C# / Java)**: 인스턴스 멤버 방식의 레거시 직렬화 메서드를 제거하고, 전 언어권에 걸쳐 `Pack` / `Unpack` API를 완벽한 정적(Static) 오버로드 구조로 통일하여 `CS0111` 등의 컴파일러 충돌을 해결했습니다.
+- **Zero-Allocation 아키텍처 방어망 구성**: 고빈도 네트워크 핫패스(Unity / Unreal 등)에서의 프레임 드랍과 OS 네이티브 힙(Heap) 락을 방지하기 위해, 사전 수영장(Memory-Pool) 최적화 기법을 완벽히 지원하는 덮어쓰기 형태의 `Unpack(obj, bin)` 인터페이스를 C# 및 C++ 권장 표준으로 문서화했습니다.
+- **JavaScript V8 엔진 최적화**: C#/C++와 대조적으로 Node.js / V8 머신 환경에서는 동적 객체 오버라이딩 시 넥터(히든 클래스/인라인 캐시)가 무너져 오히려 병목이 발생함을 규명하고, 수명이 짧은 팩토리 패턴인 `unpack(bin)`을 사용할 강력한 가이드라인을 레퍼런스에 추가했습니다.
+
+### Security & Static Analysis (보안 및 정적 분석)
+- **Elixir Dialyzer 무결성 보장**: Elixir 코드가 생성될 때 모든 `pack` 및 `unpack` 직렬화 함수 위에 엄격한 정적 런타임 타입 어노테이션(`@spec`, `@type t()`, `binary()`)을 씌우도록 코어 제네레이터를 확장했습니다. 이로써 `mix dialyzer` 구동 시 일체의 "no_return" 혹은 타입 모호성(Warning)이 발생하지 않습니다.
+- **Dialyzer 자동화 테스트 파이프라인**: 득팩 파이프라인에 이식할 수 있는 자동화된 Dialyzer 검증 스크립트(`scripts/test_elixir_dialyzer.js`)를 구축하여 향후 Elixir 브릿지단에서의 타입 안정성을 항구적으로 검증합니다.
+
+## [1.7.6] — 2026-04-03
+
+### 문서 (Documentation)
+- **C# 스니펫 컴파일 문법 검증**: "한눈에 보기"의 C# 예제 코드가 실제 `DeukPackCodec`와 함께 정상 컴파일되도록 수도코드(Pseudo-code)의 모호성을 제거하고 정확한 API 사용법으로 갱신했습니다.
+
+## [1.7.5] — 2026-04-03
+
+### 핫픽스 (Hotfix)
+- **리드미 서식 교정**: NPM 레지스트리 렌더러가 빈 테이블 헤더(`| | |`)를 파싱하다가 크래시가 발생하여 README 노출이 통째로 실패하던 버그를 해결했습니다.
+
+## [1.7.4] — 2026-04-03
+
+### 핫픽스 (Hotfix)
+- **리드미 서식 교정**: npm 레지스트리 환경과의 호환성을 위해 CAUTION 및 TIP 섹션에서 인용구(`>`) 마크다운 기호를 완전히 제거.
+
 ## [1.7.3] — 2026-04-03
 
 ### 핫픽스 (Hotfix)
@@ -144,7 +170,7 @@
 
 ### 변경
 
-- **스키마·임베디드 메타**: 필드·루트 스키마의 **`type` 문자열**을 **득팩 표준**(`struct`, `enum`, `int16`/`int32`/`int64` 등)으로 통일. **C#** `DpSchemaType`은 **`Int16`/`Int32`/`Int64`** 및 **`SchemaTypeToStandardString`**. **JSON 호환 와이어** 객체 키(`i32`, `tf`, `str`, `lst` 등)는 **변경 없음**.
+- **스키마·임베디드 메타**: 필드·루트 스키마의 **`type` 문자열**을 **득팩 표준**(`struct`, `enum`, `int16`/`int32`/`int64` 등)으로 통일. **C#** `DpSchemaType`은 **`Int16`/`Int32`/`Int64`** 및 **`SchemaTypeToStandardString`**. **JSON 호환 와이어** 객체 키(`int32`, `tf`, `str`, `lst` 등)는 **변경 없음**.
 - **C# 코드젠**: **`string`**·구조체 참조 필드 기본 초기화로 **`nullable` 활성** 소비 프로젝트 경고 감소; 코드젠 nullable 모드 꺼짐 시 선택적 구조체 **`Clone()`** 에 null-forgiving 경로.
 - **CI**: **C++** 네이티브 와이어 라이브러리 **빌드 + `ctest`** 를 **Ubuntu·Windows** 러너에서 실행.
 - **도구**: **`npm run verify`** 로 **GitHub Actions** 와 동일한 검증을 로컬에서 실행.

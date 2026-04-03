@@ -3,7 +3,7 @@ import * as path from 'path';
 import { DeukPackAST, GenerationOptions, DeukPackStruct, DeukPackEnum, DeukPackField, DeukPackTypedef, DeukPackException, DeukPackService, DeukPackType } from '../types/DeukPackTypes';
 import { CodeGenerator } from './CodeGenerator';
 import { csharpSuffixFromProfile, filterStructFieldsForProfile } from './WireProfileSubset';
-import { DeukPackEngine } from '../core/DeukPackEngine';
+import { DeukPackCodec } from '../core/DeukPackCodec';
 import { applyCodegenPlaceholders } from './templateRender';
 import { parseDeukNumericLiteral } from '../core/parseDeukNumericLiteral';
 import { CodegenTemplateHost } from './codegenTemplateHost';
@@ -15,7 +15,7 @@ export class CSharpGenerator extends CodeGenerator {
     (this as any)._csharpNullable = enableNullable;
     (this as any)._csharpVersion = _options.csharpVersion || 'net8.0';
 
-    DeukPackEngine.resolveExtends(ast);
+    DeukPackCodec.resolveExtends(ast);
     // Generate separate files per IDL source file
     const files: { [filename: string]: string } = {};
     
@@ -1743,34 +1743,34 @@ export class CSharpGenerator extends CodeGenerator {
     
     if (typeof field.type === 'string') {
       switch (field.type) {
-        case 'bool': return `this.${fieldName} = (bool)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(bool))!;`;
-        case 'byte': return `this.${fieldName} = (byte)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(byte))!;`;
-        case 'int8': return `this.${fieldName} = (sbyte)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(sbyte))!;`;
-        case 'int16': return `this.${fieldName} = (short)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(short))!;`;
-        case 'int32': return `this.${fieldName} = (int)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(int))!;`;
-        case 'int64': return `this.${fieldName} = (long)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(long))!;`;
-        case 'uint8': return `this.${fieldName} = (byte)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(byte))!;`;
-        case 'uint16': return `this.${fieldName} = (ushort)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(ushort))!;`;
-        case 'uint32': return `this.${fieldName} = (uint)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(uint))!;`;
-        case 'uint64': return `this.${fieldName} = (ulong)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(ulong))!;`;
-        case 'float': return `this.${fieldName} = (float)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(float))!;`;
-        case 'double': return `this.${fieldName} = (double)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(double))!;`;
-        case 'string': return `this.${fieldName} = (string)DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(string))!;`;
-        case 'binary': return `this.${fieldName} = (byte[])DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(byte[]))!;`;
+        case 'bool': return `this.${fieldName} = (bool)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(bool))!;`;
+        case 'byte': return `this.${fieldName} = (byte)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(byte))!;`;
+        case 'int8': return `this.${fieldName} = (sbyte)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(sbyte))!;`;
+        case 'int16': return `this.${fieldName} = (short)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(short))!;`;
+        case 'int32': return `this.${fieldName} = (int)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(int))!;`;
+        case 'int64': return `this.${fieldName} = (long)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(long))!;`;
+        case 'uint8': return `this.${fieldName} = (byte)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(byte))!;`;
+        case 'uint16': return `this.${fieldName} = (ushort)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(ushort))!;`;
+        case 'uint32': return `this.${fieldName} = (uint)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(uint))!;`;
+        case 'uint64': return `this.${fieldName} = (ulong)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(ulong))!;`;
+        case 'float': return `this.${fieldName} = (float)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(float))!;`;
+        case 'double': return `this.${fieldName} = (double)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(double))!;`;
+        case 'string': return `this.${fieldName} = (string)DeukPackCodec.ReadValue(iprot, ${tType}, typeof(string))!;`;
+        case 'binary': return `this.${fieldName} = (byte[])DeukPackCodec.ReadValue(iprot, ${tType}, typeof(byte[]))!;`;
         case 'datetime':
-        case 'timestamp': return `this.${fieldName} = new DateTime((long)DeukPackSerializer.ReadValue(iprot, DpWireType.Int64, typeof(long))!, DateTimeKind.Utc);`;
+        case 'timestamp': return `this.${fieldName} = new DateTime((long)DeukPackCodec.ReadValue(iprot, DpWireType.Int64, typeof(long))!, DateTimeKind.Utc);`;
         case 'date': {
-          const v = `(int)DeukPackSerializer.ReadValue(iprot, DpWireType.Int32, typeof(int))!`;
+          const v = `(int)DeukPackCodec.ReadValue(iprot, DpWireType.Int32, typeof(int))!`;
           return `var _${fieldName} = ${v}; this.${fieldName} = _${fieldName} == 0 ? default(DateTime) : new DateTime(_${fieldName} / 10000, (_${fieldName} / 100) % 100, _${fieldName} % 100);`;
         }
-        case 'time': return `this.${fieldName} = TimeSpan.FromMilliseconds((int)DeukPackSerializer.ReadValue(iprot, DpWireType.Int32, typeof(int))!);`;
+        case 'time': return `this.${fieldName} = TimeSpan.FromMilliseconds((int)DeukPackCodec.ReadValue(iprot, DpWireType.Int32, typeof(int))!);`;
         case 'decimal':
-        case 'numeric': return `var _${fieldName}Str = (string)DeukPackSerializer.ReadValue(iprot, DpWireType.String, typeof(string))!; this.${fieldName} = string.IsNullOrEmpty(_${fieldName}Str) ? 0m : decimal.Parse(_${fieldName}Str, System.Globalization.CultureInfo.InvariantCulture);`;
+        case 'numeric': return `var _${fieldName}Str = (string)DeukPackCodec.ReadValue(iprot, DpWireType.String, typeof(string))!; this.${fieldName} = string.IsNullOrEmpty(_${fieldName}Str) ? 0m : decimal.Parse(_${fieldName}Str, System.Globalization.CultureInfo.InvariantCulture);`;
         default: {
-          const readExpr = `(${csharpType})DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(${csharpType}))!`;
+          const readExpr = `(${csharpType})DeukPackCodec.ReadValue(iprot, ${tType}, typeof(${csharpType}))!`;
           const isStruct = ast && (this.isStructType(field.type, ast, currentNamespace) || this.isStructCSharpType(csharpType, ast));
           if (ast && this.isGeometryDeukStruct(field.type, ast, currentNamespace)) {
-            return `{ var _r = DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(${csharpType})); this.${fieldName} = _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
+            return `{ var _r = DeukPackCodec.ReadValue(iprot, ${tType}, typeof(${csharpType})); this.${fieldName} = _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
           }
           return isStruct ? `this.${fieldName} = ${readExpr} ?? ${csharpType}.CreateDefault();` : `this.${fieldName} = ${readExpr};`;
         }
@@ -1785,20 +1785,20 @@ export class CSharpGenerator extends CodeGenerator {
         case 'set': return this.generateReadSet(field, ast, currentNamespace);
         case 'map': return this.generateReadMap(field, ast, currentNamespace);
         default: {
-          const readExpr = `(${csharpType})DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(${csharpType}))!`;
+          const readExpr = `(${csharpType})DeukPackCodec.ReadValue(iprot, ${tType}, typeof(${csharpType}))!`;
           const isStruct = ast && this.isStructCSharpType(csharpType, ast);
           if (ast && typeof field.type === 'string' && this.isGeometryDeukStruct(field.type, ast, currentNamespace)) {
-            return `{ var _r = DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(${csharpType})); this.${fieldName} = _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
+            return `{ var _r = DeukPackCodec.ReadValue(iprot, ${tType}, typeof(${csharpType})); this.${fieldName} = _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
           }
           return isStruct ? `this.${fieldName} = ${readExpr} ?? ${csharpType}.CreateDefault();` : `this.${fieldName} = ${readExpr};`;
         }
       }
     }
     
-    const readExpr = `(${csharpType})DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(${csharpType}))!`;
+    const readExpr = `(${csharpType})DeukPackCodec.ReadValue(iprot, ${tType}, typeof(${csharpType}))!`;
     const isStruct = ast && (this.isStructType(field.type, ast, currentNamespace) || this.isStructCSharpType(csharpType, ast));
     if (ast && typeof field.type === 'string' && this.isGeometryDeukStruct(field.type, ast, currentNamespace)) {
-      return `{ var _r = DeukPackSerializer.ReadValue(iprot, ${tType}, typeof(${csharpType})); this.${fieldName} = _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
+      return `{ var _r = DeukPackCodec.ReadValue(iprot, ${tType}, typeof(${csharpType})); this.${fieldName} = _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
     }
     return isStruct ? `this.${fieldName} = ${readExpr} ?? ${csharpType}.CreateDefault();` : `this.${fieldName} = ${readExpr};`;
   }
@@ -1967,17 +1967,17 @@ export class CSharpGenerator extends CodeGenerator {
         case 'bool': case 'byte': case 'int8': case 'int16': case 'int32': case 'int64':
         case 'uint8': case 'uint16': case 'uint32': case 'uint64':
         case 'float': case 'double': case 'string': case 'binary':
-          return `DeukPackSerializer.WriteValue(oprot, ${tType}, ${varName});`;
+          return `DeukPackCodec.WriteValue(oprot, ${tType}, ${varName});`;
         case 'datetime': case 'timestamp':
-          return `DeukPackSerializer.WriteValue(oprot, DpWireType.Int64, ${varName}.Ticks);`;
+          return `DeukPackCodec.WriteValue(oprot, DpWireType.Int64, ${varName}.Ticks);`;
         case 'date':
-          return `DeukPackSerializer.WriteValue(oprot, DpWireType.Int32, ${varName}.Year * 10000 + ${varName}.Month * 100 + ${varName}.Day);`;
+          return `DeukPackCodec.WriteValue(oprot, DpWireType.Int32, ${varName}.Year * 10000 + ${varName}.Month * 100 + ${varName}.Day);`;
         case 'time':
-          return `DeukPackSerializer.WriteValue(oprot, DpWireType.Int32, (int)${varName}.TotalMilliseconds);`;
+          return `DeukPackCodec.WriteValue(oprot, DpWireType.Int32, (int)${varName}.TotalMilliseconds);`;
         case 'decimal': case 'numeric':
-          return `DeukPackSerializer.WriteValue(oprot, DpWireType.String, ${varName}.ToString(System.Globalization.CultureInfo.InvariantCulture));`;
+          return `DeukPackCodec.WriteValue(oprot, DpWireType.String, ${varName}.ToString(System.Globalization.CultureInfo.InvariantCulture));`;
         default:
-          return `DeukPackSerializer.WriteValue(oprot, ${tType}, ${varName});`;
+          return `DeukPackCodec.WriteValue(oprot, ${tType}, ${varName});`;
       }
     }
 
@@ -1987,29 +1987,29 @@ export class CSharpGenerator extends CodeGenerator {
         case 'array': {
           const et = this.getTType(field.type.elementType, ast, currentNamespace);
           const ect = this.getCSharpType(field.type.elementType, ast, currentNamespace);
-          return `DeukPackSerializer.WriteList<${ect}>(oprot, ${et}, ${varName});`;
+          return `DeukPackCodec.WriteList<${ect}>(oprot, ${et}, ${varName});`;
         }
         case 'set': {
           const et = this.getTType(field.type.elementType, ast, currentNamespace);
           const ect = this.getCSharpType(field.type.elementType, ast, currentNamespace);
-          return `DeukPackSerializer.WriteSet<${ect}>(oprot, ${et}, ${varName});`;
+          return `DeukPackCodec.WriteSet<${ect}>(oprot, ${et}, ${varName});`;
         }
         case 'map': {
           const kt = this.getTType(field.type.keyType, ast, currentNamespace);
           const vt = this.getTType(field.type.valueType, ast, currentNamespace);
           const kct = this.getCSharpType(field.type.keyType, ast, currentNamespace);
           const vct = this.getCSharpType(field.type.valueType, ast, currentNamespace);
-          return `DeukPackSerializer.WriteMap<${kct}, ${vct}>(oprot, ${kt}, ${vt}, ${varName});`;
+          return `DeukPackCodec.WriteMap<${kct}, ${vct}>(oprot, ${kt}, ${vt}, ${varName});`;
         }
         default:
-          return `DeukPackSerializer.WriteValue(oprot, ${tType}, ${varName});`;
+          return `DeukPackCodec.WriteValue(oprot, ${tType}, ${varName});`;
       }
     }
 
-    return `DeukPackSerializer.WriteValue(oprot, ${tType}, ${varName});`;
+    return `DeukPackCodec.WriteValue(oprot, ${tType}, ${varName});`;
   }
 
-  // generateWriteListElement is no longer needed - handled by DeukPackSerializer recursively
+  // generateWriteListElement is no longer needed - handled by DeukPackCodec recursively
 
   private generateReadList(field: DeukPackField, ast?: DeukPackAST, currentNamespace?: string): string {
     const fieldName = this.capitalize(field.name);
@@ -2021,10 +2021,10 @@ export class CSharpGenerator extends CodeGenerator {
       const elementType = this.getTType(field.type.elementType, ast, currentNamespace);
       const csharpElementType = this.getCSharpType(field.type.elementType, ast, currentNamespace);
       const reader = this.generateReaderLambda(field.type.elementType, ast, currentNamespace);
-      return `this.${fieldName} = DeukPackSerializer.ReadList<${csharpElementType}>(iprot, ${elementType}, ${reader});`;
+      return `this.${fieldName} = DeukPackCodec.ReadList<${csharpElementType}>(iprot, ${elementType}, ${reader});`;
     }
     const csharpType = this.getCSharpType(field.type, ast, currentNamespace);
-    return `this.${fieldName} = (${csharpType})DeukPackSerializer.ReadValue(iprot, DpWireType.List, typeof(${csharpType}))!;`;
+    return `this.${fieldName} = (${csharpType})DeukPackCodec.ReadValue(iprot, DpWireType.List, typeof(${csharpType}))!;`;
   }
 
   private generateReadSet(field: DeukPackField, ast?: DeukPackAST, currentNamespace?: string): string {
@@ -2033,10 +2033,10 @@ export class CSharpGenerator extends CodeGenerator {
       const elementType = this.getTType(field.type.elementType, ast, currentNamespace);
       const csharpElementType = this.getCSharpType(field.type.elementType, ast, currentNamespace);
       const reader = this.generateReaderLambda(field.type.elementType, ast, currentNamespace);
-      return `this.${fieldName} = DeukPackSerializer.ReadSet<${csharpElementType}>(iprot, ${elementType}, ${reader});`;
+      return `this.${fieldName} = DeukPackCodec.ReadSet<${csharpElementType}>(iprot, ${elementType}, ${reader});`;
     }
     const csharpType = this.getCSharpType(field.type, ast, currentNamespace);
-    return `this.${fieldName} = (${csharpType})DeukPackSerializer.ReadValue(iprot, DpWireType.Set, typeof(${csharpType}))!;`;
+    return `this.${fieldName} = (${csharpType})DeukPackCodec.ReadValue(iprot, DpWireType.Set, typeof(${csharpType}))!;`;
   }
 
   private generateReadMap(field: DeukPackField, ast?: DeukPackAST, currentNamespace?: string): string {
@@ -2048,13 +2048,13 @@ export class CSharpGenerator extends CodeGenerator {
       const csharpValueType = this.getCSharpType(field.type.valueType, ast, currentNamespace);
       const keyReader = this.generateReaderLambda(field.type.keyType, ast, currentNamespace);
       const valueReader = this.generateReaderLambda(field.type.valueType, ast, currentNamespace);
-      return `this.${fieldName} = DeukPackSerializer.ReadMap<${csharpKeyType}, ${csharpValueType}>(iprot, ${keyType}, ${valueType}, ${keyReader}, ${valueReader});`;
+      return `this.${fieldName} = DeukPackCodec.ReadMap<${csharpKeyType}, ${csharpValueType}>(iprot, ${keyType}, ${valueType}, ${keyReader}, ${valueReader});`;
     }
     const csharpType = this.getCSharpType(field.type, ast, currentNamespace);
-    return `this.${fieldName} = (${csharpType})DeukPackSerializer.ReadValue(iprot, DpWireType.Map, typeof(${csharpType}))!;`;
+    return `this.${fieldName} = (${csharpType})DeukPackCodec.ReadValue(iprot, DpWireType.Map, typeof(${csharpType}))!;`;
   }
 
-  // generateReadListElement is no longer needed - handled by DeukPackSerializer recursively
+  // generateReadListElement is no longer needed - handled by DeukPackCodec recursively
 
   private generateReaderLambda(type: DeukPackType, ast?: DeukPackAST, currentNamespace?: string): string {
     const csharpType = this.getCSharpType(type, ast, currentNamespace);
@@ -2087,14 +2087,14 @@ export class CSharpGenerator extends CodeGenerator {
           if (isEnum) return `static p => (${csharpType})p.ReadI32()`;
           
           if (ast && this.isGeometryDeukStruct(type, ast, currentNamespace)) {
-            return `static p => { var _r = DeukPackSerializer.ReadValue(p, ${tType}, typeof(${csharpType})); return _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
+            return `static p => { var _r = DeukPackCodec.ReadValue(p, ${tType}, typeof(${csharpType})); return _r == null ? default(${csharpType}) : (${csharpType})_r; }`;
           }
 
           const isStruct = ast && (this.isStructType(type, ast, currentNamespace) || this.isStructCSharpType(csharpType, ast));
           if (isStruct) {
             return `static p => { var _v = new ${csharpType}(); _v.Read(p); return _v; }`;
           }
-          return `static p => (${csharpType})DeukPackSerializer.ReadValue(p, ${tType}, typeof(${csharpType}))!`;
+          return `static p => (${csharpType})DeukPackCodec.ReadValue(p, ${tType}, typeof(${csharpType}))!`;
         }
       }
     }
@@ -2106,13 +2106,13 @@ export class CSharpGenerator extends CodeGenerator {
           const elementType = this.getTType(type.elementType, ast, currentNamespace);
           const csharpElementType = this.getCSharpType(type.elementType, ast, currentNamespace);
           const reader = this.generateReaderLambda(type.elementType, ast, currentNamespace);
-          return `static p => DeukPackSerializer.ReadList<${csharpElementType}>(p, ${elementType}, ${reader})`;
+          return `static p => DeukPackCodec.ReadList<${csharpElementType}>(p, ${elementType}, ${reader})`;
         }
         case 'set': {
           const elementType = this.getTType(type.elementType, ast, currentNamespace);
           const csharpElementType = this.getCSharpType(type.elementType, ast, currentNamespace);
           const reader = this.generateReaderLambda(type.elementType, ast, currentNamespace);
-          return `static p => DeukPackSerializer.ReadSet<${csharpElementType}>(p, ${elementType}, ${reader})`;
+          return `static p => DeukPackCodec.ReadSet<${csharpElementType}>(p, ${elementType}, ${reader})`;
         }
         case 'map': {
           const keyType = this.getTType(type.keyType, ast, currentNamespace);
@@ -2121,7 +2121,7 @@ export class CSharpGenerator extends CodeGenerator {
           const csharpValueType = this.getCSharpType(type.valueType, ast, currentNamespace);
           const kReader = this.generateReaderLambda(type.keyType, ast, currentNamespace);
           const vReader = this.generateReaderLambda(type.valueType, ast, currentNamespace);
-          return `static p => DeukPackSerializer.ReadMap<${csharpKeyType}, ${csharpValueType}>(p, ${keyType}, ${valueType}, ${kReader}, ${vReader})`;
+          return `static p => DeukPackCodec.ReadMap<${csharpKeyType}, ${csharpValueType}>(p, ${keyType}, ${valueType}, ${kReader}, ${vReader})`;
         }
         default: break;
       }
@@ -2135,7 +2135,7 @@ export class CSharpGenerator extends CodeGenerator {
         return `static p => { var _v = new ${csharpType}(); _v.Read(p); return _v; }`;
     }
 
-    return `static p => (${csharpType})DeukPackSerializer.ReadValue(p, ${tType}, typeof(${csharpType}))!`;
+    return `static p => (${csharpType})DeukPackCodec.ReadValue(p, ${tType}, typeof(${csharpType}))!`;
   }
 
   private groupByNamespace(ast: DeukPackAST & { services?: DeukPackService[] }): { [namespace: string]: { enums: DeukPackEnum[], structs: DeukPackStruct[], typedefs: any[], constants: any[], services: DeukPackService[] } } {

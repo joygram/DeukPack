@@ -198,6 +198,52 @@ ${decodeSel}
 ${encodeFields}
     <<acc::binary, 0::8>>
   end
+
+  # ── Unified DeukPack Serialization API ────────────────────────────────────────
+
+  @doc "Packs the struct into binary bytes or JSON string."
+  @spec pack(t(), atom()) :: binary()
+  def pack(%__MODULE__{} = struct, format \\\\ :binary) do
+    if format == :json do
+      if Code.ensure_loaded?(Jason), do: Jason.encode!(Map.from_struct(struct)), else: raise "Jason module not found for to_json"
+    else
+      encode(struct)
+    end
+  end
+
+  @doc \"\"\"
+  Unpacks bytes into a new struct instance. (Factory Method)
+  Standard method for BEAM VM, taking advantage of per-process GC for short-lived data.
+  \"\"\"
+  @spec unpack(binary()) :: t()
+  def unpack(bytes) when is_binary(bytes), do: unpack(bytes, :binary)
+
+  @spec unpack(binary(), atom()) :: t()
+  def unpack(bytes, format) when is_binary(bytes) do
+    if format == :json do
+      if Code.ensure_loaded?(Jason), do: Jason.decode!(bytes, keys: :atoms) |> struct(__MODULE__), else: raise "Jason module not found for from_json"
+    else
+      decode("binary", bytes, %__MODULE__{}) |> elem(0)
+    end
+  end
+
+  @doc \"\"\"
+  Unpacks bytes into an existing struct instance. (In-Place Update)
+  Merging deeply nested properties into an existing struct. Note: BEAM immutability means this still allocates a new struct internally.
+  \"\"\"
+  @spec unpack(t(), binary()) :: t()
+  def unpack(%__MODULE__{} = struct, bytes) when is_binary(bytes) do
+    unpack(struct, bytes, :binary)
+  end
+
+  @spec unpack(t(), binary(), atom()) :: t()
+  def unpack(%__MODULE__{} = struct, bytes, format) do
+    if format == :json do
+      if Code.ensure_loaded?(Jason), do: struct!(struct, Jason.decode!(bytes, keys: :atoms)), else: raise "Jason module not found for from_json"
+    else
+      decode("binary", bytes, struct) |> elem(0)
+    end
+  end
 ${encodeFieldBlock}
   # ── Field decoder ─────────────────────────────────────────────────────────────
   # Type 2=bool 3=byte 4=double 5=i32 6=i16 10=i64 11=string 12=struct 13=map 14=set 15=list

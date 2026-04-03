@@ -11,7 +11,7 @@ import {
   DeukPackTypedef,
 } from '../../types/DeukPackTypes';
 import { CodeGenerator } from '../CodeGenerator';
-import { DeukPackEngine } from '../../core/DeukPackEngine';
+import { DeukPackCodec } from '../../core/DeukPackCodec';
 import { CodegenTemplateHost } from '../codegenTemplateHost';
 import { buildEmbeddedStructSchema } from '../embeddedStructSchema';
 
@@ -19,7 +19,7 @@ export class TypeScriptGenerator extends CodeGenerator {
   private readonly _tpl = new CodegenTemplateHost('typescript');
 
   async generate(ast: DeukPackAST, _options: GenerationOptions): Promise<{ [filename: string]: string }> {
-    DeukPackEngine.resolveExtends(ast);
+    DeukPackCodec.resolveExtends(ast);
     const out: { [filename: string]: string } = {};
     const namespaces = this.groupByNamespace(ast);
 

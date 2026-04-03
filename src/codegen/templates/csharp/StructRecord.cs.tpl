@@ -29,7 +29,7 @@
         {
 @@READ_SWITCH_CASES@@
           default:
-            DeukPack.Protocol.DeukPackSerializationWarnings.LogUnknownField("@@WIRE_NAME@@", field.ID, field.Name @@?@@@@?@@ "");
+            DeukPack.Protocol.DeukPackSerializationWarnings.LogUnknownField("@@WIRE_NAME@@", field.ID, field.Name ?? "");
             DpProtocolUtil.Skip(iprot, field.Type);
             break;
         }
@@ -38,6 +38,29 @@
       iprot.ReadStructEnd();
 @@READ_MISSING_REQUIRED_CHECKS@@
     }
+
+    // ── Unified DeukPack Serialization API ──
+    public static byte[] Pack(@@CLASS_NAME@@ obj, DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary, ICollection<int>@@?@@ fieldIds = null, Dictionary<int, object>@@?@@ overrides = null) => obj.Pack(format, fieldIds, overrides);
+
+    /// <summary>
+    /// Deserializes data into a NEW instance of @@CLASS_NAME@@.
+    /// [CAUTION] Avoid using this in high-frequency network loops as it allocates memory and triggers Unity Garbage Collection spikes.
+    /// </summary>
+    public static @@CLASS_NAME@@ Unpack(byte[] data, DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary) => DeukPack.Protocol.DeukPackCodec.Unpack<@@CLASS_NAME@@>(data, format);
+
+    /// <summary>
+    /// Deserializes data into an EXISTING instance of @@CLASS_NAME@@. (Zero-Allocation)
+    /// Use this in high-frequency network hotpaths to overwrite pooled objects and prevent frame drops.
+    /// </summary>
+    public static void Unpack(@@CLASS_NAME@@ obj, byte[] data, DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary) => DeukPack.Protocol.DeukPackCodec.Unpack(obj, data, format);
+    public byte[] Pack(DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary, ICollection<int>@@?@@ fieldIds = null, Dictionary<int, object>@@?@@ overrides = null)
+    {
+        if (fieldIds == null && overrides == null) 
+            return DeukPack.Protocol.DeukPackCodec.Pack(this, format);
+        else
+            return DeukPack.Protocol.DeukPackCodec.PackAction(oprot => this.Write(oprot, fieldIds, overrides), format);
+    }
+
 
     // Clone method
     public @@CLASS_NAME@@ Clone()

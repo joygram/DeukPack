@@ -5,7 +5,7 @@
 
 import { DeukPackAST, SerializationOptions, PerformanceMetrics } from '../types/DeukPackTypes';
 
-export class NativeDeukPackEngine {
+export class NativeDeukPackCodec {
   private isAvailable: boolean = false;
 
   constructor() {

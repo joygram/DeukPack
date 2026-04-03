@@ -75,7 +75,7 @@
       ]
     },
     "thrift-field-id": {
-      "comment": "필드 ID 1: 2: — 숫자와 콜론 구분",
+      "comment": "필드 ID 1> 2> — 숫자와 콜론 구분",
       "captures": {
         "1": { "name": "constant.numeric.field-id.thrift" },
         "2": { "name": "punctuation.separator.colon.thrift" }
@@ -129,7 +129,7 @@
     },
     "primitive-types": {
       "name": "storage.type.thrift",
-      "match": "\\b(bool|byte|i8|i16|i32|i64|int8|int16|int32|int64|float|double|string|binary|list|set|map)\\b"
+      "match": "\\b(bool|byte|int8|int16|int32|int64|int8|int16|int32|int64|float|double|string|binary|list|set|map)\\b"
     },
     "constant-language": {
       "name": "constant.language.thrift",

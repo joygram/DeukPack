@@ -1,8 +1,8 @@
 // 득팩 플러그인 확인용 샘플 — 포맷(Shift+Alt+F) 및 문법 하이라이트 테스트
 namespace example_meta {
 struct data {
-1: int32 id;
-2: string name;
-3: list<int32> tags;
+1> int32 id
+2> string name
+3> list<int32> tags;
 }
 }

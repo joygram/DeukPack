@@ -16,7 +16,7 @@ import {
   DeukPackField,
 } from '../../types/DeukPackTypes';
 import { CodeGenerator } from '../CodeGenerator';
-import { DeukPackEngine } from '../../core/DeukPackEngine';
+import { DeukPackCodec } from '../../core/DeukPackCodec';
 import { CodegenTemplateHost } from '../codegenTemplateHost';
 
 type TypeGroup = {
@@ -59,7 +59,7 @@ export class CppGenerator extends CodeGenerator {
   }
 
   async generate(ast: DeukPackAST, _options: GenerationOptions): Promise<{ [filename: string]: string }> {
-    DeukPackEngine.resolveExtends(ast);
+    DeukPackCodec.resolveExtends(ast);
     const fileGroups = this.groupBySourceFile(ast);
     const out: { [filename: string]: string } = {};
 
@@ -540,7 +540,19 @@ export class CppGenerator extends CodeGenerator {
       DOC_COMMENT: docComment,
       STRUCT_NAME: s.name,
       FIELD_DECL_LINES: fieldDeclLines.join('\n'),
-      FIELD_ID_LINES: fieldIdLines.join('\n'),
+      FIELD_ID_LINES: fieldIdLines.join('\n') + '\n\n  // Unified DeukPack Serialization API\n' +
+      '  std::string Pack(const std::string& format = "") const;\n' +
+      '  static std::string Pack(const ' + s.name + '& obj, const std::string& format = "");\n' +
+      '  /**\n' +
+      '   * Deserializes data and returns it by value (RVO).\n' +
+      '   * High performance for stack allocation, but deep containers (std::vector) will allocate on the heap.\n' +
+      '   */\n' +
+      '  static ' + s.name + ' Unpack(const std::string& buf, const std::string& format = "");\n' +
+      '  /**\n' +
+      '   * Deserializes data into an existing instance (Zero-Allocation Overwrite).\n' +
+      '   * Clears and reuses existing std::vector capacity, avoiding expensive OS heap allocator mutex locks.\n' +
+      '   */\n' +
+      '  static void Unpack(' + s.name + '& obj, const std::string& buf, const std::string& format = "");',
     });
   }
 
@@ -562,6 +574,9 @@ export class CppGenerator extends CodeGenerator {
   private generateCppFile(baseName: string, namespaces: string[], group: TypeGroup, ast: DeukPackAST): string {
     const lines: string[] = [];
     lines.push(`#include "${this.cppHeaderFileName(baseName)}"`);
+    lines.push(`#include "DpBinaryProtocol.h"`);
+    lines.push(`#include "DpJsonProtocol.h"`);
+    lines.push(`#include <sstream>`);
     lines.push('');
 
     for (const ns of namespaces) {
@@ -631,6 +646,21 @@ export class CppGenerator extends CodeGenerator {
            `    iprot.ReadFieldEnd();\n` +
            `  }\n` +
            `  iprot.ReadStructEnd();\n` +
+           `}\n\n` +
+           `std::string ${name}::Pack(const std::string& format) const {\n` +
+           `  std::ostringstream ss;\n` +
+           `  if (format == \"json\") { deuk::DpJsonProtocol prot(&ss); Write(prot); }\n` +
+           `  else { deuk::DpBinaryProtocol prot(&ss); Write(prot); }\n` +
+           `  return ss.str();\n` +
+           `}\n\n` +
+           `std::string ${name}::Pack(const ${name}& obj, const std::string& format) { return obj.Pack(format); }\n\n` +
+           `${name} ${name}::Unpack(const std::string& buf, const std::string& format) {\n` +
+           `  ${name} obj; Unpack(obj, buf, format); return obj;\n` +
+           `}\n\n` +
+           `void ${name}::Unpack(${name}& obj, const std::string& buf, const std::string& format) {\n` +
+           `  std::istringstream ss(buf);\n` +
+           `  if (format == \"json\") { deuk::DpJsonProtocol prot(&ss); obj.Read(prot); }\n` +
+           `  else { deuk::DpBinaryProtocol prot(&ss); obj.Read(prot); }\n` +
            `}`;
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "deukpack",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "description": "DeukPack — Universal schema multi-hub for Protobuf, Thrift, OpenAPI, and .deuk. Protobuf-aligned wire; fast C#/C++/JS codegen.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,6 +17,7 @@
     "build:cs": "cd DeukPack.Protocol && dotnet build DeukPack.Protocol.csproj -c Release",
     "test": "jest",
     "test:cpp": "node scripts/run-cpp-native-tests.js",
+    "test:elixir-dialyzer": "node scripts/test_elixir_dialyzer.js",
     "test:idl-convert-smoke": "node scripts/idl-convert/smoke-thrift-to-deuk.js",
     "dev": "node ./node_modules/typescript/lib/tsc.js --watch",
     "clean": "rimraf dist native/cpp/build native/csharp/bin native/csharp/obj",

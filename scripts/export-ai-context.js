@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { DeukPackEngine, AiContextGenerator } = require('../dist/index');
+const { DeukPackCodec, AiContextGenerator } = require('../dist/index');
 
 function arg(name, def) {
   const i = process.argv.indexOf(name);
@@ -41,7 +41,7 @@ async function main() {
   }
 
   try {
-    const engine = new DeukPackEngine();
+    const engine = new DeukPackCodec();
     // Parse the entire tree via entry point
     const ast = await engine.parseFileWithIncludes(entry, {
       includePaths: [defineRoot],

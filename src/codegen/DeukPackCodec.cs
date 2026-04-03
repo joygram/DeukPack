@@ -1,5 +1,5 @@
 /**
- * DeukPackSerializer — 직렬화 헬퍼. DpProtocolLibrary 모듈화.
+ * DeukPackCodec — 직렬화 헬퍼. DpProtocolLibrary 모듈화.
  */
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ namespace DeukPack.Protocol
     /// DeukPack serialization helper - modularized to reduce code duplication
     /// Recursive serialization support for nested structures
     /// </summary>
-    public static class DeukPackSerializer
+    public static class DeukPackCodec
     {
         /// <summary>내부 <see cref="MemoryStream"/> 을 둔 바이너리 팩 프로토콜 (쓰기 후 <see cref="DpBinaryProtocol.ToBytes"/>).</summary>
         public static DpBinaryProtocol OpenBinaryPack()
@@ -34,6 +34,23 @@ namespace DeukPack.Protocol
         /// <summary>byte[] 를 객체로 언팩. <see cref="Deserialize{T}"/> 와 동일.</summary>
         public static T Unpack<T>(byte[] data, DpFormat format = DpFormat.Binary) where T : IDpSerializable, new()
             => Deserialize<T>(data, format);
+
+        /// <summary>byte[] 를 기준 객체에 덮어쓰기(Zero-Alloc 언팩). <see cref="DeserializeInto"/> 와 동일.</summary>
+        public static void Unpack(IDpSerializable obj, byte[] data, DpFormat format = DpFormat.Binary)
+            => DeserializeInto(obj, data, format);
+
+        /// <summary>사용자 정의 Write 액션을 이용해 팩 (오버라이드용).</summary>
+        public static byte[] PackAction(Action<DpProtocol> writeAction, DpFormat format = DpFormat.Binary, bool pretty = false)
+        {
+            var ms = new System.IO.MemoryStream();
+            DpProtocol p = CreateProtocol(ms, format, pretty);
+            writeAction(p);
+            return ms.ToArray();
+        }
+
+        [Obsolete("Use Unpack(obj, data, format) instead.", false)]
+        public static void UnpackInto(IDpSerializable obj, byte[] data, DpFormat format = DpFormat.Binary)
+            => Unpack(obj, data, format);
 
         /// <summary>
         /// Write a value recursively based on its type
@@ -310,6 +327,14 @@ namespace DeukPack.Protocol
             return obj;
         }
 
+        /// <summary>byte[] 를 기존 객체에 덮어쓰기. 가비지 생성 없이(Zero-Alloc) 상태를 갱신합니다.</summary>
+        public static void DeserializeInto(IDpSerializable obj, byte[] data, DpFormat format = DpFormat.Binary)
+        {
+            var ms = new System.IO.MemoryStream(data);
+            DpProtocol p = CreateProtocol(ms, format, false);
+            obj.Read(p);
+        }
+
         /// <summary>객체를 JSON 문자열로 덤프 (디버깅/덤프용)</summary>
         public static string ToString(IDpSerializable obj, bool pretty = true)
         {
@@ -332,5 +357,46 @@ namespace DeukPack.Protocol
                     return OpenBinaryPack(stream);
             }
         }
+    }
+
+    /// <summary>
+    /// 득팩 통합 API 파사드. 모든 타겟 언어에서 네임스페이스 식별자를 통일하기 위해 제공됩니다.
+    /// Usage: deukPack.Serialize(...) / deukPack.DeserializeInto(...)
+    /// </summary>
+    public static class deukPack
+    {
+        /// <summary>객체를 バイナリ(Binary) 바이트 배열로 직렬화 (Pack)</summary>
+        public static byte[] Pack(IDpSerializable obj)
+            => DeukPackCodec.Serialize(obj, DpFormat.Binary, false);
+
+        /// <summary>바이트 배열을 기존 객체에 덮어쓰기 역직렬화 (Unpack, Zero-Alloc)</summary>
+        public static void UnpackInto(IDpSerializable obj, byte[] data)
+            => DeukPackCodec.DeserializeInto(obj, data, DpFormat.Binary);
+
+        /// <summary>바이트 배열을 새 객체로 역직렬화 (Unpack)</summary>
+        public static T Unpack<T>(byte[] data) where T : IDpSerializable, new()
+            => DeukPackCodec.Deserialize<T>(data, DpFormat.Binary);
+
+        /// <summary>객체를 JSON 문자열로 직렬화</summary>
+        public static string ToJson(IDpSerializable obj, bool pretty = false)
+            => System.Text.Encoding.UTF8.GetString(DeukPackCodec.Serialize(obj, DpFormat.Json, pretty));
+
+        /// <summary>JSON 바이트 배열 또는 텍스트 기반 바이트를 객체로 역직렬화</summary>
+        public static T FromJson<T>(byte[] jsonBytes) where T : IDpSerializable, new()
+            => DeukPackCodec.Deserialize<T>(jsonBytes, DpFormat.Json);
+
+        // --- Legacy Backwards Compatibility (Deprecated) ---
+
+        [Obsolete("Use Pack() instead. This method is kept for backwards compatibility.")]
+        public static byte[] Serialize(IDpSerializable obj, DpFormat format = DpFormat.Binary, bool pretty = false)
+            => DeukPackCodec.Serialize(obj, format, pretty);
+
+        [Obsolete("Use UnpackInto() instead. This method is kept for backwards compatibility.")]
+        public static void DeserializeInto(IDpSerializable obj, byte[] data, DpFormat format = DpFormat.Binary)
+            => DeukPackCodec.DeserializeInto(obj, data, format);
+
+        [Obsolete("Use Unpack() instead. This method is kept for backwards compatibility.")]
+        public static T Deserialize<T>(byte[] data, DpFormat format = DpFormat.Binary) where T : IDpSerializable, new()
+            => DeukPackCodec.Deserialize<T>(data, format);
     }
 }
