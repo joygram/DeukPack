@@ -4,6 +4,13 @@
 
 **English:** [CHANGELOG.md](CHANGELOG.md)
 
+## [1.8.1] — 2026-04-03
+
+### 파이프라인 및 CI/CD 핫픽스
+- **레거시 의존성 제거**: `ci.yml` 스크립트 등 CI 파이프라인에서 삭제된 `sample.thrift`를 하드코딩으로 참조하여 발생하던 빌드 실패 이슈를 해결하고, 순정 `sample.deuk` 규격으로 테스트 스위트를 완벽하게 마이그레이션 및 교체했습니다.
+- **Elixir Dialyzer 타입 안정성**: 특정 환경에서 발생하는 `Jason` 파서 모듈의 컴파일 타임 존재 경고를 `apply` 리플렉션을 통해 동적으로 우회(Bypass)시켜 무결점(Zero-Warning) 매트릭스 테스트를 달성했습니다.
+- **C# Non-nullable 컬렉션 경고 방어**: 생성된 컬렉션 이터레이터 내부에서 CS8603 (Possible null reference return) 널 참조 경고가 표기되지 않도록 널 포기빙 연산자(`!`)를 명시적으로 주입했습니다.
+
 ## [1.8.0] — 2026-04-03
 
 ### Core: 직렬화 API 통일성 및 Static 오버로드 강제화

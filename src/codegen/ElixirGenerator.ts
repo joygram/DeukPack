@@ -205,7 +205,7 @@ ${encodeFields}
   @spec pack(t(), atom()) :: binary()
   def pack(%__MODULE__{} = struct, format \\\\ :binary) do
     if format == :json do
-      if Code.ensure_loaded?(Jason), do: Jason.encode!(Map.from_struct(struct)), else: raise "Jason module not found for to_json"
+      if Code.ensure_loaded?(Jason), do: apply(Jason, :encode!, [Map.from_struct(struct)]), else: raise "Jason module not found for to_json"
     else
       encode(struct)
     end
@@ -221,7 +221,7 @@ ${encodeFields}
   @spec unpack(binary(), atom()) :: t()
   def unpack(bytes, format) when is_binary(bytes) do
     if format == :json do
-      if Code.ensure_loaded?(Jason), do: Jason.decode!(bytes, keys: :atoms) |> struct(__MODULE__), else: raise "Jason module not found for from_json"
+      if Code.ensure_loaded?(Jason), do: apply(Jason, :decode!, [bytes, [keys: :atoms]]) |> struct(__MODULE__), else: raise "Jason module not found for from_json"
     else
       decode("binary", bytes, %__MODULE__{}) |> elem(0)
     end
@@ -239,7 +239,7 @@ ${encodeFields}
   @spec unpack(t(), binary(), atom()) :: t()
   def unpack(%__MODULE__{} = struct, bytes, format) do
     if format == :json do
-      if Code.ensure_loaded?(Jason), do: struct!(struct, Jason.decode!(bytes, keys: :atoms)), else: raise "Jason module not found for from_json"
+      if Code.ensure_loaded?(Jason), do: struct!(struct, apply(Jason, :decode!, [bytes, [keys: :atoms]])), else: raise "Jason module not found for from_json"
     else
       decode("binary", bytes, struct) |> elem(0)
     end

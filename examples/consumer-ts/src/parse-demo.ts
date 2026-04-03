@@ -6,7 +6,7 @@ import { DeukPackCodec } from 'deukpack';
 
 async function main(): Promise<void> {
   const engine = new DeukPackCodec();
-  const idl = path.join(__dirname, '..', '..', 'sample_idl', 'sample.thrift');
+  const idl = path.join(__dirname, '..', '..', 'sample_idl', 'sample.deuk');
   const ast = await engine.parseFileWithIncludes(idl, {
     includePaths: [path.dirname(idl)],
   });

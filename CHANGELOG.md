@@ -4,6 +4,13 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.8.1] — 2026-04-03
+
+### CI/CD & Pipeline Hotfix
+- **Legacy Dependency Cleanup**: Resolved build failures caused by missing `sample.thrift` references in CI scripts `ci.yml` and testing examples. Fully migrated all validation suites to use native `sample.deuk`.
+- **Elixir Dialyzer Types**: Suppressed specific `Jason` compiler references using `apply` reflection, resolving "module not available" warnings in missing dependency matrices.
+- **C# Non-nullable Warnings**: Enforced explicit null-forgiving operators (`!`) during collection iteration in generated code to resolve `CS8603` warnings in strict projects.
+
 ## [1.8.0] — 2026-04-03
 
 ### Core: Unified Serialization API & Static Overloads

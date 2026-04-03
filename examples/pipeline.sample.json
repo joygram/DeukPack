@@ -2,7 +2,7 @@
   "jobs": [
     {
       "name": "sample_tutorial",
-      "thriftFile": "sample_idl/sample.thrift",
+      "thriftFile": "sample_idl/sample.deuk",
       "outputDir": "generated",
       "csharp": true,
       "cpp": true,

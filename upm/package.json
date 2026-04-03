@@ -1,6 +1,6 @@
 {
   "name": "app.deukpack.runtime",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "displayName": "DeukPack Runtime",
   "unity": "2021.3",
   "description": "DeukPack.Core / Protocol / ExcelProtocol DLL (netstandard2.0) + Unity geometry source. DLL은 build_unity_runtime_plugins.js·빌드 파이프라인이 생성·복사.",
