@@ -164,7 +164,8 @@ void OnNetworkMessage(byte[] inputData) {
 | **v1.5.1** | **C++ Zero-Alloc Optimization**: Arena allocator, C++ DDL Generator | **DONE** |
 | **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: Ultimate JS/C# memory optimizations | **DONE** |
 | **v1.7.0** | **Elixir Engine Support**: Native BEAM pattern matching & Universal Protocol Security Shield | **DONE** |
-| **v1.7.6** | **Unified 2-Method API**: `Pack`/`Unpack` standard across all 6 languages | **Current** |
+| **v1.8.0** | **Unified 2-Method API**: `Pack`/`Unpack` standard across all 6 languages | **DONE** |
+| **v1.8.1** | **Dialyzer & CI Security**: Strict Elixir typing and GitHub Actions `sample.deuk` pure migration | **Current** |
 
 ---
 
@@ -194,7 +195,7 @@ void OnNetworkMessage(byte[] inputData) {
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
-| **Unified API** | `Pack` / `Unpack` (2-method) | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 | ✅ v1.7.6 |
+| **Unified API** | `Pack` / `Unpack` (2-method) | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 |
 | **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | | Protobuf Compatible | ✅ | ✅ | ✅ | ✅ | - |
 | | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
