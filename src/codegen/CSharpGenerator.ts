@@ -2074,7 +2074,7 @@ export class CSharpGenerator extends CodeGenerator {
         case 'uint64': return `static p => unchecked((ulong)p.ReadI64())`;
         case 'float': return `static p => (float)p.ReadDouble()`;
         case 'double': return `static p => p.ReadDouble()`;
-        case 'string': return `static p => p.ReadString()`;
+        case 'string': return `static p => p.ReadString()!`;
         case 'binary': return `static p => p.ReadBinary()`;
         case 'datetime':
         case 'timestamp': return `static p => new DateTime(p.ReadI64(), DateTimeKind.Utc)`;

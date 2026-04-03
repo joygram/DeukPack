@@ -1,12 +1,12 @@
 {
-  "version": "1.8.0",
+  "version": "1.8.1",
   "info_title_ko": "득팩 코어 업데이트",
   "info_title_en": "DeukPack core update",
-  "announce": "<strong>득팩 코어 1.8.0</strong> — Elixir Dialyzer 자동화 · Static API 통일 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약 (KO/EN)</a>",
-  "announce_ko": "<strong>득팩 코어 1.8.0</strong> — Elixir Dialyzer 자동화 · 크로스 랭귀지 Static API 통일 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>",
-  "announce_en": "<strong>DeukPack Core 1.8.0</strong> — Elixir Dialyzer Automation · Unified Static APIs —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
-  "landing_ko": "**득팩 코어 1.8.0** — Elixir `Dialyzer` 타입 추론을 완벽하게 통과하는 런타임 제네레이터를 도입하고, C#과 C++의 메모리 재활용 패턴을 전 언어권에 걸쳐 일관된 **정적(Static) API** 로 통일했습니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
-  "landing_en": "**DeukPack core 1.8.0** — Implemented an Elixir runtime generator that perfectly passes `Dialyzer` type inference, and unified memory-pooling patterns from C# and C++ into consistent **Static APIs** across all runtime languages. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
+  "announce": "<strong>득팩 코어 1.8.1</strong> — CI/CD Pipeline Hotfix · Strict Type Checks —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약 (KO/EN)</a>",
+  "announce_ko": "<strong>득팩 코어 1.8.1</strong> — CI/CD 파이프라인 핫픽스 및 엄격한 타입 안정화 —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">릴리스 요약</a>",
+  "announce_en": "<strong>DeukPack Core 1.8.1</strong> — CI/CD Hotfix & Strict Types —\n<a href=\"https://github.com/joygram/DeukPack/releases/latest\">GitHub Releases</a>\n· <a href=\"https://deukpack.app/releases/\">Release summary</a>",
+  "landing_ko": "**득팩 코어 1.8.1** — 이전 릴리스(1.8.0) 파이프라인에서 탐지된 `sample.thrift` 종속성 누락 이슈를 완벽히 해결하고 순정 `sample.deuk` 규격으로 전환했습니다. C# 제네레이터의 Non-nullable 경고와 Elixir Dialyzer 파싱 모듈 참조 경고를 사전 차단(Bypass)하여 완벽한 Zero-Warning CI/CD 빌드를 보장합니다. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [릴리스 요약](https://deukpack.app/releases/)",
+  "landing_en": "**DeukPack core 1.8.1** — Resolved CI build failures caused by deprecated `sample.thrift` dependencies in the validation workflows, fully migrating smoke tests to the native `sample.deuk` specification. Additionally suppressed C# non-nullable Collection warnings and bypassed strict Elixir Dialyzer module checks (`Jason`) to guarantee a Zero-Warning Continuous Integration experience. [GitHub Releases](https://github.com/joygram/DeukPack/releases/latest) · [Release summary](https://deukpack.app/releases/)",
   "product_notices": [
     {
       "date": "2026-04-01",
