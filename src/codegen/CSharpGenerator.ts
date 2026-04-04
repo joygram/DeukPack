@@ -146,6 +146,9 @@ export class CSharpGenerator extends CodeGenerator {
     if (t === 'int64' || t === 'i64') return `${v}L`;
     if (typeof v === 'number') return v.toString();
     if (this.isEnumType(t, _ast, _ns)) return `${CSharpTypeHelper.getCSharpType(t, _ast, _ns)}.${v}`;
+    if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+        return `new ${CSharpTypeHelper.getCSharpType(t, _ast, _ns)}()`;
+    }
     return typeof v === 'bigint' ? `${v}L` : JSON.stringify(v); 
   }
   

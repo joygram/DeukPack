@@ -190,7 +190,12 @@ export class CSharpStructGenerator {
       ANNOTATIONS: structAnn,
       STRUCT_DOC: structDoc,
       STRUCT_ANN: structAnn,
-      SCHEMA_FIELD_LINES: '',
+      SCHEMA_FIELD_LINES: struct.fields.map(f => {
+        const typeStr = (typeof f.type === 'string' && this.ctx.isEnumType(f.type, ast, ns)) ? "DpWireType.Int32" : CSharpTypeHelper.getTType(f.type, ast, ns);
+        const defVal = f.defaultValue !== undefined ? this.ctx.getCSharpDefaultValue(f.defaultValue, f.type, ast, ns) : 'null';
+        const isOpt = f.required ? 'false' : 'true';
+        return `          { ${f.id}, new DpFieldSchema { ID = ${f.id}, Name = "${CSharpTypeHelper.escapeCSharpStringContent(f.name)}", Type = ${typeStr}, IsOptional = ${isOpt}, DefaultValue = ${defVal} } },`;
+      }).join('\n'),
       META_CONTAINER_BLOCK: '',
       'NULLABLE': opts.csharpNullable ? '?' : '',
     });

@@ -27,16 +27,9 @@ namespace DeukPack.Protocol
         private readonly Stack<MapWriteState> _mapWriteStack;
         private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
-        private string? _readMapCurrentKey = ""; // Initialized to empty to avoid null check skip
         private Dictionary<string, object> _rootRead;
         private Stack<JsonReadFrame> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
-        private List<object>? _readList;
-        private int _readListIndex;
-        private Dictionary<string, object>? _readMapDict;
-        private List<string>? _readMapKeys;
-        private int _readMapIndex;
-        private bool _readMapReadingKey;
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
         public DpJsonProtocol(Stream stream, bool pretty = false, bool includeSchema = false, bool isReadMode = true)
