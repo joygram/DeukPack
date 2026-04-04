@@ -4,6 +4,13 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.9.0] — 2026-04-04
+
+### Official Python Support
+- **Python Binary Engine Added**: Officially supports Python 3.6+ environments. The new engine integrates optimization strategies modeled after robust C-API architectures (like `ORJSON`) to minimize serialization bottlenecks.
+
+- **Complex Real-World Test Models**: Scaled the measurement baselines by discarding simple 1D models in favor of the **ComplexRoundtripModel**—a comprehensive test suite invoking multi-dimensional hash maps and deep nested trees to ensure transparent, enterprise-level performance metrics.
+
 ## [1.8.1] — 2026-04-03
 
 ### CI/CD & Pipeline Hotfix

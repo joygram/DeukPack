@@ -13,7 +13,6 @@ import {
   DeukPackConstant,
   DeukPackType,
   DeukPackTypedef,
-  DeukPackField,
 } from '../../types/DeukPackTypes';
 import { CodeGenerator } from '../CodeGenerator';
 import { DeukPackCodec } from '../../core/DeukPackCodec';
@@ -67,6 +66,7 @@ export class CppGenerator extends CodeGenerator {
     out['DpBinaryProtocol.h'] = this._tpl.load('DpBinaryProtocol.h.tpl');
     out['DpPackProtocol.h'] = this._tpl.load('DpPackProtocol.h.tpl');
     out['DpJsonProtocol.h'] = this._tpl.load('DpJsonProtocol.h.tpl');
+    out['DpZeroCopy.h'] = this._tpl.load('DpZeroCopy.h.tpl');
 
     for (const [sourceFile, group] of Object.entries(fileGroups)) {
       const baseName = this.getBaseNameFromSource(sourceFile);
@@ -352,10 +352,12 @@ export class CppGenerator extends CodeGenerator {
     lines.push(this._tpl.load('HeaderPreamble.h.tpl').trimEnd());
     lines.push('');
     lines.push('#include "DpProtocol.h"');
+    lines.push('#include "DpZeroCopy.h"');
     lines.push('#include <memory>');
     lines.push('#include <vector>');
     lines.push('#include <map>');
     lines.push('#include <set>');
+    lines.push('#include <cstring>');
     lines.push('');
 
     const crossHeaders = this.collectCrossSourceHeaderIncludes(_baseName, group, ast);
@@ -413,6 +415,26 @@ export class CppGenerator extends CodeGenerator {
         lines.push('');
         emittedDeclaration = true;
       }
+      // Topological sort structs
+      const sortedStructs: DeukPackStruct[] = [];
+      const visited = new Set<string>();
+      const temp = new Set<string>();
+      const visit = (s: DeukPackStruct) => {
+        if (visited.has(s.name)) return;
+        if (temp.has(s.name)) return; // circular dependency ignore for now
+        temp.add(s.name);
+        for (const f of s.fields || []) {
+          const tName = typeof f.type === 'string' ? f.type : this.getRealType(f.type, ast);
+          const dep = defs.structs.find(x => x.name === tName || x.name === f.type || (f.type as any).elementType === x.name);
+          if (dep) visit(dep);
+        }
+        temp.delete(s.name);
+        visited.add(s.name);
+        sortedStructs.push(s);
+      };
+      for (const s of defs.structs) visit(s);
+      defs.structs = sortedStructs;
+
       if (defs.structs.length > 0) {
         for (const s of defs.structs) lines.push(`  struct ${s.name};`);
         lines.push('');
@@ -528,7 +550,10 @@ export class CppGenerator extends CodeGenerator {
         ? this.resolveTypeName(f.type, currentNs, ast)
         : this.getCppType(f.type, ast, currentNs);
       const name = f.name || 'field';
-      fieldDeclLines.push(`  std::shared_ptr<${cppType}> ${name};`);
+      
+      // OPTIONAL 필드인 경우 std::optional 도입도 좋지만 현재는 기본값으로 둡니다. 
+      // V2에서는 shared_ptr를 완전히 제거하고 직관적인 값(Value) 타입으로 저장합니다.
+      fieldDeclLines.push(`  ${cppType} ${name};`);
     }
     const fieldIdLines: string[] = [];
     for (const f of s.fields || []) {
@@ -536,24 +561,15 @@ export class CppGenerator extends CodeGenerator {
       const constName = 'kFieldId_' + name.charAt(0).toUpperCase() + name.slice(1);
       fieldIdLines.push(`  static constexpr int ${constName} = ${f.id};`);
     }
-    return this._tpl.render('CppStructDecl.h.tpl', {
-      DOC_COMMENT: docComment,
-      STRUCT_NAME: s.name,
-      FIELD_DECL_LINES: fieldDeclLines.join('\n'),
-      FIELD_ID_LINES: fieldIdLines.join('\n') + '\n\n  // Unified DeukPack Serialization API\n' +
-      '  std::string Pack(const std::string& format = "") const;\n' +
-      '  static std::string Pack(const ' + s.name + '& obj, const std::string& format = "");\n' +
-      '  /**\n' +
-      '   * Deserializes data and returns it by value (RVO).\n' +
-      '   * High performance for stack allocation, but deep containers (std::vector) will allocate on the heap.\n' +
-      '   */\n' +
-      '  static ' + s.name + ' Unpack(const std::string& buf, const std::string& format = "");\n' +
-      '  /**\n' +
-      '   * Deserializes data into an existing instance (Zero-Allocation Overwrite).\n' +
-      '   * Clears and reuses existing std::vector capacity, avoiding expensive OS heap allocator mutex locks.\n' +
-      '   */\n' +
-      '  static void Unpack(' + s.name + '& obj, const std::string& buf, const std::string& format = "");',
-    });
+    const methods = '  // V2 Zero-Copy Pack ----------------------------------\n' +
+      '  size_t GetByteSize() const;\n' +
+      '  void WriteDirect(class ZeroCopyWriter& writer) const;\n' +
+      '  void ReadDirect(class ZeroCopyReader& reader);\n' +
+      '  std::string PackV2() const;\n' +
+      '  static ' + s.name + ' UnpackV2(const std::string& data);\n' +
+      '  // ----------------------------------------------------';
+      
+    return `${docComment}struct ${s.name} {\n${fieldDeclLines.join('\n')}\n\n${fieldIdLines.join('\n')}\n\n${methods}\n};`;
   }
 
   private renderConstantLine(c: DeukPackConstant, ast: DeukPackAST): string {
@@ -593,75 +609,242 @@ export class CppGenerator extends CodeGenerator {
       lines.push(this.renderCppNamespaceClose(ns));
       lines.push('');
     }
-
     return lines.join('\n');
   }
 
-  private renderStructImpl(s: DeukPackStruct, ast: DeukPackAST, ns: string): string {
+  private renderStructImpl(s: DeukPackStruct, ast: DeukPackAST, _ns: string): string {
     const name = s.name;
     const fields = s.fields || [];
 
-    // Write method
-    const nonNullCount = fields.map(f => `(${f.name} ? 1 : 0)`).join(' + ');
-    const writeLines = fields.map(f => {
-        return `    if (${f.name}) {\n` +
-               `      oprot.WriteFieldBegin({"${f.name}", DpWireType::${this.toWireType(f.type, ast)}, ${f.id}});\n` +
-               `      ${this.renderWriteCall(f, f.name, ast)}\n` +
-               `      oprot.WriteFieldEnd();\n` +
-               `    }`;
+    // [V2] GetByteSize Method
+    let sizeLines = fields.map(f => {
+      const type = f.type;
+      const t = this.getRealType(type, ast);
+      let condition = ``;
+      if (t === 'string' || t === 'binary' || t === 'list' || t === 'array' || t === 'set' || t === 'map') {
+        condition = `!${f.name}.empty()`;
+      } else {
+        condition = `true`; // for primitives, just write always in this V2 poc unless we want to check zero
+      }
+      
+      let sizeStmts = ``;
+      if (t === 'string' || t === 'binary') sizeStmts = `size += 4 + ${f.name}.length();`;
+      else if (t === 'bool' || t === 'byte' || t === 'int8') sizeStmts = `size += 1;`;
+      else if (t === 'int16') sizeStmts = `size += 2;`;
+      else if (t === 'int32' || t === 'enum' || t === 'float') sizeStmts = `size += 4;`;
+      else if (t === 'int64' || t === 'double') sizeStmts = `size += 8;`;
+      else if (t === 'record') sizeStmts = `size += ${f.name}.GetByteSize();`;
+      else if (t === 'list' || t === 'array' || t === 'set') {
+        const et = (type as any).elementType;
+        const eType = this.getRealType(et, ast);
+        let eSize = `4`;
+        if (eType === 'int64' || eType === 'double') eSize = `8`;
+        else if (eType === 'bool' || eType === 'byte' || eType === 'int8') eSize = `1`;
+        else if (eType === 'int16') eSize = `2`;
+        else if (eType === 'string' || eType === 'binary') eSize = `4 + elem.length()`;
+        else if (eType === 'record') eSize = `elem.GetByteSize()`;
+        
+        sizeStmts = `size += 1 + 4;\n    for (const auto elem : ${f.name}) { size += ${eSize}; }`;
+      } else if (t === 'map') {
+        const kt = (type as any).keyType;
+        const vt = (type as any).valueType;
+        const kType = this.getRealType(kt, ast);
+        const vType = this.getRealType(vt, ast);
+        
+        let kSize = `4`;
+        if (kType === 'string' || kType === 'binary') kSize = `4 + kv.first.length()`;
+        else if (kType === 'int64' || kType === 'double') kSize = `8`;
+
+        let vSize = `4`;
+        if (vType === 'string' || vType === 'binary') vSize = `4 + kv.second.length()`;
+        else if (vType === 'int64' || vType === 'double') vSize = `8`;
+        else if (vType === 'record') vSize = `kv.second.GetByteSize()`;
+
+        sizeStmts = `size += 1 + 1 + 4;\n    for (const auto& kv : ${f.name}) { size += ${kSize}; size += ${vSize}; }`;
+      } else {
+        sizeStmts = `size += 0; /* unsupported size */`;
+      }
+
+      if (condition === 'true') {
+        return `  size += 1 + 2; // FieldBegin\n  ${sizeStmts}`;
+      } else {
+        return `  if (${condition}) {\n    size += 1 + 2;\n    ${sizeStmts}\n  }`;
+      }
     }).join('\n');
 
-    // Read method
-    const readSwitchCases = fields.map(f => {
-        return `      case ${f.id}:\n` +
-               `        if (field.Type == DpWireType::${this.toWireType(f.type, ast)} || field.Type == DpWireType::Void) {\n` +
-               `          ${this.renderReadCall(f, f.name, ast, ns)}\n` +
-               `        } else {\n` +
-               `          iprot.Skip(field.Type);\n` +
-               `        }\n` +
-               `        break;`;
+    // [V2] WriteDirect Method
+    let writeLines = fields.map(f => {
+      const type = f.type;
+      const t = this.getRealType(type, ast);
+       let condition = ``;
+      if (t === 'string' || t === 'binary' || t === 'list' || t === 'array' || t === 'set' || t === 'map') {
+        condition = `!${f.name}.empty()`;
+      } else {
+        condition = `true`; 
+      }
+
+      let writeOp = ``;
+      if (t === 'string' || t === 'binary') writeOp = `writer.WriteString(${f.name});`;
+      else if (t === 'bool') writeOp = `writer.WriteByte(${f.name} ? 1 : 0);`;
+      else if (t === 'byte' || t === 'int8') writeOp = `writer.WriteByte(${f.name});`;
+      else if (t === 'int16') writeOp = `writer.WriteI16(${f.name});`;
+      else if (t === 'int32' || t === 'enum') writeOp = `writer.WriteI32(static_cast<int32_t>(${f.name}));`;
+      else if (t === 'int64') writeOp = `writer.WriteI64(${f.name});`;
+      else if (t === 'float') writeOp = `writer.WriteI32(*(reinterpret_cast<const int32_t*>(&${f.name}))); /* fixme proper float */`;
+      else if (t === 'double') writeOp = `writer.WriteI64(*(reinterpret_cast<const int64_t*>(&${f.name}))); /* fixme proper double */`;
+      else if (t === 'record') writeOp = `${f.name}.WriteDirect(writer);`;
+      else if (t === 'list' || t === 'array' || t === 'set') {
+        const et = (type as any).elementType;
+        const eType = this.getRealType(et, ast);
+        let eWrite = `writer.WriteI32(static_cast<int32_t>(elem));`;
+        if (eType === 'string' || eType === 'binary') eWrite = `writer.WriteString(elem);`;
+        else if (eType === 'int64' || eType === 'double') eWrite = `writer.WriteI64(elem);`;
+        else if (eType === 'record') eWrite = `elem.WriteDirect(writer);`;
+        
+        const b = t === 'set' ? 'WriteSetBegin' : 'WriteListBegin';
+        writeOp = `writer.${b}(static_cast<uint8_t>(deuk::DpWireType::${this.toWireType(et, ast)}), static_cast<int32_t>(${f.name}.size()));\n` +
+                  `    for (const auto elem : ${f.name}) { ${eWrite} }`;
+      } else if (t === 'map') {
+          const kt = (type as any).keyType;
+          const vt = (type as any).valueType;
+          const kType = this.getRealType(kt, ast);
+          const vType = this.getRealType(vt, ast);
+          
+          let kWrite = `writer.WriteI32(static_cast<int32_t>(kv.first));`;
+          if (kType === 'string' || kType === 'binary') kWrite = `writer.WriteString(kv.first);`;
+          else if (kType === 'int64' || kType === 'double') kWrite = `writer.WriteI64(kv.first);`;
+          
+          let vWrite = `writer.WriteI32(static_cast<int32_t>(kv.second));`;
+          if (vType === 'string' || vType === 'binary') vWrite = `writer.WriteString(kv.second);`;
+          else if (vType === 'int64' || vType === 'double') vWrite = `writer.WriteI64(kv.second);`;
+          else if (vType === 'record') vWrite = `kv.second.WriteDirect(writer);`;
+          
+          writeOp = `writer.WriteMapBegin(static_cast<uint8_t>(deuk::DpWireType::${this.toWireType(kt, ast)}), static_cast<uint8_t>(deuk::DpWireType::${this.toWireType(vt, ast)}), static_cast<int32_t>(${f.name}.size()));\n` +
+                    `    for (const auto& kv : ${f.name}) { ${kWrite} ${vWrite} }`;
+      } else {
+        writeOp = `// TODO Write Op: ${t}`;
+      }
+
+      if (condition === 'true') {
+        return `  writer.WriteFieldBegin(static_cast<uint8_t>(deuk::DpWireType::${this.toWireType(type, ast)}), ${f.id});\n  ${writeOp}`;
+      } else {
+        return `  if (${condition}) {\n    writer.WriteFieldBegin(static_cast<uint8_t>(deuk::DpWireType::${this.toWireType(type, ast)}), ${f.id});\n    ${writeOp}\n  }`;
+      }
     }).join('\n');
 
-    const nameToIdLogic = fields.map(f => 
-        `    if (id == 0 && field.Name == "${f.name}") id = ${f.id};`
-    ).join('\n');
-
-    return `void ${name}::Write(DpProtocol& oprot) const {\n` +
-           `  oprot.WriteStructBegin({"${name}", ${nonNullCount || '0'}});\n` +
+    return `size_t ${name}::GetByteSize() const {\n` +
+           `  size_t size = 0;\n` +
+           `${sizeLines}\n` +
+           `  size += 1; // FieldStop\n` +
+           `  return size;\n` +
+           `}\n\n` +
+           `void ${name}::WriteDirect(ZeroCopyWriter& writer) const {\n` +
            `${writeLines}\n` +
-           `  oprot.WriteFieldStop();\n` +
-           `  oprot.WriteStructEnd();\n` +
+           `  writer.WriteFieldStop();\n` +
            `}\n\n` +
-           `void ${name}::Read(DpProtocol& iprot) {\n` +
-           `  iprot.ReadStructBegin();\n` +
+           `void ${name}::ReadDirect(ZeroCopyReader& reader) {\n` +
            `  while (true) {\n` +
-           `    DpColumn field = iprot.ReadFieldBegin();\n` +
-           `    if (field.Type == DpWireType::Stop) break;\n` +
-           `    int16 id = field.ID;\n` +
-           `${nameToIdLogic}\n` +
-           `    switch (id) {\n` +
-           `${readSwitchCases}\n` +
-           `      default: iprot.Skip(field.Type); break;\n` +
+           `    uint8_t f_type; int16_t f_id;\n` +
+           `    if (!reader.ReadFieldBegin(f_type, f_id)) break;\n` +
+           `    switch (f_id) {\n` +
+           `${this.renderReadDirectCases(s, ast)}\n` +
+           `      default:\n` +
+           `        reader.Skip(f_type);\n` +
+           `        break;\n` +
            `    }\n` +
-           `    iprot.ReadFieldEnd();\n` +
            `  }\n` +
-           `  iprot.ReadStructEnd();\n` +
            `}\n\n` +
-           `std::string ${name}::Pack(const std::string& format) const {\n` +
-           `  std::ostringstream ss;\n` +
-           `  if (format == \"json\") { deuk::DpJsonProtocol prot(&ss); Write(prot); }\n` +
-           `  else { deuk::DpBinaryProtocol prot(&ss); Write(prot); }\n` +
-           `  return ss.str();\n` +
+           `std::string ${name}::PackV2() const {\n` +
+           `  size_t total_size = GetByteSize();\n` +
+           `  std::string buf;\n` +
+           `  buf.resize(total_size);\n` +
+           `  ZeroCopyWriter writer(reinterpret_cast<uint8_t*>(&buf[0]));\n` +
+           `  WriteDirect(writer);\n` +
+           `  return buf;\n` +
            `}\n\n` +
-           `std::string ${name}::Pack(const ${name}& obj, const std::string& format) { return obj.Pack(format); }\n\n` +
-           `${name} ${name}::Unpack(const std::string& buf, const std::string& format) {\n` +
-           `  ${name} obj; Unpack(obj, buf, format); return obj;\n` +
-           `}\n\n` +
-           `void ${name}::Unpack(${name}& obj, const std::string& buf, const std::string& format) {\n` +
-           `  std::istringstream ss(buf);\n` +
-           `  if (format == \"json\") { deuk::DpJsonProtocol prot(&ss); obj.Read(prot); }\n` +
-           `  else { deuk::DpBinaryProtocol prot(&ss); obj.Read(prot); }\n` +
+           `${name} ${name}::UnpackV2(const std::string& data) {\n` +
+           `  ${name} obj;\n` +
+           `  ZeroCopyReader reader(reinterpret_cast<const uint8_t*>(data.data()), data.length());\n` +
+           `  obj.ReadDirect(reader);\n` +
+           `  return obj;\n` +
            `}`;
+  }
+
+  private renderReadDirectCases(s: DeukPackStruct, ast: DeukPackAST): string {
+    const lines: string[] = [];
+    for (const f of s.fields || []) {
+      const type = f.type;
+      const t = this.getRealType(type, ast);
+      
+      let readOp = `// TODO Read Op: ${t}`;
+      if (t === 'string' || t === 'binary') readOp = `${f.name} = reader.ReadString();`;
+      else if (t === 'bool') readOp = `${f.name} = (reader.ReadByte() != 0);`;
+      else if (t === 'byte' || t === 'int8') readOp = `${f.name} = reader.ReadByte();`;
+      else if (t === 'int16') readOp = `${f.name} = reader.ReadI16();`;
+      else if (t === 'int32') readOp = `${f.name} = reader.ReadI32();`;
+      else if (t === 'enum') readOp = `${f.name} = static_cast<${this.getCppType(type, ast, '')}>(reader.ReadI32());`;
+      else if (t === 'int64') readOp = `${f.name} = reader.ReadI64();`;
+      else if (t === 'float') {
+          // bit_cast via union for simple impl
+          readOp = `int32_t __fi32_${f.id} = reader.ReadI32();\n        ${f.name} = *(reinterpret_cast<const float*>(&__fi32_${f.id})); /* fixme proper float */`;
+      }
+      else if (t === 'double') readOp = `${f.name} = reader.ReadDouble();`;
+      else if (t === 'record') readOp = `${f.name}.ReadDirect(reader);`;
+      else if (t === 'list' || t === 'array' || t === 'set') {
+        const et = (type as any).elementType;
+        const eType = this.getRealType(et, ast);
+        
+        let eRead = `reader.ReadI32()`;
+        if (eType === 'string' || eType === 'binary') eRead = `reader.ReadString()`;
+        else if (eType === 'int64' || eType === 'double') eRead = `reader.ReadI64()`;
+        else if (eType === 'bool') eRead = `(reader.ReadByte() != 0)`;
+        else if (eType === 'int16') eRead = `reader.ReadI16()`;
+        else if (eType === 'byte' || eType === 'int8') eRead = `reader.ReadByte()`;
+        else if (eType === 'enum') eRead = `static_cast<${this.getCppType(et, ast, '')}>(reader.ReadI32())`;
+        else if (eType === 'record') eRead = `[&]() -> decltype(${f.name})::value_type { decltype(${f.name})::value_type v; v.ReadDirect(reader); return v; }()`;
+
+        const b = t === 'set' ? 'ReadSetBegin' : 'ReadListBegin';
+        const ins = t === 'set' ? 'insert' : 'push_back';
+        
+        readOp = `uint8_t __et_${f.id}; int32_t __c_${f.id};\n` +
+                 `        reader.${b}(__et_${f.id}, __c_${f.id});\n` +
+                 (t !== 'set' ? `        ${f.name}.reserve(__c_${f.id});\n` : ``) +
+                 `        for (int32_t i=0; i<__c_${f.id}; ++i) { ${f.name}.${ins}(${eRead}); }`;
+      } else if (t === 'map') {
+        const kt = (type as any).keyType;
+        const vt = (type as any).valueType;
+        const kType = this.getRealType(kt, ast);
+        const vType = this.getRealType(vt, ast);
+        
+        let kRead = `reader.ReadI32()`;
+        if (kType === 'string' || kType === 'binary') kRead = `reader.ReadString()`;
+        else if (kType === 'int64' || kType === 'double') kRead = `reader.ReadI64()`;
+        else if (kType === 'enum') kRead = `static_cast<${this.getCppType(kt, ast, '')}>(reader.ReadI32())`;
+
+        let vRead = `reader.ReadI32()`;
+        if (vType === 'string' || vType === 'binary') vRead = `reader.ReadString()`;
+        else if (vType === 'int64' || vType === 'double') vRead = `reader.ReadI64()`;
+        else if (vType === 'bool') vRead = `(reader.ReadByte() != 0)`;
+        else if (vType === 'int16') vRead = `reader.ReadI16()`;
+        else if (vType === 'byte' || vType === 'int8') vRead = `reader.ReadByte()`;
+        else if (vType === 'enum') vRead = `static_cast<${this.getCppType(vt, ast, '')}>(reader.ReadI32())`;
+        else if (vType === 'record') vRead = `[&]() -> decltype(${f.name})::mapped_type { decltype(${f.name})::mapped_type v; v.ReadDirect(reader); return v; }()`;
+
+        readOp = `uint8_t __kt_${f.id}; uint8_t __vt_${f.id}; int32_t __c_${f.id};\n` +
+                 `        reader.ReadMapBegin(__kt_${f.id}, __vt_${f.id}, __c_${f.id});\n` +
+                 `        for (int32_t i=0; i<__c_${f.id}; ++i) {\n` +
+                 `          auto __k = ${kRead};\n` +
+                 `          auto __v = ${vRead};\n` +
+                 `          ${f.name}[__k] = __v;\n` +
+                 `        }`;
+      }
+      
+      lines.push(`      case ${f.id}: {`);
+      lines.push(`        ${readOp}`);
+      lines.push(`        break;`);
+      lines.push(`      }`);
+    }
+    return lines.join('\n');
   }
 
   private getRealType(type: DeukPackType, ast: DeukPackAST): string {
@@ -693,124 +876,5 @@ export class CppGenerator extends CodeGenerator {
     }
   }
 
-  private renderWriteCall(f: DeukPackField, varName: string, ast: DeukPackAST): string {
-    const type = f.type;
-    const t = this.getRealType(type, ast);
-    switch (t) {
-        case 'bool': return `oprot.WriteBool(*${varName});`;
-        case 'byte': case 'int8': return `oprot.WriteByte(*${varName});`;
-        case 'int16': return `oprot.WriteI16(*${varName});`;
-        case 'int32': return `oprot.WriteI32(*${varName});`;
-        case 'int64': return `oprot.WriteI64(*${varName});`;
-        case 'float': case 'double': return `oprot.WriteDouble(*${varName});`;
-        case 'string': return `oprot.WriteString(*${varName});`;
-        case 'binary': return `oprot.WriteBinary(*${varName});`;
-        case 'record': return `${varName}->Write(oprot);`;
-        case 'enum': return `oprot.WriteI32(static_cast<deuk::int32>(*${varName}));`;
-        case 'list': case 'array': case 'set': {
-            const et = (type as any).elementType;
-            const etWire = this.toWireType(et, ast);
-            const isSet = t === 'set';
-            const begin = isSet ? 'WriteSetBegin' : 'WriteListBegin';
-            const end = isSet ? 'WriteSetEnd' : 'WriteListEnd';
-            return `oprot.${begin}({DpWireType::${etWire}, static_cast<deuk::int32>(${varName}->size())});\n` +
-                   `      for (const auto& elem : *${varName}) {\n` +
-                   `        ${this.renderWriteValueOnly(et, 'elem', ast)}\n` +
-                   `      }\n` +
-                   `      oprot.${end}();`;
-        }
-        case 'map': {
-            const kt = (type as any).keyType;
-            const vt = (type as any).valueType;
-            return `oprot.WriteMapBegin({DpWireType::${this.toWireType(kt, ast)}, DpWireType::${this.toWireType(vt, ast)}, static_cast<deuk::int32>(${varName}->size())});\n` +
-                   `      for (const auto& kv : *${varName}) {\n` +
-                   `        ${this.renderWriteValueOnly(kt, 'kv.first', ast)}\n` +
-                   `        ${this.renderWriteValueOnly(vt, 'kv.second', ast)}\n` +
-                   `      }\n` +
-                   `      oprot.WriteMapEnd();`;
-        }
-        default: return `// TODO: ${t}`;
-    }
-  }
 
-  private renderWriteValueOnly(type: DeukPackType, varName: string, ast: DeukPackAST): string {
-    const t = this.getRealType(type, ast);
-    switch (t) {
-        case 'bool': return `oprot.WriteBool(${varName});`;
-        case 'byte': case 'int8': return `oprot.WriteByte(${varName});`;
-        case 'int16': return `oprot.WriteI16(${varName});`;
-        case 'int32': return `oprot.WriteI32(${varName});`;
-        case 'int64': return `oprot.WriteI64(${varName});`;
-        case 'float': case 'double': return `oprot.WriteDouble(${varName});`;
-        case 'string': return `oprot.WriteString(${varName});`;
-        case 'binary': return `oprot.WriteBinary(${varName});`;
-        case 'record': return `${varName}.Write(oprot);`;
-        case 'enum': return `oprot.WriteI32(static_cast<deuk::int32>(${varName}));`;
-        default: return `// TODO: ${t}`;
-    }
-  }
-
-  private renderReadCall(f: DeukPackField, varName: string, ast: DeukPackAST, currentNs: string): string {
-    const type = f.type;
-    const t = this.getRealType(type, ast);
-    const cppType = typeof type === 'string' ? this.resolveTypeName(type, currentNs, ast) : this.getCppType(type, ast, currentNs);
-    
-    switch (t) {
-        case 'bool': return `${varName} = std::make_shared<bool>(iprot.ReadBool());`;
-        case 'byte': case 'int8': return `${varName} = std::make_shared<deuk::int8>(iprot.ReadByte());`;
-        case 'int16': return `${varName} = std::make_shared<deuk::int16>(iprot.ReadI16());`;
-        case 'int32': return `${varName} = std::make_shared<deuk::int32>(iprot.ReadI32());`;
-        case 'int64': return `${varName} = std::make_shared<deuk::int64>(iprot.ReadI64());`;
-        case 'float': return `${varName} = std::make_shared<deuk::float32>(static_cast<deuk::float32>(iprot.ReadDouble()));`;
-        case 'double': return `${varName} = std::make_shared<deuk::float64>(iprot.ReadDouble());`;
-        case 'string': return `${varName} = std::make_shared<std::string>(iprot.ReadString());`;
-        case 'binary': return `${varName} = std::make_shared<std::string>(iprot.ReadBinary());`;
-        case 'enum': return `${varName} = std::make_shared<${cppType}>(static_cast<${cppType}>(iprot.ReadI32()));`;
-        case 'record': return `${varName} = std::make_shared<${cppType}>();\n          ${varName}->Read(iprot);`;
-        case 'list': case 'array': case 'set': {
-            const et = (type as any).elementType;
-            const isSet = t === 'set';
-            const begin = isSet ? 'ReadSetBegin' : 'ReadListBegin';
-            const end = isSet ? 'ReadSetEnd' : 'ReadListEnd';
-            return `${varName} = std::make_shared<${cppType}>();\n` +
-                   `          auto info = iprot.${begin}();\n` +
-                   `          for (int32 i = 0; i < info.Count; ++i) {\n` +
-                   `            ${varName}->${isSet ? 'insert' : 'push_back'}(${this.renderReadValueOnly(et, ast, currentNs)});\n` +
-                   `          }\n` +
-                   `          iprot.${end}();`;
-        }
-        case 'map': {
-            const kt = (type as any).keyType;
-            const vt = (type as any).valueType;
-            return `${varName} = std::make_shared<${cppType}>();\n` +
-                   `          auto info = iprot.ReadMapBegin();\n` +
-                   `          for (int32 i = 0; i < info.Count; ++i) {\n` +
-                   `            auto key = ${this.renderReadValueOnly(kt, ast, currentNs)};\n` +
-                   `            auto val = ${this.renderReadValueOnly(vt, ast, currentNs)};\n` +
-                   `            (*${varName})[key] = val;\n` +
-                   `          }\n` +
-                   `          iprot.ReadMapEnd();`;
-        }
-        default: return `// TODO: ${t}`;
-    }
-  }
-
-  private renderReadValueOnly(type: DeukPackType, ast: DeukPackAST, currentNs: string): string {
-    const t = this.getRealType(type, ast);
-    const cppType = typeof type === 'string' ? this.resolveTypeName(type, currentNs, ast) : this.getCppType(type, ast, currentNs);
-    switch (t) {
-        case 'bool': return `iprot.ReadBool()`;
-        case 'byte': case 'int8': return `iprot.ReadByte()`;
-        case 'int16': return `iprot.ReadI16()`;
-        case 'int32': return `iprot.ReadI32()`;
-        case 'int64': return `iprot.ReadI64()`;
-        case 'float': return `static_cast<deuk::float32>(iprot.ReadDouble())`;
-        case 'double': return `iprot.ReadDouble()`;
-        case 'string': return `iprot.ReadString()`;
-        case 'binary': return `iprot.ReadBinary()`;
-        case 'record': return `[] (DpProtocol& ip) { ${cppType} v; v.Read(ip); return v; }(iprot)`;
-        case 'enum': return `static_cast<${cppType}>(iprot.ReadI32())`;
-        default: return `/* TODO: ${t} */ {}`;
-    }
-  }
 }

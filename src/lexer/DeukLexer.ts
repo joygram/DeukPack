@@ -96,7 +96,7 @@ export class DeukLexer {
     }
 
     if (char === '"' || char === "'") return this.readStringLiteral();
-    if (this.isDigit(char)) return this.readNumber();
+    if (this.isDigit(char) || (char === '-' && this.isDigit(this.peek()))) return this.readNumber();
     if (this.isAlpha(char) || char === '_') return this.readIdentifier();
     if (char === '/' && this.peek() === '/') return this.readLineComment();
     if (char === '/' && this.peek() === '*') return this.readBlockComment();
@@ -145,6 +145,12 @@ export class DeukLexer {
     const startLine = this.line;
     const startColumn = this.column;
     let value = '';
+    
+    if (this.input[this.position] === '-') {
+      value += '-';
+      this.advance();
+    }
+
     if (this.input[this.position] === '0') {
       const nx = this.peek();
       if (nx === 'x' || nx === 'X') {

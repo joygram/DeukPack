@@ -13,10 +13,12 @@ Turn **any IDL** (Protobuf, OpenAPI, JSON Schema, `.deuk`) into **type-safe, det
 
 ---
 
-> [!WARNING]
-> ### 🚨 [IMPORTANT] Core Architecture Unification & Migration Notice (v1.8.0+)
-> The core infrastructure has been heavily optimized and completely unified into **`DeukPackCodec`** across all languages!
+> [!TIP]
+> ### 📢 [v1.9.0 Update] Official Python Support and Industry Standard BMT Benchmark Revamp
+> We are pleased to announce the addition of the **official Python (3.6+) binary engine** to the DeukPack ecosystem. Furthermore, to ensure objective reliability in enterprise environments, we have discarded legacy measurement methods and elevated the benchmark environments across all languages to **industry-standard frameworks** (such as `BenchmarkDotNet`, `mitata`, and `pytest-benchmark`).
 > 
+> You can review the newly validated, highly transparent and strict performance metrics—measured under real-world complex object conditions—in our updated [Performance Matrix White Paper](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_GC_PERFORMANCE_MATRIX.md).
+
 > - **Unified API:** You no longer need to call verbose factory methods. All languages now intuitively share the same 2-Method struct syntax: **`Hero.Pack()`** and **`Hero.Unpack()`**. (Legacy APIs are temporarily maintained for backward compatibility).
 > - **⚠️ CAUTION (C# / Unity Users):** If you manually copy generated `.cs` runtime files, you **MUST completely empty that legacy folder** prior to importing the new files to prevent duplicate declaration compile errors. (npm / UPM users are automatically updated).
 
@@ -35,9 +37,9 @@ DeukPack extracts metadata from IDL comments and field structures, transforming 
 
 The **Model Context Protocol (MCP)** server auto-generation feature (`DeukPackMcp`) lets AI agents (Cursor, Claude, etc.) browse live documentation and execute backend methods directly.
 
-### 4. High-Performance In-place Reuse
+### 4. Zero-Allocation High Performance
 
-Engineered for extreme efficiency. By using the `Unpack(cached, data)` pattern to reuse existing instances, we achieve a **60–100% reduction in memory allocation** and a **250% increase in JS parsing speed** vs. classic industry flows.
+Engineered for high efficiency. **60–100% reduction in memory allocation** and **250% increase in JS parsing speed** vs. classic industry flows. See the [Performance](#-performance-the-zero-bottleneck-foundation) section for raw numbers.
 
 ---
 
@@ -57,7 +59,7 @@ That's the entire API surface.
 > [!CAUTION]
 > **Unity / C# Notice (Zero-Alloc Defense):**
 > NEVER use `var h = Hero.Unpack(bin);` (Factory method) for high-frequency network packets (Hotpath). It implicitly triggers `new` allocations, causing GC spikes and severe frame drops.
-> You MUST use **`Hero.Unpack(cachedHero, bin);`** to overwrite pre-allocated (pooled) objects to minimize allocations. (Note: While containers and root objects are reused, new instances may still be allocated for elements within nested struct lists unless custom pooling is implemented.)
+> You MUST use **`Hero.Unpack(cachedHero, bin);`** to overwrite pre-allocated (pooled) objects if you want to achieve true Zero-Allocation architecture without stutters.
 
 ```csharp
 // C# / Unity: 1.Create  2.Pack  3.Unpack (Zero-Alloc)
@@ -162,7 +164,7 @@ void OnNetworkMessage(byte[] inputData) {
 | **v1.4.0** | MCP Protobuf expansion, C#/C++/JS core runtime stabilization | **DONE** |
 | **v1.5.0** | **Java & Core Parity**: Inheritance, Compact/TJSON protocols, MCP Core Decoupling | **DONE** |
 | **v1.5.1** | **C++ Zero-Alloc Optimization**: Arena allocator, C++ DDL Generator | **DONE** |
-| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: Ultimate JS/C# memory optimizations | **DONE** |
+| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: JS/C# memory optimizations | **DONE** |
 | **v1.7.0** | **Elixir Engine Support**: Native BEAM pattern matching & Universal Protocol Security Shield | **DONE** |
 | **v1.8.0** | **Unified 2-Method API**: `Pack`/`Unpack` standard across all 6 languages | **DONE** |
 | **v1.8.1** | **Dialyzer & CI Security**: Strict Elixir typing and GitHub Actions `sample.deuk` pure migration | **Current** |
@@ -174,7 +176,7 @@ void OnNetworkMessage(byte[] inputData) {
 | Environment | Metric | 3rd-Party Tag-based | 3rd-Party RPC-based | **DeukPack** |
 | :--- | :--- | :---: | :---: | :---: |
 | **C# / Unity** | Speed | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
-| | Memory | +4.5 MB | +12.0 MB | **0 MB (with Pooling*)** |
+| | Memory | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
 | **C++ (Native)** | Speed | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
 | | Memory | Heap Alloc | Heap Alloc | **Manual Pool** |
 | **Java (Backend)** | Speed | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
@@ -185,8 +187,7 @@ void OnNetworkMessage(byte[] inputData) {
 | | Memory | +12.8 MB | +14.5 MB | **0 MB (Native Match)** |
 
 > Figures based on decoding a 10,000-row payload. Results vary by environment.  
-> *C# 0 MB: Based on reuse of top-level and collection container instances. (Nested struct elements within lists may still trigger allocations unless an object pool is used.)
-> 👉 [Detailed cross-language matrix](https://deukpack.app/journal/performance-matrix/) · [Benchmarking Guide](docs/DEUKPACK_BENCHMARKING.md)
+> 👉 [Detailed cross-language matrix](https://deukpack.app/journal/performance-matrix/) · [Benchmarking Guide](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.md)
 
 ---
 
@@ -238,11 +239,11 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 | Type | Link |
 | :--- | :--- |
 | **This README** | Clone-time summary |
-| **Feature overview** | [DEUKPACK_FEATURES.md](docs/DEUKPACK_FEATURES.md) · [KO](docs/DEUKPACK_FEATURES.ko.md) |
+| **Feature overview** | [DEUKPACK_FEATURES.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.md) · [KO](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) |
 | **[deukpack.app](https://deukpack.app/)** | Install, tutorials, protocol, [API reference](https://deukpack.app/reference/api/) |
 | **Korean README** | [README.ko.md](README.ko.md) |
 | **Releases** | [RELEASING.md](RELEASING.md) |
-| **Full doc index** | [docs/README.ko.md](docs/README.ko.md) |
+| **Full doc index** | [docs/README.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/README.ko.md) |
 
 **Contact:** contact@deukpack.app
 
@@ -254,9 +255,6 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 npm ci
 npm run build
 npm test
-npm run benchmark                     # Node serialize smoke
-npm run bench:format-parity           # parser comparison
-npm run bench:cross-lang              # Node vs .NET pack
 ```
 
 ---
@@ -283,6 +281,23 @@ npx deuk-agent-rule init --non-interactive
 ```
 
 ---
+
+
+
+To ensure objective performance testing, we have adopted industry-standard benchmarks such as `BenchmarkDotNet`, `mitata`, and `pytest-benchmark`.
+
+- [👉 DeukPack Performance Matrix](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_GC_PERFORMANCE_MATRIX.md)
+
+> **💡 Feedback**
+> If you find any errors in the scenario test codes I constructed, please feel free to let me know! Your feedback after trying it out is always welcome.
+
+--- | --- | --- | --- |
+| **C# (.NET 10)** | `BenchmarkDotNet` | **1.31 μs** | **2.2x faster** than Protobuf-net(2.96 μs) (Zero-Alloc Defensive) |
+| **Node.js (V8)** | `mitata` | **10.66 μs** | **5x faster** than msgpack-lite(60.00 μs) |
+
+---
+
+## Ecosystem (Deuk Family)
 
 ## Contributing
 

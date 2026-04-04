@@ -110,10 +110,45 @@ export class JavaGenerator {
     const hashCodeBody = fields.map(f => `this.${f.name}`).join(', ');
 
     const cloneBody = fields.map(f => {
-        const type = this.toJavaType(f.type, ast, javaPackage);
-        if (type.startsWith('List<') || type.startsWith('ArrayList<')) return `            if (this.${f.name} != null) cloned.${f.name} = new ArrayList<>(this.${f.name});`;
-        if (type.startsWith('Set<') || type.startsWith('HashSet<')) return `            if (this.${f.name} != null) cloned.${f.name} = new HashSet<>(this.${f.name});`;
-        if (type.startsWith('Map<') || type.startsWith('HashMap<')) return `            if (this.${f.name} != null) cloned.${f.name} = new HashMap<>(this.${f.name});`;
+        const javaType = this.toJavaType(f.type, ast, javaPackage);
+        const isList = javaType.startsWith('List<') || javaType.startsWith('ArrayList<');
+        const isSet  = javaType.startsWith('Set<')  || javaType.startsWith('HashSet<');
+        const isMap  = javaType.startsWith('Map<')  || javaType.startsWith('HashMap<');
+        if (isList || isSet || isMap) {
+            // 원소 타입 추출 및 struct 여부 판단
+            const elemType = typeof f.type === 'object' && 'elementType' in f.type
+                ? f.type.elementType : null;
+            const isStructElem = elemType != null
+                ? this.isStructType(elemType, ast)
+                : false;
+            if (isList) {
+                if (isStructElem) {
+                    // Deep copy: struct 원소는 .clone() 호출
+                    const et = this.toJavaTypeForGeneric(elemType!, ast, javaPackage);
+                    return `            if (this.${f.name} != null) { cloned.${f.name} = new ArrayList<>(this.${f.name}.size()); for (${et} _e : this.${f.name}) cloned.${f.name}.add((${et})_e.clone()); }`;
+                }
+                // Primitive/String: copy constructor OK
+                return `            if (this.${f.name} != null) cloned.${f.name} = new ArrayList<>(this.${f.name});`;
+            }
+            if (isSet) {
+                if (isStructElem) {
+                    const et = this.toJavaTypeForGeneric(elemType!, ast, javaPackage);
+                    return `            if (this.${f.name} != null) { cloned.${f.name} = new HashSet<>(this.${f.name}.size()); for (${et} _e : this.${f.name}) cloned.${f.name}.add((${et})_e.clone()); }`;
+                }
+                return `            if (this.${f.name} != null) cloned.${f.name} = new HashSet<>(this.${f.name});`;
+            }
+            if (isMap) {
+                const valType = typeof f.type === 'object' && 'valueType' in f.type
+                    ? f.type.valueType : null;
+                const isStructVal = valType != null ? this.isStructType(valType, ast) : false;
+                if (isStructVal) {
+                    const kt = this.toJavaTypeForGeneric((f.type as any).keyType, ast, javaPackage);
+                    const vt = this.toJavaTypeForGeneric(valType!, ast, javaPackage);
+                    return `            if (this.${f.name} != null) { cloned.${f.name} = new HashMap<>(this.${f.name}.size()); for (Map.Entry<${kt}, ${vt}> _e : this.${f.name}.entrySet()) cloned.${f.name}.put(_e.getKey(), (${vt})_e.getValue().clone()); }`;
+                }
+                return `            if (this.${f.name} != null) cloned.${f.name} = new HashMap<>(this.${f.name});`;
+            }
+        }
         return ``;
     }).filter(Boolean).join('\n');
 
@@ -231,6 +266,11 @@ export class JavaGenerator {
     return ast.enums.some(e => e.name === t || (e as any).fullName === t);
   }
 
+  private isStructType(type: DeukPackType, ast: DeukPackAST): boolean {
+    if (typeof type !== 'string') return false;
+    return ast.structs.some(s => s.name === type || (s as any).fullName === type);
+  }
+
   private renderWriteCall(f: DeukPackField, varName: string, ast: DeukPackAST, ns: string): string {
     const type = f.type;
     const t = typeof type === 'string' ? type : type.type;
@@ -245,7 +285,7 @@ export class JavaGenerator {
         case 'binary': return `oprot.writeBinary(${varName});`;
         case 'enum': return `oprot.writeI32(${varName}.getValue());`;
         case 'record': return `${varName}.write(oprot);`;
-        case 'list': case 'array': {
+        case 'list': case 'array': case 'set': {
             const listItemType = (type as any).elementType;
             return `oprot.writeListBegin(new DpList(DpWireType.${this.toWireType(listItemType, ast)}, ${varName}.size()));\n` +
                    `            for (${this.toJavaTypeForGeneric(listItemType, ast, ns)} _item : ${varName}) {\n` +
@@ -308,11 +348,14 @@ export class JavaGenerator {
         case 'binary': return `${varName} = iprot.readBinary();`;
         case 'enum': return `${varName} = ${this.toJavaType(type, ast, ns)}.findByValue(iprot.readI32());`;
         case 'record': return `${varName} = new ${this.toJavaType(type, ast, ns)}();\n                        ${varName}.read(iprot);`;
-        case 'list': case 'array': {
+        case 'list': case 'array': case 'set': {
+            const tType = typeof type === 'string' ? type : type.type;
+            const isSet = tType === 'set';
+            const implClass = isSet ? 'LinkedHashSet<>' : 'ArrayList<>';
             const listItemType = (type as any).elementType;
             const itemJavaType = this.toJavaTypeForGeneric(listItemType, ast, ns);
             return `{ DpList _list = iprot.readListBegin();\n` +
-                   `                        ${varName} = new ArrayList<>(_list.Count);\n` +
+                   `                        ${varName} = new ${implClass}(_list.Count);\n` +
                    `                        for (int _i = 0; _i < _list.Count; _i++) {\n` +
                    `                            ${itemJavaType} _item = ${this.renderReadValue(listItemType, ast, ns)};\n` +
                    `                            ${varName}.add(_item);\n` +

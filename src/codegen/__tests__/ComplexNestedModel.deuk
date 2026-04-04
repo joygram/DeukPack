@@ -1,0 +1,12 @@
+namespace deuk.test
+
+struct DeeplyNestedStruct {
+    1> string data
+    2> list<list<int32>> matrix
+}
+
+struct RecursiveModel {
+    1> string root_name
+    2> list<DeeplyNestedStruct> levels
+    3> map<string, list<DeeplyNestedStruct>> category_map
+}

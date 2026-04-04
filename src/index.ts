@@ -23,6 +23,8 @@ export * from './codegen/cpp';
 export * from './codegen/typescript';
 export * from './codegen/javascript';
 export * from './codegen/CSharpGenerator';
+export * from './codegen/PythonGenerator';
+export * from './codegen/ElixirGenerator';
 export * from './types/DeukPackTypes';
 export * from './protocols/WireProtocol';
 export * from './protocols/JsonProtocol';
