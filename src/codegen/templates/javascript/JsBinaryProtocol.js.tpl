@@ -79,7 +79,7 @@ function _jsBinWriteStruct(a, schema, obj, schemas) {
   a.push(0); // Stop
 }
 function _jsBinReadI16(p) {
-  var v = (p.view.getUint8(p.off) << 8) | p.view.getUint8(p.off + 1);
+  var v = p.view.getInt16(p.off, false);
   p.off += 2;
   return v;
 }
@@ -141,7 +141,7 @@ function _jsBinReadValue(p, type, typeName, schemas) {
   var wt = _toDpWireType(type);
   switch (wt) {
     case 2: return p.view.getUint8(p.off++) !== 0; // Bool
-    case 3: return p.view.getUint8(p.off++); // Byte
+    case 3: return p.view.getInt8(p.off++); // Byte
     case 4: return _jsBinReadDouble(p);
     case 6: return _jsBinReadI16(p);
     case 8: return _jsBinReadI32(p);

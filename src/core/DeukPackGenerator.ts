@@ -10,6 +10,8 @@ import { CppGenerator } from '../codegen/cpp/CppGenerator';
 import { TypeScriptGenerator } from '../codegen/typescript/TypeScriptGenerator';
 import { JavaGenerator } from '../codegen/JavaGenerator';
 import { JavaScriptGenerator } from '../codegen/javascript/JavaScriptGenerator';
+import { PythonGenerator } from '../codegen/PythonGenerator';
+import { ElixirGenerator } from '../codegen/ElixirGenerator';
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -43,6 +45,12 @@ export class DeukPackGenerator {
           break;
         case 'javascript':
           generator = new JavaScriptGenerator();
+          break;
+        case 'python':
+          generator = new PythonGenerator();
+          break;
+        case 'elixir':
+          generator = new ElixirGenerator();
           break;
         default:
           console.warn(`[DeukPack] Unknown generator: ${genName}. Skipping.`);

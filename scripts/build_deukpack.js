@@ -44,7 +44,9 @@ function hasCodegenOrEmit(options) {
         (options.protoSchema && String(options.protoSchema).trim()) ||
         (options.thriftSchema && String(options.thriftSchema).trim()) ||
         options.mcp ||
-        options.elixir
+        options.elixir ||
+        options.python ||
+        options.rust
     );
 }
 
@@ -105,6 +107,7 @@ function printCliUsage(opts = {}) {
     line('  --allow-multi-namespace  Permit multiple namespace blocks in a single IDL file');
     line('  --brace-less-namespace   Omit namespace { } braces in output for single-namespace files (indented)');
     line('  --cpp       Generate C++ code');
+    line('  --rust      Generate Rust code (v1.9 Internal)');
     line('  --ts        Generate TypeScript under <outputDir>/ts/ (1st-stage types; JS via app build or tsc). See docs/DEUKPACK_JS_BUILD_PIPELINE.md');
     line('  --js        Generate JavaScript under <outputDir>/js/ (Path B: direct JS for Node/tools). App bundle: use TS output + app build.');
     line('  --protocol <protocol>  Wire hint: deuk pack|json|yaml (default pack); Thrift interop tbinary|tcompact|tjson — see docs/DEUKPACK_WIRE_INTEROP_VS_NATIVE.md');
@@ -317,6 +320,8 @@ async function runOneBuild(thriftFile, outputDir, options, parseOpts) {
     if (options.java) generationPromises.push(generateJava(engine, ast, outputDir, options));
     if (options.mcp) generationPromises.push(generateMcp(engine, ast, outputDir, options));
     if (options.elixir) generationPromises.push(generateElixir(engine, ast, outputDir, options));
+    if (options.python) generationPromises.push(generatePython(engine, ast, outputDir, options));
+    if (options.rust) generationPromises.push(generateRust(engine, ast, outputDir, options));
     await Promise.all(generationPromises);
 
     if (options.convertToDeuk) {
@@ -612,6 +617,8 @@ const DEFAULT_LANG_OUTPUT_SUBDIRS = Object.freeze({
     java: 'java',
     mcp: 'mcp',
     elixir: 'elixir',
+    python: 'python',
+    rust: 'rust',
 });
 
 /**
@@ -640,9 +647,11 @@ function mergeLangOutputSubdirs(partial) {
         java: DEFAULT_LANG_OUTPUT_SUBDIRS.java,
         mcp: DEFAULT_LANG_OUTPUT_SUBDIRS.mcp,
         elixir: DEFAULT_LANG_OUTPUT_SUBDIRS.elixir,
+        python: DEFAULT_LANG_OUTPUT_SUBDIRS.python,
+        rust: DEFAULT_LANG_OUTPUT_SUBDIRS.rust,
     };
     if (!partial || typeof partial !== 'object') return out;
-    for (const k of ['csharp', 'cpp', 'ts', 'js', 'java', 'mcp', 'elixir']) {
+    for (const k of ['csharp', 'cpp', 'ts', 'js', 'java', 'mcp', 'elixir', 'python', 'rust']) {
         if (partial[k] != null && String(partial[k]).trim() !== '') {
             out[k] = assertLangOutputSubdirSegment(String(partial[k]), k);
         }
@@ -718,6 +727,8 @@ async function runPipeline(configPath) {
             java: !!job.java,
             mcp: !!job.mcp,
             elixir: !!job.elixir,
+            python: !!job.python,
+            pythonUseDict: !!job.pythonUseDict,
             json: !!job.json,
             importOpenApi: job.importOpenApi || undefined,
             openapi: job.openapi || undefined,
@@ -892,6 +903,17 @@ function parseOptions(args) {
                 break;
             case '--elixir':
                 options.elixir = true;
+                break;
+            case '--python':
+                options.python = true;
+                break;
+            case '--rust':
+                options.rust = true;
+                break;
+            case '--python-use-dict':
+                if (i + 1 < args.length) {
+                    options.pythonUseDict = args[++i] === 'true';
+                }
                 break;
             case '--ef':
                 options.ef = true;
@@ -1118,7 +1140,6 @@ async function generateCpp(engine, ast, outputDir, options = {}) {
         allowMultiNamespace: options.allowMultiNamespace === true
     };
     const cppFiles = await generator.generate(ast, cppGenOptions);
-
     for (const [filename, content] of Object.entries(cppFiles)) {
         if (!filename || filename === 'nul.h' || filename === 'nul.cpp' || filename.startsWith('nul')) {
             console.warn(`   ⚠️  Skipping invalid filename: ${filename}`);
@@ -1269,6 +1290,59 @@ async function generateElixir(engine, ast, outputDir, options = {}) {
 
     const generateTime = Date.now() - startTime;
     console.log(`✅ Elixir generated ${Object.keys(elixirFiles).length} files in ${generateTime}ms`);
+}
+
+async function generatePython(engine, ast, outputDir, options = {}) {
+    console.log('🔧 Generating Python code (v1.9 Internal)...');
+    const startTime = Date.now();
+
+    const pythonDir = path.join(outputDir, options.langOutputSubdirs.python);
+    await fs.mkdir(pythonDir, { recursive: true });
+
+    const { PythonGenerator } = require('../dist/codegen/PythonGenerator');
+    const generator = new PythonGenerator();
+    const pythonFiles = await generator.generate(ast, options);
+
+    for (const [filename, content] of Object.entries(pythonFiles)) {
+        const filePath = path.join(pythonDir, filename);
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.writeFile(filePath, content, 'utf8');
+        console.log(`   📄 Generated: ${filename}`);
+    }
+
+    const generateTime = Date.now() - startTime;
+    console.log(`✅ Python generated ${Object.keys(pythonFiles).length} files in ${generateTime}ms`);
+}
+
+async function generateRust(engine, ast, outputDir, options = {}) {
+    console.log('🔧 Generating Rust code (v1.9 Internal)...');
+    const startTime = Date.now();
+
+    const rustDir = path.join(outputDir, options.langOutputSubdirs.rust);
+    await fs.mkdir(rustDir, { recursive: true });
+
+    const { RustGenerator } = require('../dist/codegen/RustGenerator');
+    const generator = new RustGenerator();
+    const rustFiles = await generator.generate(ast, options);
+
+    for (const [filename, content] of Object.entries(rustFiles)) {
+        const filePath = path.join(rustDir, filename);
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.writeFile(filePath, content, 'utf8');
+        console.log(`   📄 Generated: ${filename}`);
+    }
+
+    // Copy static templates
+    const cargoTpl = path.join(__dirname, '../src/codegen/templates/rust/Cargo.toml.tpl');
+    const zeroCopyTpl = path.join(__dirname, '../src/codegen/templates/rust/dp_zero_copy.rs.tpl');
+    
+    await fs.writeFile(path.join(rustDir, 'Cargo.toml'), await fs.readFile(cargoTpl, 'utf8'));
+    const srcDir = path.join(rustDir, 'src');
+    await fs.mkdir(srcDir, { recursive: true });
+    await fs.writeFile(path.join(srcDir, 'dp_zero_copy.rs'), await fs.readFile(zeroCopyTpl, 'utf8'));
+
+    const generateTime = Date.now() - startTime;
+    console.log(`✅ Rust generated ${Object.keys(rustFiles).length} files in ${generateTime}ms`);
 }
 
 // Run the main function

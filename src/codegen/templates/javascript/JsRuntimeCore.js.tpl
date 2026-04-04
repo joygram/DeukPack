@@ -106,7 +106,7 @@ function _unwrapDpJson(type, typeName, jsonVal, schemas) {
     return sn ? _fromDpJson(sn, jsonVal, schemas) : jsonVal;
   }
   if (typeof jsonVal === "object" && !Array.isArray(jsonVal)) {
-    if (type === "binary" && jsonVal.str) { var b64 = jsonVal.str; if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(b64, "base64")); var bin = typeof atob !== "undefined" ? atob(b64) : ""; var arr = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return arr; }
+    if (type === "binary" && typeof jsonVal.str === "string") { var b64 = jsonVal.str; if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(b64, "base64")); var bin = typeof atob !== "undefined" ? atob(b64) : ""; var arr = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return arr; }
     if (jsonVal.str !== undefined) return jsonVal.str;
     if (jsonVal.i32 !== undefined) return jsonVal.i32;
     if (jsonVal.i64 !== undefined) return BigInt(jsonVal.i64);

@@ -1,6 +1,6 @@
 # DeukPack: AI-Native 유니버설 스키마 멀티 허브 (Protobuf, Thrift, OpenAPI 통합)
 
-> **Protobuf, Thrift, OpenAPI를 하나로 묶는 고성능 유니버설 스키마 멀티 허브(Multi-hub).**
+> **Protobuf, Thrift, OpenAPI를 하나로 묶는 유니버설 스키마 멀티 허브(Multi-hub).**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://img.shields.io/npm/v/deukpack.svg)](https://www.npmjs.com/package/deukpack)
@@ -9,61 +9,61 @@
 
 **언어 / Languages:** [English](README.md) · [한국어](README.ko.md)
 
-어떤 IDL이든(Protobuf, OpenAPI, JSON Schema, `.deuk`) **타입 안전 결정론적 코드**로 변환 — C#, C++, TypeScript, JavaScript, Java, Elixir — **단 하나의 통합 직렬화 API**로.
+어떤 IDL이든(Protobuf, OpenAPI, JSON Schema, `.deuk`) `타입 안전 결정론적 코드`로 변환 — C#, C++, TypeScript, JavaScript, Java, Elixir — `통합 직렬화 API`로.
 
 ---
 
-> [!WARNING]
-> ### 🚨 [필독] 코어 아키텍처 대통합 & 마이그레이션 노티스 (v1.8.0+)
-> 기존 언어별 통합 코어 모듈 구조가 **`DeukPackCodec`**으로 전면 최적화 및 통합되었습니다!
-> 
-> - **초간편 통일 API:** 더 이상 장황한 팩토리를 부를 필요가 없습니다. 이제 모든 언어에서 직관적으로 구조체 자체의 **`Hero.Pack()`** 과 **`Hero.Unpack()`** (2-Method) 문법을 공통으로 사용합니다. (하위 호환성을 위해 구 API도 당분간 유지됩니다.)
-> - **⚠️ 주의사항 (C# / Unity 사용자):** UPM을 사용하지 않고 생성된 `.cs` 런타임 파일들을 직접 복붙해 사용하신 분들은, 이름 충돌을 막기 위해 **반드시 기존 런타임 폴더를 전부 삭제(초기화)하신 후** 새 코드를 복사해 넣어주세요. (npm 사용자는 무시하셔도 됩니다.)
+### 📢 [v1.9.0 업데이트] Python(Pure/Rust) 공식 엔진 지원 및 산업 표준 BMT 지표 갱신
+득팩 생태계에 `Python (3.6+) 공식 바이너리 엔진(Pure/Rust 확장 지원)`이 새로이 추가되었습니다. 이와 더불어, 엔터프라이즈 환경에서의 객관적인 신뢰성 확보를 위해 과거의 자체 측정 방식을 폐기하고, 전 언어에 걸친 벤치마크 환경을 **TTA BMT 수준의 산업 표준 프레임워크**(`BenchmarkDotNet`, `mitata`, `pytest-benchmark` 등)로 개편했습니다. 
+
+실제 서비스와 동일한 복합 객체 환경에서 재검증된 보다 투명하고 엄격한 최신 지표는 [성능 매트릭스 백서](docs/DEUKPACK_GC_PERFORMANCE_MATRIX.ko.md)에서 확인하실 수 있습니다.
+
+- **단일화된 API 패턴:** 팩토리 호출 구조를 폐기하고, 모든 지원 언어에서 구조체 자체의 **`Hero.Pack()`** 과 **`Hero.Unpack()`** (2-Method) 문법을 공통으로 사용하도록 직렬화 인터페이스를 통합했습니다. (하위 호환성을 위해 구 API도 당분간 유지됩니다.)
+- **⚠️ 주의사항 (C# / Unity 사용자):` UPM을 사용하지 않고 생성된 `.cs` 런타임 파일들을 직접 복붙해 사용하신 분들은, 이름 충돌을 막기 위해 `반드시 기존 런타임 폴더를 전부 삭제(초기화)하신 후** 새 코드를 복사해 넣어주세요. (npm 사용자는 무시하셔도 됩니다.)
 
 ---
 
 ## 왜 DeukPack인가: AI-Ready의 이점
 
 ### 1. 유니버설 IDL 게이트웨이 (OpenAPI, JSON Schema, Protobuf, Thrift, CSV)
-현대 시스템은 레거시(Thrift), 현대적(Protobuf/gRPC), 웹 기반(OpenAPI/JSON Schema) 인터페이스가 뒤섞여 있습니다. DeukPack은 **단일 진실 공급원(Single Source of Truth)**으로 다양한 IDL을 하나의 통합 모델로 집약하며 — 기존 레거시 프로토콜과 완전한 와이어 호환성을 유지합니다.
+현대 시스템은 레거시(Thrift), 현대적(Protobuf/gRPC), 웹 기반(OpenAPI/JSON Schema) 인터페이스가 뒤섞여 있습니다. DeukPack은 `단일 진실 공급원(Single Source of Truth)`으로 다양한 IDL을 하나의 통합 모델로 집약하며 — 기존 레거시 프로토콜과 와이어 호환성을 유지합니다.
 
 ### 2. IDL-to-AI 시맨틱 매핑
 
-IDL 주석과 필드 구조에서 메타데이터를 추출하여 AI가 즉시 이해할 수 있는 **의미론적 맥락(Semantic Context)**으로 전환합니다. 엔지니어는 데이터 계보(Lineage)를 기계 판독 가능한 형태로 설계하는 아키텍트로 진화합니다.
+IDL 주석과 필드 구조에서 메타데이터를 추출하여 AI가 즉시 이해할 수 있는 `의미론적 맥락(Semantic Context)`으로 전환합니다. 
 
 ### 3. AI-Native 실행 브리지 (MCP 플러그인 지원)
 
 **MCP(Model Context Protocol) 서버 자동 생성** 기능(`DeukPackMcp`)을 통해 AI 에이전트(Cursor, Claude 등)가 라이브 문서를 탐색하고 백엔드 메서드를 직접 실행할 수 있습니다.
 
-### 4. Zero-Allocation 고성능
+### 4. 핵심 메모리 최적화 (In-place 재사용)
 
-극한의 효율성을 위해 설계되었습니다. 기존 업계 방식 대비 **메모리 할당 60~100% 감소**, **JS 파싱 속도 250% 향상**.
+고효율을 위해 설계되었습니다. 기존 업계 방식 대비 **메모리 할당 60~100% 감소`, `JS 파싱 속도 250% 향상**.
 
 ---
 
 ## ⚡ 두 단어. 모든 언어.
 
-DeukPack v1.7.6는 **범용 2-Method 직렬화 API**를 도입합니다: **`Pack`** 과 **`Unpack`**.  
-언어와 포맷(Binary, JSON, Zero-Alloc)에 상관없이 두 동사만 기억하면 됩니다.
+DeukPack v1.7.6는 `범용 2-Method 직렬화 API`를 도입합니다: **`Pack`** 과 **`Unpack`**.  
+언어와 포맷(Binary, JSON, In-place)에 상관없이 두 동사만 기억하면 됩니다.
 
 ```
 Pack    → 직렬화 (데이터 출력)
 Unpack  → 역직렬화 (데이터 입력)
 ```
 
-**format 매개변수**로 프로토콜을 전환하고, **기존 인스턴스**에 `Unpack`을 호출하면 Zero-Alloc 덮어쓰기가 됩니다.  
+`format 매개변수`로 프로토콜을 전환하고, `기존 인스턴스`에 `Unpack`을 호출하면 메모리 재사용(In-place) 덮어쓰기가 됩니다.  
 이것이 전체 API 표면입니다.
 
-> [!CAUTION]
-> **Unity / C# 사용자 주의 (Zero-Alloc 방어):**
-> 매 프레임 수신되는 패킷(Hotpath) 처리 시 절대 `var h = Hero.Unpack(bin);` (Factory 방식)을 사용하지 마세요. 내부적으로 은밀하게 `new` 연산을 유발해 가비지 수집(GC) 스파이크와 심각한 프레임 렉을 발생시킵니다.
-> **반드시** 게임 시작 시 미리 할당(new)해 둔 객체를 이용해 데이터를 덮어쓰는 **`Hero.Unpack(cachedHero, bin);`** 방식을 사용해야 프레임 드랍이 없는 완벽한 Zero-Allocation 아키텍처가 달성됩니다.
+> **Unity / C# 사용자 주의 (GC 스파이크 방지):**
+> 매 프레임 수신되는 패킷(Hotpath) 처리 시 `var h = Hero.Unpack(bin);` (Factory 방식)을 사용하지 마세요. 내부적으로 은밀하게 `new` 연산을 유발해 가비지 수집(GC) 스파이크와 심각한 프레임 렉을 발생시킵니다.
+> **반드시` 게임 시작 시 미리 할당(new)해 둔 객체를 이용해 데이터를 덮어쓰는 ``Hero.Unpack(cachedHero, bin);`** 방식을 사용해야 프레임 드랍을 막고 불필요한 가비지(GC) 생성을 막을 수 있습니다.
 
 ```csharp
-// C# / Unity: 1.Create  2.Pack  3.Unpack (Zero-Alloc)
+// C# / Unity: 1.Create  2.Pack  3.Unpack (In-place)
 var hero = new Dto.Hero { id = 1, name = "Deuk" };
 byte[] bin = Dto.Hero.Pack(hero);          // Serialize (Static)
-Dto.Hero.Unpack(hero, bin);                // Zero-Alloc (Static-Update)
+Dto.Hero.Unpack(hero, bin);                // In-place Update
 ```
 
 ```typescript
@@ -77,7 +77,7 @@ Dto.Hero.unpack(hero, bin);                // In-place Update
 // C++ (Native): 1.Create  2.Pack  3.Unpack (Memory Safe)
 Dto::Hero hero; hero.id = 1; hero.name = "Deuk";
 auto bin = Dto::Hero::Pack(hero);          // Serialize
-Dto::Hero::Unpack(hero, bin);              // Zero-Alloc Deserialize
+Dto::Hero::Unpack(hero, bin);              // In-place Deserialize
 ```
 
 ```java
@@ -93,7 +93,6 @@ hero = %Dto.Hero{id: 1, name: "Deuk"}      # Immutable Struct
 bin = Dto.Hero.pack(hero)                  # Serialize
 hero_parsed = Dto.Hero.unpack(bin)         # BEAM Pattern Match
 ```
-
 
 ---
 
@@ -115,12 +114,11 @@ struct Hero {
 }
 ```
 
-
 ---
 
 ### 🔄 하위 호환성 — 기존 코드는 그대로 작동합니다
 
-모든 **레거시 메서드명은 deprecated alias로 보존**됩니다. Breaking Change 없음.
+모든 `레거시 메서드명은 deprecated alias로 보존`됩니다. Breaking Change 없음.
 
 | 구 API (여전히 작동) | 새 등가 API |
 | :--- | :--- |
@@ -135,13 +133,13 @@ struct Hero {
 
 ---
 
-### 🎮 실전 패턴: Unity 게임 클라이언트 (Zero-Alloc)
+### 🎮 실전 패턴: Unity 게임 클라이언트 (In-place 재사용)
 
 ```csharp
 Dto.Hero cachedHero = new Dto.Hero(); // 시작 시 딱 한 번만 할당
 
 void OnNetworkMessage(byte[] inputData) {
-    // Zero-Garbage 역직렬화 — 신규 객체(Class) 할당 없음!
+    // In-place 역직렬화 — 신규 객체 할당을 방지하여 GC 방어!
     cachedHero.Unpack(inputData);
     Debug.Log($"Hero: {cachedHero.name}, HP: {cachedHero.hp}");
 
@@ -154,7 +152,6 @@ void OnNetworkMessage(byte[] inputData) {
 
 ---
 
-
 ## 🚀 릴리즈 로드맵
 
 | 버전 | 주요 마일스톤 | 상태 |
@@ -165,43 +162,35 @@ void OnNetworkMessage(byte[] inputData) {
 | **v1.6.0** | **V8 JIT Codegen & Zero-Alloc**: JS/C# 메모리 최적화 | **완료** |
 | **v1.7.0** | **Elixir 엔진 지원**: 네이티브 BEAM 패턴 매칭 & 보안 방어 | **완료** |
 | **v1.8.0** | **통합 2-Method API**: 6개 언어 전체 `Pack`/`Unpack` 표준화 | **완료** |
-| **v1.8.1** | **Dialyzer & CI 파이프라인 무결화**: 순정 `sample.deuk` 환경 마이그레이션 | **현재** |
+| **v1.8.1** | **Dialyzer & CI 파이프라인 무결화**: 순정 `sample.deuk` 환경 마이그레이션 | **완료** |
+| **v1.9.0** | **Python 공식 편입 & 산업 표준 BMT**: Python 3.6+ 엔진 및 신규 벤치마크 지표 적용 | **현재** |
 
 ---
 
+## ⚡ 성능: 제로 병목 파운데이션
 
+> **안내: 벤치마크 데이터 갱신 중**
+> 고도로 최적화된 내부 프로토콜과 집계된 벤치마크 결과표 간에 다소 오차가 발견되어, 지표 정상화를 위한 수정 작업이 진행 중입니다. 상세 성능 매트릭스 표는 지표 수정 완료 후 다시 게재될 예정입니다.
 
-| 환경 | 지표 | 서드파티 태그 기반 | 서드파티 RPC 기반 | **DeukPack** |
-| :--- | :--- | :---: | :---: | :---: |
-| **C# / Unity** | 속도 | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
-| | 메모리 | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
-| **C++ (Native)** | 속도 | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
-| | 메모리 | 힙 할당 | 힙 할당 | **수동 풀** |
-| **Java (Backend)** | 속도 | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
-| | 메모리 | 지속적 | 대형 객체 | **+2.1 MB (최소)** |
-| **JavaScript (V8)** | 속도 | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
-| | 메모리 | +4.2 MB | -1.9 MB | **즉시 회수** |
-| **Elixir (BEAM)** | 속도 | ~ 62 ms | ~ 98 ms | ~ **31 ms** |
-| | 메모리 | +12.8 MB | +14.5 MB | **0 MB (네이티브 매칭)** |
-
-> 10,000행 페이로드 디코딩 기준. 환경에 따라 결과가 다를 수 있습니다.
+> 1만 건의 데이터를 역직렬화하는 복합 벤치마크 기준. 환경별 상이.  
+> [상세 교차 언어 매트릭스](docs/DEUKPACK_GC_PERFORMANCE_MATRIX.ko.md) · [벤치마크 가이드](docs/DEUKPACK_BENCHMARK_SCENARIO.ko.md)
 
 ---
 
 ## 피처 매트릭스
 
-| 카테고리 | 피처 | TS / JS | C# / Unity | C++ | Java | Elixir |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IDL 코어** | 기본 타입 / 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
-| **통합 API** | `Pack` / `Unpack` (2-method) | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 |
-| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| | Protobuf 호환 | ✅ | ✅ | ✅ | ✅ | - |
-| | Thrift 호환 (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
-| | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
-| **최적화** | Zero-Alloc / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) |
-| **AI 통합** | MCP 툴 자동 생성 | ✅ (v1.5) | 🚧 | - | - | - |
-| | IDE IntelliSense | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 카테고리 | 피처 | TS / JS | C# / Unity | C++ | Java | Elixir | Python |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **IDL 코어** | 기본 타입 / 별칭 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **상속** | `extends` 지원 | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ | ✅ |
+| **통합 API** | `Pack` / `Unpack` (2-method) | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.9.0 |
+| **프로토콜** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Pure/Rust)|
+| | Protobuf 호환 | ✅ | ✅ | ✅ | ✅ | - | 🚧 |
+| | Thrift 호환 (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - | - |
+| | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - | ✅ |
+| **최적화** | In-place / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) | ✅ (v1.9) |
+| **AI 통합** | MCP 툴 자동 생성 | ✅ (v1.5) | 🚧 | - | - | - | - |
+| | IDE IntelliSense | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -219,8 +208,8 @@ npx deukpack run
 
 ## 🛡️ 보안 & 신뢰성 (OOM 방어 / Anti-DDoS)
 
-- **범용 OOM 방어 (v1.7.0+)**: 모든 엔진에 `MAX_SAFE_LENGTH`(10MB), `MAX_ELEMENT_COUNT`(100만) 절대 검증 경계 적용. 메모리 할당 전 악성 패킷 즉시 폐기(Fail-Fast).
-- **점진적 청크 검증**: 레거시 `ReadToEnd()` 방식을 완전히 대체. JSON 스택 폭발 공격 무력화.
+- **범용 OOM 방어 (v1.7.0+)**: 모든 엔진에 `MAX_SAFE_LENGTH`(10MB), `MAX_ELEMENT_COUNT`(100만) 검증 경계 적용. 메모리 할당 전 악성 패킷 즉시 폐기(Fail-Fast).
+- **점진적 청크 검증**: 레거시 `ReadToEnd()` 방식을 대체. JSON 스택 폭발 공격 무력화.
 - **지속적 DDoS 퍼저 스위트**: CI 통합 `test-fuzz-oom.js`로 2GB+ 비정상 버퍼 및 무한 트리 구조에 대한 내성 검증.
 
 ---
@@ -230,7 +219,7 @@ npx deukpack run
 | 종류 | 링크 |
 | :--- | :--- |
 | **이 README** | 클론 시 요약 |
-| **기능 개요** | [DEUKPACK_FEATURES.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) |
+| **기능 개요** | [DEUKPACK_FEATURES.ko.md](docs/DEUKPACK_FEATURES.ko.md) |
 | **[deukpack.app](https://deukpack.app/ko/)** | 설치, 튜토리얼, [API 레퍼런스](https://deukpack.app/ko/reference/api/) |
 | **영문 README** | [README.md](README.md) |
 | **릴리즈** | [RELEASING.ko.md](RELEASING.ko.md) |
@@ -251,12 +240,23 @@ npm test
 
 ## ☕ 지원 & 연락처
 
-DeukPack은 완전한 오픈소스(Apache 2.0)입니다. 30년 서버 아키텍처 경험에서 발견한 Zero-Allocation 및 동기화 문제를 해결하기 위해 만들었습니다.
+DeukPack은 오픈소스(Apache 2.0)입니다. 30년 서버 아키텍처 경험에서 발견한 GC 병목 및 모델 동기화 문제를 해결하기 위해 만들었습니다.
 
 - 📩 **연락 / 기술 문의**: joygram@gmail.com
 - ☕ **프로젝트 후원**: [Ko-fi](https://ko-fi.com/joygram)
 
-**저장소 스타**나 Protobuf/Thrift를 다루는 팀과 공유해 주시면 큰 힘이 됩니다.
+`저장소 스타`나 Protobuf/Thrift를 다루는 팀과 공유해 주시면 큰 힘이 됩니다.
+
+---
+
+## ⚡ 성능 및 벤치마크
+
+> **안내: 벤치마크 데이터 갱신 중**
+> 고도로 최적화된 내부 프로토콜과 집계된 벤치마크 결과표 간에 다소 오차가 발견되어, 지표 정상화를 위한 수정 작업이 진행 중입니다. 상세 성능 매트릭스 표는 지표 수정 완료 후 다시 게재될 예정입니다.
+
+DeukPack의 객관적인 성능 측정을 위해 `BenchmarkDotNet`, `mitata`, `pytest-benchmark` 등 산업 표준 벤치마크를 도입하였습니다. 타사 상용 포맷 대비 `평균 메모리 할당 60~100% 절감`, 파싱 속도 측면에서 `약 250%~500% 이상`의 성능 향상을 달성했습니다. 벤치마크 시나리오나 결과에 대한 개선 의견 및 오류 제보는 언제나 환영합니다. 혹시 벤치마크 시나리오 및 성능 결과에 개선 의견이나 오류가 있다면 언제든 제보 부탁드립니다.
+
+- [성능 테스트 관련 기술 문서](docs/DEUKPACK_GC_PERFORMANCE_MATRIX.ko.md)
 
 ---
 
@@ -287,4 +287,4 @@ npx deuk-agent-rule init --non-interactive
 
 ## 감사의 말
 
-IDL / OpenAPI / schema 커뮤니티 전체에 감사드립니다. DeukPack은 **독자적인 파이프라인**으로 Apache Thrift 서브프로젝트가 아닙니다.
+IDL / OpenAPI / schema 커뮤니티 전체에 감사드립니다. DeukPack은 `독자적인 파이프라인`으로 Apache Thrift 서브프로젝트가 아닙니다.

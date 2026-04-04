@@ -372,10 +372,16 @@ end
         // Use apply/3 to avoid cross-module arity warning when nested module is compiled later
         return `apply(${rootModule}.${type}, :decode, ["binary", ${restVar}, struct(${rootModule}.${type}), depth + 1])`;
       }
+      if (ast.enums && ast.enums.find(e => e.name === type)) {
+        return `(
+          {val, r2} = decode_field(8, ${restVar})
+          {apply(${rootModule}.${type}, :from_integer, [val]), r2}
+        )`;
+      }
       return `decode_field(${wt}, ${restVar})`;
     }
     const t = (type as any).type;
-    if (t === 'list' || t === 'array') {
+    if (t === 'list' || t === 'array' || t === 'set') {
       const elemWT = this.wireType((type as any).elementType, ast);
       const elemLambda = `fn r -> ${this.generateDecodeHelper((type as any).elementType, 'r', ast, rootModule)} end`;
       return `(
@@ -473,10 +479,11 @@ ${typedListHelper}${typedMapHelper}`;
       `  def from_integer(_), do: nil`
     ].join('\n');
 
+    const docCommentStr = enm.docComment ? '\n' + enm.docComment.split('\n').map(line => line.trim() ? `  ${line}` : '').join('\n') : '';
+
     return `defmodule ${moduleName} do
   @moduledoc """
-  DeukPack Generated Enum: ${enm.name}
-  ${enm.docComment || ''}
+  DeukPack Generated Enum: ${enm.name}${docCommentStr}
   """
 
 ${toIntegerClauses}
@@ -593,7 +600,7 @@ end
       }
     }
     const t = (type as any).type;
-    if (t === 'list' || t === 'array') {
+    if (t === 'list' || t === 'array' || t === 'set') {
       const elemType = (type as any).elementType;
       const elemWT = this.wireType(elemType, ast);
       const elemExpr = this.encodeBitExpr(elemType, 'item', ast, rootModule);

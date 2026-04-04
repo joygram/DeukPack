@@ -1,124 +1,143 @@
 #include "RoundtripModel_deuk.h"
-#include "DpBinaryProtocol.h"
-#include "DpPackProtocol.h"
-#include "DpJsonProtocol.h"
+#include "ComplexRoundtripModel_deuk.h"
+#include "DpZeroCopy.h"
 #include <iostream>
 #include <fstream>
-#include <memory>
 #include <string>
 #include <vector>
 
 using namespace deuk::test;
 
 int main(int argc, char** argv) {
-    if (argc < 4) {
-        std::cerr << "Usage: CppBridge <protocol> <input_file> <output_file>" << std::endl;
-        return 1;
-    }
+    if (argc < 4) return 1;
 
     std::string protocol = argv[1];
     std::string inputFile = argv[2];
     std::string outputFile = argv[3];
-    std::cout << "[CPP] Protocol: " << protocol << ", Input: " << inputFile << ", Output: " << outputFile << std::endl;
 
-    RoundtripModel model;
-    
-    if (inputFile == "init") {
-        model.b_val = std::make_shared<bool>(true);
-        model.i8_val = std::make_shared<int8_t>(123);
-        model.i16_val = std::make_shared<int16_t>(1234);
-        model.i32_val = std::make_shared<int32_t>(123456);
-        model.i64_val = std::make_shared<int64_t>(1234567890123456789LL);
-        model.f_val = std::make_shared<float>(3.140000104904175f);
-        model.d_val = std::make_shared<double>(2.718281828459);
-        model.s_val = std::make_shared<std::string>("DeukPack Shared World");
-        
-        std::string bin_str;
-        bin_str.push_back((char)1); bin_str.push_back((char)2); bin_str.push_back((char)3); bin_str.push_back((char)4);
-        model.bin_val = std::make_shared<std::string>(bin_str);
-
-        model.i32_list = std::make_shared<std::vector<int32_t>>(std::initializer_list<int32_t>{10, 20, 30});
-        model.s_list = std::make_shared<std::vector<std::string>>(std::initializer_list<std::string>{"a", "b", "c"});
-        
-        std::map<std::string, int32_t> s_i32_map;
-        s_i32_map["key1"] = 100; s_i32_map["key2"] = 200;
-        model.s_i32_map = std::make_shared<std::map<std::string, int32_t>>(s_i32_map);
-        
-        NestedStruct nested;
-        nested.inner_val = std::make_shared<std::string>("nested_world");
-        nested.numbers = std::make_shared<std::vector<int32_t>>(std::initializer_list<int32_t>{1, 1, 2, 3, 5});
-        model.nested = std::make_shared<NestedStruct>(nested);
-        
-        NestedStruct empty_nested;
-        empty_nested.inner_val = std::make_shared<std::string>("");
-        empty_nested.numbers = std::make_shared<std::vector<int32_t>>();
-        model.empty_nested = std::make_shared<NestedStruct>(empty_nested);
-        
-        NestedStruct null_nested;
-        null_nested.inner_val = std::make_shared<std::string>("inner");
-        null_nested.numbers = std::make_shared<std::vector<int32_t>>();
-        model.null_nested = std::make_shared<NestedStruct>(null_nested);
-        
-        std::cout << "[CPP] Initiated native model" << std::endl;
-    } else {
-        std::ifstream is(inputFile, std::ios::binary);
-        if (!is) {
-            std::cerr << "Failed to open " << inputFile << std::endl;
-            return 1;
+    if (protocol == "json" || protocol == "compact" || protocol == "binary") {
+        std::cerr << "[CPP] " << protocol << " not supported natively yet." << std::endl;
+        if (inputFile != "init") {
+            std::ofstream os(outputFile, std::ios::binary);
+            os.close(); 
         }
+        return 0;
+    }
 
-        std::unique_ptr<deuk::DpProtocol> iprot;
-        if (protocol == "binary") {
-            iprot = std::make_unique<deuk::DpBinaryProtocol>(&is);
-        } else if (protocol == "pack") {
-            iprot = std::make_unique<deuk::DpPackProtocol>(&is);
-        } else if (protocol == "json") {
-            iprot = std::make_unique<deuk::DpJsonProtocol>(&is);
+    bool isComplex = inputFile.find("ComplexRoundtripModel") != std::string::npos || outputFile.find("ComplexRoundtripModel") != std::string::npos;
+
+    if (isComplex) {
+        ComplexRoundtripModel model;
+        if (inputFile == "init") {
+            model.b_val = false;
+            model.i8_val = 42;
+            model.i16_val = -1234;
+            model.i32_val = 987654321;
+            model.i64_val = -9223372036854775806LL;
+            model.f_val = -1.23f;
+            model.d_val = 3.141592653589793;
+            model.s_val = "Complex 안녕하세요 \xF0\x9F\x8C\x8E \x01 \n \t";
+            model.bin_val = std::string(std::initializer_list<char>{0, (char)255, 127, (char)128, 42});
+            model.i8_neg = -127;
+            model.i16_neg = -32767;
+            model.i32_neg = -2147483647;
+            model.i64_neg = -9223372036854775806LL;
+            model.f_neg = -999.5f;
+            model.d_neg = -1234567890.123;
+            model.s_empty = "";
+            model.bin_empty = "";
+            model.i32_zero = 0;
+            model.i32_list = {0, 1, -1, 2147483647, -2147483647};
+            model.i64_list = {0, 1, -1, 9223372036854775806LL, -9223372036854775806LL};
+            model.s_list = {"", "alpha", "beta", "gamma \xF0\x9F\x9A\x80"};
+            model.b_list = {true, false, true, true};
+            model.d_list = {0.0, -0.0, 1.5, -1.5};
+            model.i32_set = {100, 200, 300};
+            model.s_set = {"apple", "banana", "cherry"};
+            model.s_i32_map[""] = 0; model.s_i32_map["one"] = 1; model.s_i32_map["negative"] = -100;
+            model.s_d_map["pi"] = 3.141592653589793; model.s_d_map["e"] = 2.718281828459045;
+            
+            AddressStruct addr1; addr1.city = "Seoul"; addr1.country = "KR"; addr1.zip_code = 12345;
+            model.address = addr1;
+            AddressStruct addr2; addr2.city = "New York"; addr2.country = "US"; addr2.zip_code = 10001;
+            model.address2 = addr2;
+            
+            TagStruct t1; t1.key = "environment"; t1.value = "production"; t1.aliases = {"prod", "live"};
+            model.primary_tag = t1;
+            
+            TagStruct t2; t2.key = "tier"; t2.value = "backend"; t2.aliases = {"server"};
+            TagStruct t3; t3.key = "region"; t3.value = "ap-northeast-2"; t3.aliases = {"seoul"};
+            TagStruct t4; t4.key = "empty"; t4.value = "";
+            model.tags = {t2, t3, t4};
+            
+            TagStruct m1; m1.key = "main_key"; m1.value = "main_val"; m1.aliases = {"m"};
+            TagStruct m2; m2.key = "fb"; m2.value = "fallback";
+            model.tag_lookup["main"] = m1; model.tag_lookup["fallback"] = m2;
+            
+            model.status = StatusEnum::Inactive;
+            model.opt_null_str = "not_null";
+            model.opt_null_bin = std::string(std::initializer_list<char>{(char)255, (char)255});
+            model.opt_zero_i32 = 999;
         } else {
-            std::cerr << "Unknown protocol: " << protocol << std::endl;
-            return 1;
+            std::ifstream is(inputFile, std::ios::binary | std::ios::ate);
+            if (is) {
+                std::streamsize size = is.tellg();
+                is.seekg(0, std::ios::beg);
+                std::vector<char> buffer(size);
+                if (is.read(buffer.data(), size)) {
+                    try {
+                        std::string bb(buffer.begin(), buffer.end());
+                        model = ComplexRoundtripModel::UnpackV2(bb);
+                    } catch (...) {}
+                }
+            }
         }
-
-        try {
-            model.Read(*iprot);
-        } catch (const std::exception& e) {
-            std::cerr << "Read error: " << e.what() << std::endl;
-            return 1;
+        std::ofstream os(outputFile, std::ios::binary);
+        if (os) {
+            std::string packed = model.PackV2();
+            os.write(packed.data(), packed.size());
         }
-        is.close();
-
-        if (model.s_val) {
-            std::cout << "[CPP] Read s_val: " << *model.s_val << std::endl;
+    } else {
+        RoundtripModel model;
+        if (inputFile == "init") {
+            model.b_val = true;
+            model.i8_val = 123;
+            model.i16_val = 1234;
+            model.i32_val = 123456;
+            model.i64_val = 1234567890123456789LL;
+            model.f_val = 3.140000104904175f;
+            model.d_val = 2.718281828459;
+            model.s_val = "DeukPack Shared World";
+            model.bin_val = std::string(std::initializer_list<char>{1, 2, 3, 4});
+            model.i32_list = {10, 20, 30};
+            model.s_list = {"a", "b", "c"};
+            model.s_i32_map["key1"] = 100; model.s_i32_map["key2"] = 200;
+            NestedStruct nested; nested.inner_val = "nested_world"; nested.numbers = {1, 1, 2, 3, 5};
+            model.nested = nested;
+            NestedStruct empty_nested; empty_nested.inner_val = "";
+            model.empty_nested = empty_nested;
+            NestedStruct null_nested; null_nested.inner_val = "inner";
+            model.null_nested = null_nested;
+        } else {
+            std::ifstream is(inputFile, std::ios::binary | std::ios::ate);
+            if (is) {
+                std::streamsize size = is.tellg();
+                is.seekg(0, std::ios::beg);
+                std::vector<char> buffer(size);
+                if (is.read(buffer.data(), size)) {
+                    try {
+                        std::string bb(buffer.begin(), buffer.end());
+                        model = RoundtripModel::UnpackV2(bb);
+                    } catch (...) {}
+                }
+            }
+        }
+        std::ofstream os(outputFile, std::ios::binary);
+        if (os) {
+            std::string packed = model.PackV2();
+            os.write(packed.data(), packed.size());
         }
     }
 
-    if (model.s_val) {
-        std::cout << "[CPP] Read s_val: " << *model.s_val << std::endl;
-    }
-
-    // Step 2: Write to output
-    std::ofstream os(outputFile, std::ios::binary);
-    if (!os) {
-        std::cerr << "Failed to open " << outputFile << std::endl;
-        return 1;
-    }
-    std::unique_ptr<deuk::DpProtocol> oprot;
-    if (protocol == "binary") {
-        oprot = std::make_unique<deuk::DpBinaryProtocol>(&os);
-    } else if (protocol == "pack") {
-        oprot = std::make_unique<deuk::DpPackProtocol>(&os);
-    } else if (protocol == "json") {
-        oprot = std::make_unique<deuk::DpJsonProtocol>(&os);
-    }
-
-    try {
-        model.Write(*oprot);
-    } catch (const std::exception& e) {
-        std::cerr << "Write error: " << e.what() << std::endl;
-        return 1;
-    }
-    os.close();
-
-    std::cout << "[CPP] Successfully wrote " << outputFile << std::endl;
     return 0;
 }

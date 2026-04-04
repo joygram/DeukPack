@@ -1,0 +1,78 @@
+namespace deuk.test
+
+# ─────────────────────────────────────────
+# ComplexRoundtripModel
+# 모든 지원 타입 + 복합 구조체 중첩 포함
+# (정수 경계값은 C# sbyte/short/int/long 안전 범위로 조정)
+# ─────────────────────────────────────────
+
+enum StatusEnum {
+    Unknown  = 0
+    Active   = 1
+    Inactive = 2
+    Deleted  = 3
+}
+
+struct AddressStruct {
+    1> string  city     = "Seoul"
+    2> string  country  = "KR"
+    3> int32   zip_code = 0
+}
+
+struct TagStruct {
+    1> string          key   = ""
+    2> string          value = ""
+    3> list<string>    aliases
+}
+
+struct ComplexRoundtripModel {
+    # ── Primitives ──────────────────────────────────────────
+    1>  bool    b_val     = true
+    2>  int8    i8_val    = 127
+    3>  int16   i16_val   = 32767
+    4>  int32   i32_val   = 2147483647
+    5>  int64   i64_val   = 9223372036854775806
+    6>  float   f_val     = 3.14
+    7>  double  d_val     = 2.71828182845905
+    8>  string  s_val     = "DeukPack Complex World"
+    9>  binary  bin_val
+
+    # ── Negative edge values (safe within C# signed ranges) ─
+    10> int8    i8_neg    = -127
+    11> int16   i16_neg   = -32767
+    12> int32   i32_neg   = -2147483647
+    13> int64   i64_neg   = -9223372036854775806
+    14> float   f_neg     = -999.5
+    15> double  d_neg     = -1234567890.123
+
+    # ── Empty / zero edge ───────────────────────────────────
+    16> string  s_empty   = ""
+    17> binary  bin_empty
+    18> int32   i32_zero  = 0
+
+    # ── Collections ─────────────────────────────────────────
+    19> list<int32>          i32_list
+    20> list<int64>          i64_list
+    21> list<string>         s_list
+    22> list<bool>           b_list
+    23> list<double>         d_list
+    24> set<int32>           i32_set
+    25> set<string>          s_set
+    26> map<string, int32>   s_i32_map
+    27> map<string, double>  s_d_map
+
+    # ── Nested structs ──────────────────────────────────────
+    28> AddressStruct            address
+    29> AddressStruct            address2
+    30> TagStruct                primary_tag
+    31> list<TagStruct>          tags
+    32> map<string, TagStruct>   tag_lookup
+
+    # ── Enum field ──────────────────────────────────────────
+    33> StatusEnum  status = Active
+
+    # ── Optional / null scenario ────────────────────────────
+    34> string  opt_null_str   = ""
+    35> binary  opt_null_bin
+    36> int32   opt_zero_i32   = 0
+}

@@ -7,7 +7,7 @@
     // Serialization methods
     public void Write(DpProtocol oprot) => Write(oprot, null, null);
 
-    public void Write(DpProtocol oprot, ICollection<int>@@?@@ fieldIds, Dictionary<int, object>@@?@@ overrides = null)
+    public void Write(DpProtocol oprot, ICollection<int>@@NULLABLE@@ fieldIds, Dictionary<int, object>@@NULLABLE@@ overrides = null)
     {
 @@WRITE_UNIFIED_INNER@@
     }
@@ -40,7 +40,7 @@
     }
 
     // ── Unified DeukPack Serialization API ──
-    public static byte[] Pack(@@CLASS_NAME@@ obj, DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary, ICollection<int>@@?@@ fieldIds = null, Dictionary<int, object>@@?@@ overrides = null) => obj.Pack(format, fieldIds, overrides);
+    public static byte[] Pack(@@CLASS_NAME@@ obj, DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary, ICollection<int>@@NULLABLE@@ fieldIds = null, Dictionary<int, object>@@NULLABLE@@ overrides = null) => obj.Pack(format, fieldIds, overrides);
 
     /// <summary>
     /// Deserializes data into a NEW instance of @@CLASS_NAME@@.
@@ -53,7 +53,7 @@
     /// Use this in high-frequency network hotpaths to overwrite pooled objects and prevent frame drops.
     /// </summary>
     public static void Unpack(@@CLASS_NAME@@ obj, byte[] data, DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary) => DeukPack.Protocol.DeukPackCodec.Unpack(obj, data, format);
-    public byte[] Pack(DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary, ICollection<int>@@?@@ fieldIds = null, Dictionary<int, object>@@?@@ overrides = null)
+    public byte[] Pack(DeukPack.Protocol.DpFormat format = DeukPack.Protocol.DpFormat.Binary, ICollection<int>@@NULLABLE@@ fieldIds = null, Dictionary<int, object>@@NULLABLE@@ overrides = null)
     {
         if (fieldIds == null && overrides == null) 
             return DeukPack.Protocol.DeukPackCodec.Pack(this, format);

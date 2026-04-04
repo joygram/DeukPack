@@ -32,3 +32,9 @@ enum TestEnum {
 struct EnumModel {
     1> TestEnum e_val = Beta
 }
+
+struct ComplexListModel {
+    1> string name
+    2> list<NestedStruct> items
+    3> map<string, NestedStruct> lookup
+}

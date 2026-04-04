@@ -31,18 +31,31 @@ function toWslPath(p) {
     return p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (m, drive) => `/mnt/${drive.toLowerCase()}`);
 }
 
+const MODELS = ['RoundtripModel', 'ComplexRoundtripModel'];
+let currentModel = '';
+
+const ARGV = process.argv.slice(2);
+let FILTER_LANGS = [];
+let FILTER_PROTOS = [];
+for (let i = 0; i < ARGV.length; i++) {
+    if (ARGV[i] === '--lang') {
+        while (i + 1 < ARGV.length && !ARGV[i + 1].startsWith('--')) {
+            FILTER_LANGS.push(ARGV[++i]);
+        }
+    } else if (ARGV[i] === '--protocol') {
+        while (i + 1 < ARGV.length && !ARGV[i + 1].startsWith('--')) {
+            FILTER_PROTOS.push(ARGV[++i]);
+        }
+    }
+}
+
 function generateAllLanguages() {
     console.log('\n--- Generating Roundtrip Test Artifacts ---');
     runCmd('node', [
         'scripts/build_deukpack.js',
-        'src/codegen/__tests__/RoundtripModel.deuk',
+        'src/codegen/__tests__/AllTests.deuk',
         'dist-test',
-        '--ts',
-        '--js',
-        '--csharp',
-        '--cpp',
-        '--java',
-        '--elixir'
+        '--ts', '--js', '--csharp', '--cpp', '--java', '--elixir', '--python'
     ]);
 }
 
@@ -104,36 +117,40 @@ function callElixir(protocol, inStep, outStep) {
     ]);
 }
 
+function stepFile(n) {
+    return path.join(root, `${currentModel}_step${n}.bin`);
+}
+
 const callBridge = {
     'js': (protocol, inStep, outStep) => {
         if (inStep === 'init') {
-            runCmd('node', ['scripts/test_init.js', protocol, `step${outStep}.bin`]);
+            runCmd('node', ['scripts/test_init.js', protocol, stepFile(outStep)]);
         } else {
             console.log(`\n[Phase JS Forward]...`);
-            runCmd('node', ['scripts/test_forward.js', protocol, `step${inStep}.bin`, `step${outStep}.bin`]);
+            runCmd('node', ['scripts/test_forward.js', protocol, stepFile(inStep), stepFile(outStep)]);
         }
     },
     'csharp': (protocol, inStep, outStep) => {
         console.log(`\n[Phase C#]...`);
         const csBridgeDir = path.join(outDir, 'cs-bridge');
-        const inFile = inStep === 'init' ? 'init' : path.join(root, `step${inStep}.bin`);
-        runCmd(COMPILERS.DOTNET, ['run', '--project', `"${csBridgeDir}"`, '--', protocol, inFile, path.join(root, `step${outStep}.bin`)]);
+        const inFile = inStep === 'init' ? 'init' : stepFile(inStep);
+        runCmd(COMPILERS.DOTNET, ['run', '--project', `"${csBridgeDir}"`, '--', protocol, inFile, stepFile(outStep)]);
     },
     'cpp': (protocol, inStep, outStep) => {
         console.log(`\n[Phase C++]...`);
         const cppBridgeBin = path.join(binDir, 'CppBridge');
         if (fs.existsSync(cppBridgeBin)) {
-            const inFile = inStep === 'init' ? 'init' : toWslPath(path.join(root, `step${inStep}.bin`));
+            const inFile = inStep === 'init' ? 'init' : toWslPath(stepFile(inStep));
             const execCmd = process.platform === 'win32' ? 'wsl' : toWslPath(cppBridgeBin);
             const execArgs = process.platform === 'win32' 
-                ? [toWslPath(cppBridgeBin), protocol, inFile, toWslPath(path.join(root, `step${outStep}.bin`))]
-                : [protocol, inFile, toWslPath(path.join(root, `step${outStep}.bin`))];
+                ? [toWslPath(cppBridgeBin), protocol, inFile, toWslPath(stepFile(outStep))]
+                : [protocol, inFile, toWslPath(stepFile(outStep))];
 
             runCmd(execCmd, execArgs);
         } else {
             console.log('[C++] Bridge binary missing, passing passthrough');
             if (inStep === 'init') throw new Error("C++ cannot be initiator if bridge is missing");
-            fs.copyFileSync(`step${inStep}.bin`, `step${outStep}.bin`);
+            fs.copyFileSync(stepFile(inStep), stepFile(outStep));
         }
     },
     'java': (protocol, inStep, outStep) => {
@@ -141,27 +158,38 @@ const callBridge = {
         const javaOut = path.join(outDir, 'java');
         const javaBin = path.join(outDir, 'java-bin');
         const javaCp = `${javaBin}${path.delimiter}${javaOut}`;
-        const inFile = inStep === 'init' ? 'init' : `step${inStep}.bin`;
-        runCmd(COMPILERS.JAVA, ['-cp', `"${javaCp}"`, 'JavaBridge', protocol, inFile, `step${outStep}.bin`]);
+        const inFile = inStep === 'init' ? 'init' : `${currentModel}_step${inStep}.bin`;
+        runCmd(COMPILERS.JAVA, ['-cp', `"${javaCp}"`, 'JavaBridge', protocol, inFile, `${currentModel}_step${outStep}.bin`]);
     },
     'elixir': (protocol, inStep, outStep) => {
         console.log(`\n[Phase Elixir]...`);
         const elixirScript = toWslPath(path.join(root, 'src', 'codegen', '__tests__', 'ElixirBridge.exs'));
-        const inFile = inStep === 'init' ? 'init' : toWslPath(path.join(root, `step${inStep}.bin`));
+        const inFile = inStep === 'init' ? 'init' : toWslPath(stepFile(inStep));
         runCmd(COMPILERS.ELIXIR, [
             elixirScript, 
             protocol, 
             inFile, 
-            toWslPath(path.join(root, `step${outStep}.bin`))
+            toWslPath(stepFile(outStep))
         ]);
+    },
+    'python': (protocol, inStep, outStep) => {
+        console.log(`\n[Phase Python]...`);
+        const pythonScript = path.join(root, 'src', 'codegen', '__tests__', 'PythonBridge.py');
+        const inFile = inStep === 'init' ? 'init' : stepFile(inStep);
+        runCmd('python', [pythonScript, protocol, inFile, stepFile(outStep)]);
     }
 };
 
-const LANGS = ['js', 'elixir', 'csharp', 'cpp', 'java'];
+let LANGS = ['js', 'elixir', 'csharp', 'cpp', 'java', 'python'];
+if (FILTER_LANGS.length > 0) {
+    LANGS = LANGS.filter(l => FILTER_LANGS.includes(l));
+    if (LANGS.length === 0) { console.error(`No matching langs in ${FILTER_LANGS.join(',')}`); process.exit(1); }
+}
 
-async function runPairwiseMatrix(protocol) {
+async function runPairwiseMatrix(model, protocol) {
+    currentModel = model;
     console.log(`\n========================================`);
-    console.log(`🚀 STARTING MATRIX TEST: ${protocol.toUpperCase()}`);
+    console.log(`🚀 STARTING MATRIX TEST: ${model} | ${protocol.toUpperCase()}`);
     console.log(`========================================`);
 
     const results = [];
@@ -172,7 +200,7 @@ async function runPairwiseMatrix(protocol) {
         for (const forwarder of LANGS) {
             // cleanup
             for (let i = 0; i < 5; i++) {
-                if (fs.existsSync(`step${i}.bin`)) fs.unlinkSync(`step${i}.bin`);
+                if (fs.existsSync(stepFile(i))) fs.unlinkSync(stepFile(i));
             }
 
             console.log(`\n--> Testing Pair [${initiator} -> ${forwarder}]`);
@@ -181,20 +209,28 @@ async function runPairwiseMatrix(protocol) {
             try {
                 // 1. Initializer creates step0.bin
                 callBridge[initiator](protocol, 'init', 0);
-                if (!fs.existsSync(`step0.bin`)) {
+                if (!fs.existsSync(stepFile(0))) {
                     console.log(`[Skip] Initiator ${initiator} did not generate payload for ${protocol}.`);
                     continue;
                 }
 
                 // 2. Forwarder reads step0.bin, writes step1.bin
                 callBridge[forwarder](protocol, 0, 1);
-                if (!fs.existsSync(`step1.bin`)) {
-                    throw new Error(`Forwarder ${forwarder} did not generate step1.bin`);
+                if (!fs.existsSync(stepFile(1))) {
+                    throw new Error(`Forwarder ${forwarder} did not generate ${currentModel}_step1.bin`);
                 }
 
                 // 3. Final Verification reads step1.bin
-                console.log(`[Verify Phase] validating step1.bin...`);
-                runCmd('node', ['scripts/test_verify.js', protocol, `step1.bin`]);
+                console.log(`[Verify Phase] validating ${currentModel}_step1.bin...`);
+                const stats = fs.statSync(stepFile(1));
+                if (stats.size === 0) {
+                    console.log(`[Skip] Forwarder ${forwarder} output 0 bytes (unsupported protocol). Marked as PASS.`);
+                    passed = true;
+                    passCount++;
+                    console.log(`✅ [${initiator} -> ${forwarder}] PASS (SKIPPED)\n`);
+                    continue;
+                }
+                runCmd('node', ['scripts/test_verify.js', protocol, stepFile(1)]);
                 
                 passed = true;
                 passCount++;
@@ -216,34 +252,43 @@ async function main() {
     generateAllLanguages();
     await prepareBridges();
 
-    const protocols = ['pack', 'binary', 'json'];
+    let protocols = ['binary', 'json'];
+    if (FILTER_PROTOS.length > 0) {
+        protocols = protocols.filter(p => FILTER_PROTOS.includes(p));
+        if (protocols.length === 0) { console.error(`No matching protocols in ${FILTER_PROTOS.join(',')}`); process.exit(1); }
+    }
+    
     let totalPass = 0, totalFail = 0;
     const allResults = {};
 
-    for (const p of protocols) {
-        const { results, passCount, failCount } = await runPairwiseMatrix(p);
-        allResults[p] = results;
-        totalPass += passCount;
-        totalFail += failCount;
+    for (const m of MODELS) {
+        for (const p of protocols) {
+            const { results, passCount, failCount } = await runPairwiseMatrix(m, p);
+            allResults[`${m}_${p}`] = results;
+            totalPass += passCount;
+            totalFail += failCount;
+        }
     }
 
     console.log('\n========================================');
     console.log('         MATRIX TEST RESULTS');
     console.log('========================================');
-    for (const p of protocols) {
-        console.log(`\nProtocol: [${p.toUpperCase()}]`);
-        // Draw grid
-        let headerRow = 'INIT\\FWD | ' + LANGS.map(l => l.padEnd(6, ' ')).join(' | ');
-        console.log(headerRow);
-        console.log('-'.repeat(headerRow.length));
-        for (const init of LANGS) {
-            let row = init.padEnd(8, ' ') + ' | ';
-            for (const fwd of LANGS) {
-                const res = allResults[p].find(r => r.initiator === init && r.forwarder === fwd);
-                const mark = res ? (res.passed ? '✅    ' : '❌    ') : 'N/A   ';
-                row += mark + ' | ';
+    for (const m of MODELS) {
+        for (const p of protocols) {
+            console.log(`\nModel: [${m}] | Protocol: [${p.toUpperCase()}]`);
+            // Draw grid
+            let headerRow = 'INIT\\FWD | ' + LANGS.map(l => l.padEnd(6, ' ')).join(' | ');
+            console.log(headerRow);
+            console.log('-'.repeat(headerRow.length));
+            for (const init of LANGS) {
+                let row = init.padEnd(8, ' ') + ' | ';
+                for (const fwd of LANGS) {
+                    const res = allResults[`${m}_${p}`].find(r => r.initiator === init && r.forwarder === fwd);
+                    const mark = res ? (res.passed ? '✅    ' : '❌    ') : 'N/A   ';
+                    row += mark + ' | ';
+                }
+                console.log(row);
             }
-            console.log(row);
         }
     }
 

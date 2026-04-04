@@ -4,6 +4,13 @@ Notable changes to the `deukpack` npm package by release.
 
 **한국어:** [CHANGELOG.ko.md](CHANGELOG.ko.md)
 
+## [1.9.0] — 2026-04-04
+
+### Official Python Support
+- **Python Binary Engine Added**: Officially supports Python 3.6+ environments. The new engine integrates optimization strategies modeled after robust C-API architectures (like `ORJSON`) to minimize serialization bottlenecks.
+
+- **Complex Real-World Test Models**: Scaled the measurement baselines by discarding simple 1D models in favor of the **ComplexRoundtripModel**—a comprehensive test suite invoking multi-dimensional hash maps and deep nested trees to ensure transparent, enterprise-level performance metrics.
+
 ## [1.8.1] — 2026-04-03
 
 ### CI/CD & Pipeline Hotfix
@@ -264,7 +271,7 @@ Notable changes to the `deukpack` npm package by release.
 
 ### Changed
 
-- **Docs**: **README** / **README.ko** — installation steps in **code blocks**; **project-local** `npm install deukpack` → `npx deukpack init` → `npx deukpack run`; **global `npm install -g`** removed from this guide; kits link label **DeukPack Tale** / **득팩 테일** (URL unchanged).
+- **Docs**: **README** / **README.ko** — installation steps in **code blocks**; **project-local** `npm install deukpack` → `npx deukpack init` → `npx deukpack run`; **global `npm install -g`** removed from this guide; kits link label **DeukPack Tale` / `득팩 테일** (URL unchanged).
 - **CLI**: One-shot `deukpack <entry> <outDir> …` **warns** when **`./deukpack.pipeline.json`** is missing; suggests **`npx deukpack init`** (build still runs).
 - **`deukpack init` / bootstrap / bundled VSIX**: When **`.deukpack/deuk-idl-vsix.json`** records a different **npm `deukpack` version**, **attempt bundled VSIX install without prompting**; **Unity-near** detection strengthens install/skip messaging; **`--non-interactive` `init`** calls version-bump VSIX **ensure** when **`--skip-vsix`** is not set; **bootstrap** passes Unity hint into VSIX prompts and runs bump **ensure** when not TTY.
 

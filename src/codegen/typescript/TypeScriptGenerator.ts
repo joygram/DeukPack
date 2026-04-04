@@ -293,7 +293,8 @@ export class TypeScriptGenerator extends CodeGenerator {
     });
     const out = block.split('\n');
     if (packReg) {
-      const packJson = JSON.stringify(buildEmbeddedStructSchema(struct, ast));
+      const bigintReplacer = (_k: string, v: unknown) => typeof v === 'bigint' ? v.toString() : v;
+      const packJson = JSON.stringify(buildEmbeddedStructSchema(struct, ast), bigintReplacer);
       const codecBlock = this._tpl.render('TsPackCodec.ts.tpl', {
         STRUCT_SHORT_NAME: shortName,
         PACK_JSON_STR: JSON.stringify(packJson),

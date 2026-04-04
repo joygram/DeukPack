@@ -13,11 +13,12 @@ Turn **any IDL** (Protobuf, OpenAPI, JSON Schema, `.deuk`) into **type-safe, det
 
 ---
 
-> [!WARNING]
-> ### 🚨 [IMPORTANT] Core Architecture Unification & Migration Notice (v1.8.0+)
-> The core infrastructure has been heavily optimized and completely unified into **`DeukPackCodec`** across all languages!
-> 
-> - **Unified API:** You no longer need to call verbose factory methods. All languages now intuitively share the same 2-Method struct syntax: **`Hero.Pack()`** and **`Hero.Unpack()`**. (Legacy APIs are temporarily maintained for backward compatibility).
+### 📢 [v1.9.0 Update] Official Python (Pure/Rust) Support and Industry Standard BMT Benchmark Revamp
+We are pleased to announce the addition of the **official Python (3.6+) binary engine (Pure/Rust Accelerated)** to the DeukPack ecosystem. Furthermore, to ensure objective reliability in enterprise environments, we have discarded legacy measurement methods and elevated the benchmark environments across all languages to **industry-standard frameworks** (such as `BenchmarkDotNet`, `mitata`, and `pytest-benchmark`).
+
+> You can review the newly validated, highly transparent and strict performance metrics—measured under real-world complex object conditions—in our updated [Performance Matrix White Paper](docs/DEUKPACK_GC_PERFORMANCE_MATRIX.md).
+
+- **Unified API:** You no longer need to call verbose factory methods. All languages now intuitively share the same 2-Method struct syntax: **`Hero.Pack()`** and **`Hero.Unpack()`**. (Legacy APIs are temporarily maintained for backward compatibility).
 > - **⚠️ CAUTION (C# / Unity Users):** If you manually copy generated `.cs` runtime files, you **MUST completely empty that legacy folder** prior to importing the new files to prevent duplicate declaration compile errors. (npm / UPM users are automatically updated).
 
 ---
@@ -35,35 +36,34 @@ DeukPack extracts metadata from IDL comments and field structures, transforming 
 
 The **Model Context Protocol (MCP)** server auto-generation feature (`DeukPackMcp`) lets AI agents (Cursor, Claude, etc.) browse live documentation and execute backend methods directly.
 
-### 4. Zero-Allocation High Performance
+### 4. Core Memory Optimization (In-place Reuse)
 
-Engineered for extreme efficiency. **60–100% reduction in memory allocation** and **250% increase in JS parsing speed** vs. classic industry flows. See the [Performance](#-performance-the-zero-bottleneck-foundation) section for raw numbers.
+Engineered for high efficiency. **60–100% reduction in memory allocation** and **250% increase in JS parsing speed** vs. classic industry flows. See the [Performance](#-performance-the-zero-bottleneck-foundation) section for raw numbers.
 
 ---
 
 ## ⚡ Two Words. Every Language.
 
 DeukPack v1.7.6 introduces a **universal 2-method serialization API**: **`Pack`** and **`Unpack`**.  
-Regardless of language or wire format — binary, JSON, Zero-Alloc — you only need to remember two verbs.
+Regardless of language or wire format — binary, JSON, In-place — you only need to remember two verbs.
 
 ```
 Pack    → Serialize (data out)
 Unpack  → Deserialize (data in)
 ```
 
-Pass a **format parameter** to switch protocols. Call `Unpack` on an **existing instance** for Zero-Alloc overwrite.  
+Pass a **format parameter** to switch protocols. Call `Unpack` on an **existing instance** for in-place overwrite.  
 That's the entire API surface.
 
-> [!CAUTION]
-> **Unity / C# Notice (Zero-Alloc Defense):**
+> **Unity / C# Notice (GC Spike Prevention):**
 > NEVER use `var h = Hero.Unpack(bin);` (Factory method) for high-frequency network packets (Hotpath). It implicitly triggers `new` allocations, causing GC spikes and severe frame drops.
-> You MUST use **`Hero.Unpack(cachedHero, bin);`** to overwrite pre-allocated (pooled) objects if you want to achieve true Zero-Allocation architecture without stutters.
+> You MUST use **`Hero.Unpack(cachedHero, bin);`** to overwrite pre-allocated (pooled) objects if you want to achieve true in-place architecture without GC stutters.
 
 ```csharp
-// C# / Unity: 1.Create  2.Pack  3.Unpack (Zero-Alloc)
+// C# / Unity: 1.Create  2.Pack  3.Unpack (In-place)
 var hero = new Dto.Hero { id = 1, name = "Deuk" };
 byte[] bin = Dto.Hero.Pack(hero);          // Serialize (Static)
-Dto.Hero.Unpack(hero, bin);                // Zero-Alloc (Static-Update)
+Dto.Hero.Unpack(hero, bin);                // In-place Update
 ```
 
 ```typescript
@@ -77,7 +77,7 @@ Dto.Hero.unpack(hero, bin);                // In-place Update
 // C++ (Native): 1.Create  2.Pack  3.Unpack (Memory Safe)
 Dto::Hero hero; hero.id = 1; hero.name = "Deuk";
 auto bin = Dto::Hero::Pack(hero);          // Serialize
-Dto::Hero::Unpack(hero, bin);              // Zero-Alloc Deserialize
+Dto::Hero::Unpack(hero, bin);              // In-place Deserialize
 ```
 
 ```java
@@ -93,7 +93,6 @@ hero = %Dto.Hero{id: 1, name: "Deuk"}      # Immutable Struct
 bin = Dto.Hero.pack(hero)                  # Serialize
 hero_parsed = Dto.Hero.unpack(bin)         # BEAM Pattern Match
 ```
-
 
 ---
 
@@ -115,7 +114,6 @@ struct Hero {
 }
 ```
 
-
 ---
 
 ### 🔄 Backward Compatibility — Existing Code is Safe
@@ -135,7 +133,7 @@ Your existing project will compile without errors. IDE will show **soft deprecat
 
 ---
 
-### 🎮 Real-World Pattern: Unity Game Client (Zero-Alloc)
+### 🎮 Real-World Pattern: Unity Game Client (In-place Reuse)
 
 ```csharp
 Dto.Hero cachedHero = new Dto.Hero(); // Allocated exactly ONCE at startup
@@ -154,7 +152,6 @@ void OnNetworkMessage(byte[] inputData) {
 
 ---
 
-
 ## 🚀 Release Roadmap
 
 | Version | Key Milestones | Status |
@@ -162,51 +159,42 @@ void OnNetworkMessage(byte[] inputData) {
 | **v1.4.0** | MCP Protobuf expansion, C#/C++/JS core runtime stabilization | **DONE** |
 | **v1.5.0** | **Java & Core Parity**: Inheritance, Compact/TJSON protocols, MCP Core Decoupling | **DONE** |
 | **v1.5.1** | **C++ Zero-Alloc Optimization**: Arena allocator, C++ DDL Generator | **DONE** |
-| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: Ultimate JS/C# memory optimizations | **DONE** |
+| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: JS/C# memory optimizations | **DONE** |
 | **v1.7.0** | **Elixir Engine Support**: Native BEAM pattern matching & Universal Protocol Security Shield | **DONE** |
 | **v1.8.0** | **Unified 2-Method API**: `Pack`/`Unpack` standard across all 6 languages | **DONE** |
-| **v1.8.1** | **Dialyzer & CI Security**: Strict Elixir typing and GitHub Actions `sample.deuk` pure migration | **Current** |
+| **v1.8.1** | **Dialyzer & CI Security**: Strict Elixir typing and GitHub Actions `sample.deuk` pure migration | **DONE** |
+| **v1.9.0** | **Python Official Parity & BMT**: Python 3.6+ Engine and industrial benchmark suite | **Current** |
 
 ---
 
 ## ⚡ Performance: The Zero-Bottleneck Foundation
 
-| Environment | Metric | 3rd-Party Tag-based | 3rd-Party RPC-based | **DeukPack** |
-| :--- | :--- | :---: | :---: | :---: |
-| **C# / Unity** | Speed | ~ 45 ms | ~ 85 ms | ~ **28 ms** |
-| | Memory | +4.5 MB | +12.0 MB | **0 MB (Zero)** |
-| **C++ (Native)** | Speed | ~ 14 ms | ~ 22 ms | ~ **12 ms** |
-| | Memory | Heap Alloc | Heap Alloc | **Manual Pool** |
-| **Java (Backend)** | Speed | ~ 25 ms | ~ 38 ms | ~ **35 ms** |
-| | Memory | Continuous | Large Objects | **+2.1 MB (Min)** |
-| **JavaScript (V8)** | Speed | ~ 54 ms | ~ 190 ms | ~ **158 ms** |
-| | Memory | +4.2 MB | -1.9 MB | **Immediate Reclaim** |
-| **Elixir (BEAM)** | Speed | ~ 62 ms | ~ 98 ms | ~ **31 ms** |
-| | Memory | +12.8 MB | +14.5 MB | **0 MB (Native Match)** |
+> **Notice: Benchmark Data Under Revision**
+> We have identified an inconsistency between the highly-optimized protocol implementations and the aggregated result table. The performance metrics matrix is currently being revised and will be republished once the evaluation is complete.
 
 > Figures based on decoding a 10,000-row payload. Results vary by environment.  
-> 👉 [Detailed cross-language matrix](https://deukpack.app/journal/performance-matrix/) · [Benchmarking Guide](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_BENCHMARKING.md)
+> [Detailed cross-language matrix](docs/DEUKPACK_GC_PERFORMANCE_MATRIX.md) · [Benchmarking Guide](docs/DEUKPACK_BENCHMARK_SCENARIO.md)
 
 ---
 
 ## Feature Matrix
 
-| Category | Feature | TS / JS | C# / Unity | C++ | Java | Elixir |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ |
-| **Unified API** | `Pack` / `Unpack` (2-method) | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 |
-| **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| | Protobuf Compatible | ✅ | ✅ | ✅ | ✅ | - |
-| | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
-| | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
-| | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - |
-| **Optimizations**| Zero-Alloc / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) |
-| | `Write` Logic Overrides | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - |
-| **Data/Meta** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - |
-| **AI Integration** | MCP Tool Auto-Generation | ✅ (v1.5) | 🚧 | - | - | - |
-| | Intelligent Context | ✅ | ✅ | ✅ | ✅ | ✅ |
-| | IDE IntelliSense | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Category | Feature | TS / JS | C# / Unity | C++ | Java | Elixir | Python |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **IDL Core** | Basic Types / Aliases | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Inheritance** | `extends` support | ✅ | ✅ | ✅ | ✅ (v1.5) | ✅ | ✅ |
+| **Unified API** | `Pack` / `Unpack` (2-method) | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.8.0 | ✅ v1.9.0 |
+| **Protocols** | Native Pack (.dpk) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Pure/Rust)|
+| | Protobuf Compatible | ✅ | ✅ | ✅ | ✅ | - | 🚧 |
+| | Thrift Compatible (T-Series) | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - | - |
+| | JSON (Tagged / POJO) | ✅ | ✅ | ✅ (v1.5) | ✅ | - | ✅ |
+| | YAML / CSV | ✅ | ✅ (v1.2.7) | 🚧 | 🚧 | - | - |
+| **Optimizations**| In-place / JIT | ✅ (v1.6) | ✅ | ✅ (v1.4.2) | 🚧 | ✅ (BEAM) | ✅ (v1.9) |
+| | `Write` Logic Overrides | ✅ | ✅ | ✅ (v1.5) | ✅ (v1.5) | - | - |
+| **Data/Meta** | `tablelink` / MetaTable | ✅ | ✅ | ✅ (v1.5) | ✅ | - | - |
+| **AI Integration** | MCP Tool Auto-Generation | ✅ (v1.5) | 🚧 | - | - | - | - |
+| | Intelligent Context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| | IDE IntelliSense | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -228,7 +216,7 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 
 - **Universal OOM Defense (v1.7.0+)**: Enforced `MAX_SAFE_LENGTH` (10MB) and `MAX_ELEMENT_COUNT` (1,000,000) limits across all engines. Malicious packets are discarded (Fail-Fast) before any memory allocation.
 - **Progressive Chunk Validation**: Replaces legacy `ReadToEnd()` with length pre-evaluation, neutralizing JSON stack bombing in Node.js and Java backends.
-- **Continuous DDoS Fuzzer Suite**: CI-integrated `test-fuzz-oom.js` bombards all parsers with 2GB+ abnormal buffers.
+- **Continuous DDoS Fuzzer Suite**: CI-integrated `test-fuzz-oom.js` injects parsers with 2GB+ abnormal buffers.
 
 ---
 
@@ -237,11 +225,11 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 | Type | Link |
 | :--- | :--- |
 | **This README** | Clone-time summary |
-| **Feature overview** | [DEUKPACK_FEATURES.md](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.md) · [KO](https://github.com/joygram/DeukPack/blob/main/docs/DEUKPACK_FEATURES.ko.md) |
+| **Feature overview** | [DEUKPACK_FEATURES.md](docs/DEUKPACK_FEATURES.md) · [KO](docs/DEUKPACK_FEATURES.ko.md) |
 | **[deukpack.app](https://deukpack.app/)** | Install, tutorials, protocol, [API reference](https://deukpack.app/reference/api/) |
 | **Korean README** | [README.ko.md](README.ko.md) |
 | **Releases** | [RELEASING.md](RELEASING.md) |
-| **Full doc index** | [docs/README.ko.md](https://github.com/joygram/DeukPack/blob/main/docs/README.ko.md) |
+| **Full doc index** | [docs/README.ko.md](docs/README.ko.md) |
 
 **Contact:** contact@deukpack.app
 
@@ -253,13 +241,16 @@ DeukPack implements strict defense-in-depth against **network-layer parsing vuln
 npm ci
 npm run build
 npm test
+npm run benchmark                     # Node serialize smoke
+npm run bench:format-parity           # parser comparison
+npm run bench:cross-lang              # Node vs .NET pack
 ```
 
 ---
 
 ## ☕ Support & Contact
 
-DeukPack is completely open-source (Apache 2.0). Built to solve fundamental Zero-Allocation and Sync issues from 30 years of server architecture experience.
+DeukPack is completely open-source (Apache 2.0). Built to solve fundamental GC bottleneck and model synchronization issues from 30 years of server architecture experience.
 
 - 📩 **Contact / Technical Inquiries**: joygram@gmail.com
 - ☕ **Support the Project**: [Sponsor via Ko-fi](https://ko-fi.com/joygram)
@@ -279,6 +270,19 @@ npx deuk-agent-rule init --non-interactive
 ```
 
 ---
+
+## ⚡ Performance & Benchmarks
+
+> **Notice: Benchmark Data Under Revision**
+> We have identified an inconsistency between the highly-optimized protocol implementations and the aggregated result table. The performance metrics matrix is currently being revised and will be republished once the evaluation is complete.
+
+To ensure objective performance testing, we have adopted industry-standard benchmarks such as `BenchmarkDotNet`, `mitata`, and `pytest-benchmark`. Achieving **60-100% reduction in memory allocation** and **2.5x to 5x faster parsing speeds** compared to legacy industry formats. If you find any errors or have suggestions regarding the benchmark scenarios, please let us know.
+
+- [Performance test technical document](docs/DEUKPACK_GC_PERFORMANCE_MATRIX.md)
+
+---
+
+## Ecosystem (Deuk Family)
 
 ## Contributing
 

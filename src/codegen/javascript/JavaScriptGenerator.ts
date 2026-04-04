@@ -166,7 +166,7 @@ export class JavaScriptGenerator extends CodeGenerator {
         let dv = f.defaultValue;
         const ti = getEmbeddedSchemaTypeInfo(f.type, ast);
         if (ti.type === 'bool' && typeof dv === 'string') dv = (dv === 'true');
-        lines.push(`  if (obj["${f.name}"] === undefined) obj["${f.name}"] = ${JSON.stringify(dv)};`);
+        lines.push(`  if (obj["${f.name}"] === undefined) obj["${f.name}"] = ${JSON.stringify(dv, (_k, v) => typeof v === 'bigint' ? Number(v) : v)};`);
       }
     }
     lines.push(`  return obj;`);
@@ -195,7 +195,7 @@ export class JavaScriptGenerator extends CodeGenerator {
         let dv = f.defaultValue;
         const ti = getEmbeddedSchemaTypeInfo(f.type, ast);
         if (ti.type === 'bool' && typeof dv === 'string') dv = (dv === 'true');
-        lines.push(`  if (obj["${f.name}"] === undefined) obj["${f.name}"] = ${JSON.stringify(dv)};`);
+        lines.push(`  if (obj["${f.name}"] === undefined) obj["${f.name}"] = ${JSON.stringify(dv, (_k, v) => typeof v === 'bigint' ? Number(v) : v)};`);
       }
     }
     lines.push(`  return obj;`);
@@ -268,7 +268,7 @@ export class JavaScriptGenerator extends CodeGenerator {
     return this._tpl.render('JsWireProfileStruct.js.tpl', {
       PROFILE: profile,
       SUBSET_EXPORT_NAME: subsetExportName,
-      SCHEMA_JSON: JSON.stringify(schemaObj),
+      SCHEMA_JSON: JSON.stringify(schemaObj, (_k, v) => typeof v === 'bigint' ? v.toString() : v),
       INLINE_BIN: inlineBin,
       INLINE_PACK: inlinePack,
     });

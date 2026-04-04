@@ -212,6 +212,77 @@ namespace DeukPack.Protocol
         }
 
         /// <summary>
+        /// 기존 <see cref="List{T}"/> 인스턴스에 덮어쓰기 역직렬화 (Zero-Alloc In-place Unpack).
+        /// <para>
+        /// <see cref="ReadList{T}"/>와 달리 새 인스턴스를 생성하지 않습니다.
+        /// In-place Unpack(<c>Hero.Unpack(cached, data)</c>) 패턴에서 list 필드 GC를 제거합니다.
+        /// </para>
+        /// <para>
+        /// <b>주의:</b> <paramref name="target"/>이 null이면 동작하지 않습니다.
+        /// 호출 전 <c>this.Items ??= new List&lt;T&gt;();</c> 로 초기화하십시오.
+        /// </para>
+        /// </summary>
+        public static void ReadListInto<T>(
+            DpProtocol iprot,
+            DpWireType elementType,
+            List<T> target,
+            Func<DpProtocol, T>? reader = null)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            var listInfo = iprot.ReadListBegin();
+            target.Clear();                               // 기존 인스턴스 재사용
+            if (target.Capacity < listInfo.Count)
+                target.Capacity = listInfo.Count;         // resize 최소화 (1회만)
+            for (int i = 0; i < listInfo.Count; i++)
+            {
+                if (reader != null)
+                {
+                    target.Add(reader(iprot));
+                }
+                else
+                {
+                    var value = ReadValue(iprot, elementType, typeof(T));
+                    if (value is T item) target.Add(item);
+                }
+            }
+            iprot.ReadListEnd();
+        }
+
+        /// <summary>
+        /// List&lt;T&gt;를 Deep Clone합니다 (LINQ Enumerator GC 없이 Capacity-aware foreach).
+        /// struct 원소를 포함한 list 필드의 Clone() 생성 코드에서 사용됩니다.
+        /// </summary>
+        public static List<T> CloneList<T>(List<T>? source, Func<T, T> cloneElem)
+        {
+            if (source == null) return new List<T>();
+            var result = new List<T>(source.Count);
+            foreach (var item in source) result.Add(cloneElem(item));
+            return result;
+        }
+
+        /// <summary>HashSet&lt;T&gt;를 Deep Clone합니다.</summary>
+        public static HashSet<T> CloneSet<T>(HashSet<T>? source, Func<T, T> cloneElem)
+        {
+            if (source == null) return new HashSet<T>();
+            var result = new HashSet<T>(); // netstandard2.0 compatible
+            foreach (var item in source) result.Add(cloneElem(item));
+            return result;
+        }
+
+        /// <summary>Dictionary&lt;TKey,TValue&gt;를 Deep Clone합니다.</summary>
+        public static Dictionary<TKey, TValue> CloneMap<TKey, TValue>(
+            Dictionary<TKey, TValue>? source,
+            Func<KeyValuePair<TKey, TValue>, TKey> keySelector,
+            Func<KeyValuePair<TKey, TValue>, TValue> valueSelector)
+            where TKey : notnull
+        {
+            if (source == null) return new Dictionary<TKey, TValue>();
+            var result = new Dictionary<TKey, TValue>(source.Count);
+            foreach (var kvp in source) result[keySelector(kvp)] = valueSelector(kvp);
+            return result;
+        }
+
+        /// <summary>
         /// Write a set recursively
         /// </summary>
         public static void WriteSet<T>(DpProtocol oprot, DpWireType elementType, IEnumerable<T> set)
@@ -249,6 +320,24 @@ namespace DeukPack.Protocol
             }
             iprot.ReadSetEnd();
             return set;
+        }
+
+        /// <summary>기존 <see cref="HashSet{T}"/> 인스턴스에 덮어쓰기 역직렬화.</summary>
+        public static void ReadSetInto<T>(DpProtocol iprot, DpWireType elementType, HashSet<T> target, Func<DpProtocol, T>? reader = null)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            var setInfo = iprot.ReadSetBegin();
+            target.Clear();
+            for (int i = 0; i < setInfo.Count; i++)
+            {
+                if (reader != null) target.Add(reader(iprot));
+                else
+                {
+                    var value = ReadValue(iprot, elementType, typeof(T));
+                    if (value is T item) target.Add(item);
+                }
+            }
+            iprot.ReadSetEnd();
         }
 
         /// <summary>
@@ -306,6 +395,28 @@ namespace DeukPack.Protocol
             }
             iprot.ReadMapEnd();
             return map;
+        }
+
+        /// <summary>기존 <see cref="Dictionary{TKey, TValue}"/> 인스턴스에 덮어쓰기 역직렬화.</summary>
+        public static void ReadMapInto<TKey, TValue>(
+            DpProtocol iprot,
+            DpWireType keyType,
+            DpWireType valueType,
+            Dictionary<TKey, TValue> target,
+            Func<DpProtocol, TKey>? keyReader = null,
+            Func<DpProtocol, TValue>? valueReader = null)
+        where TKey : notnull
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            var mapInfo = iprot.ReadMapBegin();
+            target.Clear();
+            for (int i = 0; i < mapInfo.Count; i++)
+            {
+                TKey key = (keyReader != null) ? keyReader(iprot) : (TKey)ReadValue(iprot, keyType, typeof(TKey))!;
+                TValue value = (valueReader != null) ? valueReader(iprot) : (TValue)ReadValue(iprot, valueType, typeof(TValue))!;
+                target[key] = value;
+            }
+            iprot.ReadMapEnd();
         }
 
         /// <summary>득팩 객체 → byte[]. <paramref name="pretty"/> 는 JSON/Deuk JSON/Deuk YAML 에만 적용(바이너리는 무시).</summary>

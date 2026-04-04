@@ -22,20 +22,14 @@ namespace DeukPack.Protocol
         private readonly bool _includeSchema;
         private readonly bool _pretty;
         private readonly Stack<JsonStructState> _writeStack;
-        private readonly Stack<List<object>> _listWriteStack;
+        private class ListWriteState { public List<object> List = new List<object>(); public string FieldKey = ""; }
+        private readonly Stack<ListWriteState> _listWriteStack;
         private readonly Stack<MapWriteState> _mapWriteStack;
         private string _currentFieldKey = "";
         private DpWireType _currentFieldType;
-        private string? _readMapCurrentKey = ""; // Initialized to empty to avoid null check skip
         private Dictionary<string, object> _rootRead;
         private Stack<JsonReadFrame> _readStack;
         private KeyValuePair<string, object>? _currentReadField;
-        private List<object>? _readList;
-        private int _readListIndex;
-        private Dictionary<string, object>? _readMapDict;
-        private List<string>? _readMapKeys;
-        private int _readMapIndex;
-        private bool _readMapReadingKey;
         private readonly UTF8Encoding _utf8 = new UTF8Encoding(false);
 
         public DpJsonProtocol(Stream stream, bool pretty = false, bool includeSchema = false, bool isReadMode = true)
@@ -44,8 +38,10 @@ namespace DeukPack.Protocol
             _pretty = pretty;
             _includeSchema = includeSchema;
             _isReadMode = isReadMode;
+            _contextTypes = new Stack<ContextType>();
+            _readContextTypes = new Stack<ContextType>();
             _writeStack = new Stack<JsonStructState>();
-            _listWriteStack = new Stack<List<object>>();
+            _listWriteStack = new Stack<ListWriteState>();
             _mapWriteStack = new Stack<MapWriteState>();
             _readStack = new Stack<JsonReadFrame>();
             if (isReadMode)
@@ -74,6 +70,9 @@ namespace DeukPack.Protocol
             _stream?.Flush();
         }
 
+        private enum ContextType { Struct, List, Map }
+        private readonly Stack<ContextType> _contextTypes;
+
         private struct JsonStructState
         {
             public Dictionary<string, object> Obj;
@@ -91,6 +90,7 @@ namespace DeukPack.Protocol
         {
             public readonly Dictionary<string, object?> Map = new Dictionary<string, object?>();
             public object? PendingKey;
+            public string FieldKey = "";
         }
 
         private static string DpWireTypeToJsonKey(DpWireType t)
@@ -124,7 +124,8 @@ namespace DeukPack.Protocol
 
         private void WriteValueToCurrent(object value)
         {
-            if (_mapWriteStack.Count > 0)
+            var ctx = _contextTypes.Count > 0 ? _contextTypes.Peek() : ContextType.Struct;
+            if (ctx == ContextType.Map)
             {
                 var top = _mapWriteStack.Peek();
                 if (top.PendingKey == null)
@@ -137,11 +138,11 @@ namespace DeukPack.Protocol
                 }
                 return;
             }
-            if (_listWriteStack.Count > 0)
+            if (ctx == ContextType.List)
             {
                 var wrappedChild = WrapValueForJson(value);
                 if (wrappedChild != null)
-                    _listWriteStack.Peek().Add(wrappedChild);
+                    _listWriteStack.Peek().List.Add(wrappedChild);
                 return;
             }
             var jsonVal = WrapValueForJson(value);
@@ -149,20 +150,17 @@ namespace DeukPack.Protocol
                 _writeStack.Peek().Obj[_currentFieldKey] = jsonVal;
         }
 
-        public void WriteStructBegin(DpRecord s) { _writeStack.Push(new JsonStructState { Obj = new Dictionary<string, object>(), IsMapKey = false, FieldKey = _currentFieldKey }); }
+        public void WriteStructBegin(DpRecord s) { _contextTypes.Push(ContextType.Struct); _writeStack.Push(new JsonStructState { Obj = new Dictionary<string, object>(), IsMapKey = false, FieldKey = _currentFieldKey }); }
         public void WriteStructEnd()
         {
             var top = _writeStack.Pop();
-            if (_mapWriteStack.Count > 0)
+            _contextTypes.Pop();
+            _currentFieldKey = top.FieldKey;
+            
+            if (_contextTypes.Count > 0)
             {
-                var outer = _mapWriteStack.Peek();
-                outer.Map[outer.PendingKey?.ToString() ?? ""] = top.Obj;
-                outer.PendingKey = null;
+                WriteValueToCurrent(top.Obj);
             }
-            else if (_listWriteStack.Count > 0)
-                _listWriteStack.Peek().Add(top.Obj);
-            else if (_writeStack.Count > 0)
-                _writeStack.Peek().Obj[top.FieldKey] = top.Obj;
             else
             {
                 var json = JsonProtocolSerialize(top.Obj);
@@ -210,73 +208,82 @@ namespace DeukPack.Protocol
         public void WriteFieldEnd() { }
         public void WriteFieldStop() { }
         public void WriteBool(bool b) { WriteValueToCurrent(b); }
-        public void WriteByte(byte b) { WriteValueToCurrent((int)b); }
+        public void WriteByte(byte b) { WriteValueToCurrent((int)(sbyte)b); }
         public void WriteI16(short v) { WriteValueToCurrent((int)v); }
         public void WriteI32(int v) { WriteValueToCurrent(v); }
         public void WriteI64(long v) { WriteValueToCurrent(v); }
         public void WriteDouble(double v) { WriteValueToCurrent(v); }
         public void WriteString(string? s) { WriteValueToCurrent(s ?? ""); }
         public void WriteBinary(byte[]? b) { WriteValueToCurrent(Convert.ToBase64String(b ?? Array.Empty<byte>())); }
-        public void WriteListBegin(DpList list) { _listWriteStack.Push(new List<object>()); }
+        public void WriteListBegin(DpList list) { _contextTypes.Push(ContextType.List); _listWriteStack.Push(new ListWriteState { FieldKey = _currentFieldKey }); }
         public void WriteListEnd()
         {
-            var list = _listWriteStack.Pop();
-            var wrapper = new Dictionary<string, object> { { "lst", list } };
-            if (_mapWriteStack.Count > 0)
-            {
-                var outer = _mapWriteStack.Peek();
-                outer.Map[outer.PendingKey?.ToString() ?? ""] = wrapper;
-                outer.PendingKey = null;
-            }
-            else if (_listWriteStack.Count > 0)
-                _listWriteStack.Peek().Add(list);
-            else
-                _writeStack.Peek().Obj[_currentFieldKey] = wrapper;
+            var state = _listWriteStack.Pop();
+            _contextTypes.Pop();
+            var wrapper = new Dictionary<string, object> { { "lst", state.List } };
+            _currentFieldKey = state.FieldKey;
+            WriteValueToCurrent(wrapper);
         }
         public void WriteSetBegin(DpSet set) { WriteListBegin(new DpList { ElementType = set.ElementType, Count = set.Count }); }
         public void WriteSetEnd() { WriteListEnd(); }
-        public void WriteMapBegin(DpDict map) { _mapWriteStack.Push(new MapWriteState()); }
+        public void WriteMapBegin(DpDict map) { _contextTypes.Push(ContextType.Map); _mapWriteStack.Push(new MapWriteState { FieldKey = _currentFieldKey }); }
         public void WriteMapEnd()
         {
             var state = _mapWriteStack.Pop();
+            _contextTypes.Pop();
             var wrapper = new Dictionary<string, object> { { "map", state.Map } };
-            if (_mapWriteStack.Count > 0)
-            {
-                var outer = _mapWriteStack.Peek();
-                outer.Map[outer.PendingKey?.ToString() ?? ""] = wrapper;
-                outer.PendingKey = null;
-            }
-            else if (_listWriteStack.Count > 0)
-                _listWriteStack.Peek().Add(wrapper);
-            else
-                _writeStack.Peek().Obj[_currentFieldKey] = wrapper;
+            _currentFieldKey = state.FieldKey;
+            WriteValueToCurrent(wrapper);
         }
+
+        private List<object>? _pendingReadList;
+        private Dictionary<string, object>? _pendingReadMap;
+
+        private struct ReadListState { public List<object> List; public int Index; }
+        private readonly Stack<ReadListState> _readListStack = new Stack<ReadListState>();
+
+        private struct ReadMapState { public Dictionary<string, object> Dict; public List<string> Keys; public string CurrentKey; public int Index; public bool ReadingKey; }
+        private readonly Stack<ReadMapState> _readMapStack = new Stack<ReadMapState>();
+        private readonly Stack<ContextType> _readContextTypes;
 
         public DpRecord ReadStructBegin()
         {
             if (_readStack.Count == 0)
                 _readStack.Push(new JsonReadFrame { Obj = _rootRead, Enumerator = _rootRead?.GetEnumerator() });
-            else if (_readList != null && _readListIndex < _readList.Count)
+            else
             {
-                var nextObj = _readList[_readListIndex++] as Dictionary<string, object>;
-                if (nextObj != null)
+                var ctx = _readContextTypes.Count > 0 ? _readContextTypes.Peek() : ContextType.Struct;
+                if (ctx == ContextType.List)
+                {
+                    var state = _readListStack.Pop();
+                    if (state.Index < state.List.Count)
+                    {
+                        var nextObj = state.List[state.Index++] as Dictionary<string, object>;
+                        if (nextObj != null) _readStack.Push(new JsonReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
+                    }
+                    _readListStack.Push(state);
+                }
+                else if (ctx == ContextType.Map)
+                {
+                    var state = _readMapStack.Pop();
+                    if (!state.ReadingKey && state.Index < state.Keys.Count)
+                    {
+                        if (state.Dict.TryGetValue(state.CurrentKey, out var mapVal) && mapVal is Dictionary<string, object> mapStruct)
+                        {
+                            _readStack.Push(new JsonReadFrame { Obj = mapStruct, Enumerator = mapStruct.GetEnumerator() });
+                            state.Index++;
+                            state.ReadingKey = true;
+                        }
+                    }
+                    _readMapStack.Push(state);
+                }
+                else if (_currentReadField.HasValue && _currentReadField.Value.Value is Dictionary<string, object> nextObj)
                     _readStack.Push(new JsonReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
             }
-            else if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && !_readMapReadingKey && _readMapIndex < _readMapKeys.Count)
-            {
-                var mapVal = _readMapDict[_readMapCurrentKey];
-                if (mapVal is Dictionary<string, object> mapStruct)
-                {
-                    _readStack.Push(new JsonReadFrame { Obj = mapStruct, Enumerator = mapStruct.GetEnumerator() });
-                    _readMapIndex++;
-                    _readMapReadingKey = true;
-                }
-            }
-            else if (_currentReadField.HasValue && _currentReadField.Value.Value is Dictionary<string, object> nextObj)
-                _readStack.Push(new JsonReadFrame { Obj = nextObj, Enumerator = nextObj.GetEnumerator() });
+            _readContextTypes.Push(ContextType.Struct);
             return new DpRecord("");
         }
-        public void ReadStructEnd() { if (_readStack.Count > 0) _readStack.Pop(); }
+        public void ReadStructEnd() { if (_readStack.Count > 0) _readStack.Pop(); if (_readContextTypes.Count > 0) _readContextTypes.Pop(); }
         public DpColumn ReadFieldBegin()
         {
             if (_readStack.Count == 0)
@@ -296,15 +303,11 @@ namespace DeukPack.Protocol
             _currentReadField = kv;
             if ((t == DpWireType.List || t == DpWireType.Set) && wrapper.TryGetValue(DpTypeNames.ToProtocolName(t), out var listVal) && listVal is List<object> list)
             {
-                _readList = list;
-                _readListIndex = 0;
+                _pendingReadList = list;
             }
             else if (t == DpWireType.Map && wrapper.TryGetValue(DpTypeNames.ToProtocolName(t), out var mapVal) && mapVal is Dictionary<string, object> mapDict)
             {
-                _readMapDict = mapDict;
-                _readMapKeys = new List<string>(mapDict.Keys);
-                _readMapIndex = 0;
-                _readMapReadingKey = true;
+                _pendingReadMap = mapDict;
             }
             return new DpColumn(kv.Key, DpWireType.Void, short.TryParse(kv.Key, out var id) ? id : (short)0);
         }
@@ -320,43 +323,54 @@ namespace DeukPack.Protocol
         private T ReadSingleValue<T>(string key)
         {
             object? v = null;
-            if (_readMapDict != null && _readMapKeys != null && _readMapCurrentKey != null && _readMapIndex < _readMapKeys.Count)
+            var ctx = _readContextTypes.Count > 0 ? _readContextTypes.Peek() : ContextType.Struct;
+            if (ctx == ContextType.Map)
             {
-                if (_readMapReadingKey)
+                var state = _readMapStack.Pop();
+                if (state.Index < state.Keys.Count)
                 {
-                    v = _readMapCurrentKey = _readMapKeys[_readMapIndex];
-                    _readMapReadingKey = false;
-                }
-                else
-                {
-                    var valObj = _readMapDict[_readMapCurrentKey];
-                    if (valObj is Dictionary<string, object> dict)
+                    if (state.ReadingKey)
                     {
-                        if (dict.TryGetValue(key, out var tv1)) v = tv1;
-                        else if (dict.TryGetValue("i32", out tv1) || dict.TryGetValue("i64", out tv1) || dict.TryGetValue("i8", out tv1) || dict.TryGetValue("i16", out tv1)) v = tv1;
-                        else if (dict.TryGetValue("str", out tv1)) v = tv1;
-                        else if (dict.TryGetValue("dbl", out tv1)) v = tv1;
-                        else if (dict.TryGetValue("tf", out tv1)) v = tv1;
+                        v = state.CurrentKey = state.Keys[state.Index];
+                        state.ReadingKey = false;
                     }
                     else
-                        v = valObj;
-                    _readMapIndex++;
-                    _readMapReadingKey = true;
+                    {
+                        if (state.Dict.TryGetValue(state.CurrentKey, out var valObj))
+                        {
+                            if (valObj is Dictionary<string, object> dict)
+                            {
+                                if (dict.TryGetValue(key, out var tv1)) v = tv1;
+                                else if (dict.TryGetValue("i32", out tv1) || dict.TryGetValue("i64", out tv1) || dict.TryGetValue("i8", out tv1) || dict.TryGetValue("i16", out tv1)) v = tv1;
+                                else if (dict.TryGetValue("str", out tv1)) v = tv1;
+                                else if (dict.TryGetValue("dbl", out tv1)) v = tv1;
+                                else if (dict.TryGetValue("tf", out tv1)) v = tv1;
+                            }
+                            else v = valObj;
+                        }
+                        state.Index++;
+                        state.ReadingKey = true;
+                    }
                 }
+                _readMapStack.Push(state);
             }
-            else if (_readList != null && _readListIndex < _readList.Count)
+            else if (ctx == ContextType.List)
             {
-                var raw = _readList[_readListIndex++];
-                if (raw is Dictionary<string, object> dict)
+                var state = _readListStack.Pop();
+                if (state.Index < state.List.Count)
                 {
-                    if (dict.TryGetValue(key, out var tv2)) v = tv2;
-                    else if (dict.TryGetValue("i32", out tv2) || dict.TryGetValue("i64", out tv2) || dict.TryGetValue("i8", out tv2) || dict.TryGetValue("i16", out tv2)) v = tv2;
-                    else if (dict.TryGetValue("str", out tv2)) v = tv2;
-                    else if (dict.TryGetValue("dbl", out tv2)) v = tv2;
-                    else if (dict.TryGetValue("tf", out tv2)) v = tv2;
+                    var raw = state.List[state.Index++];
+                    if (raw is Dictionary<string, object> dict)
+                    {
+                        if (dict.TryGetValue(key, out var tv2)) v = tv2;
+                        else if (dict.TryGetValue("i32", out tv2) || dict.TryGetValue("i64", out tv2) || dict.TryGetValue("i8", out tv2) || dict.TryGetValue("i16", out tv2)) v = tv2;
+                        else if (dict.TryGetValue("str", out tv2)) v = tv2;
+                        else if (dict.TryGetValue("dbl", out tv2)) v = tv2;
+                        else if (dict.TryGetValue("tf", out tv2)) v = tv2;
+                    }
+                    else v = raw;
                 }
-                else
-                    v = raw;
+                _readListStack.Push(state);
             }
             else if (_currentReadField.HasValue)
             {
@@ -374,18 +388,24 @@ namespace DeukPack.Protocol
         }
         public DpList ReadListBegin()
         {
-            int c = _readList?.Count ?? 0;
-            return new DpList { ElementType = DpWireType.String, Count = c };
+            var lst = _pendingReadList ?? new List<object>();
+            _pendingReadList = null;
+            _readContextTypes.Push(ContextType.List);
+            _readListStack.Push(new ReadListState { List = lst, Index = 0 });
+            return new DpList { ElementType = DpWireType.String, Count = lst.Count };
         }
-        public void ReadListEnd() { _readList = null; }
+        public void ReadListEnd() { if (_readContextTypes.Count > 0) _readContextTypes.Pop(); if (_readListStack.Count > 0) _readListStack.Pop(); }
         public DpSet ReadSetBegin() { var l = ReadListBegin(); return new DpSet { ElementType = l.ElementType, Count = l.Count }; }
-        public void ReadSetEnd() { }
+        public void ReadSetEnd() { ReadListEnd(); }
         public DpDict ReadMapBegin()
         {
-            int c = _readMapDict?.Count ?? 0;
-            return new DpDict { KeyType = DpWireType.String, ValueType = DpWireType.String, Count = c };
+            var md = _pendingReadMap ?? new Dictionary<string, object>();
+            _pendingReadMap = null;
+            _readContextTypes.Push(ContextType.Map);
+            _readMapStack.Push(new ReadMapState { Dict = md, Keys = new List<string>(md.Keys), CurrentKey = "", Index = 0, ReadingKey = true });
+            return new DpDict { KeyType = DpWireType.String, ValueType = DpWireType.String, Count = md.Count };
         }
-        public void ReadMapEnd() { _readMapDict = null; _readMapKeys = null; }
+        public void ReadMapEnd() { if (_readContextTypes.Count > 0) _readContextTypes.Pop(); if (_readMapStack.Count > 0) _readMapStack.Pop(); }
 
         private static string JsonProtocolSerialize(Dictionary<string, object> obj)
         {
@@ -423,7 +443,20 @@ namespace DeukPack.Protocol
         private static string EscapeJson(string s)
         {
             if (string.IsNullOrEmpty(s)) return "";
-            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+            var sb = new StringBuilder();
+            foreach (var c in s)
+            {
+                if (c == '"') sb.Append("\\\"");
+                else if (c == '\\') sb.Append("\\\\");
+                else if (c == '\b') sb.Append("\\b");
+                else if (c == '\f') sb.Append("\\f");
+                else if (c == '\n') sb.Append("\\n");
+                else if (c == '\r') sb.Append("\\r");
+                else if (c == '\t') sb.Append("\\t");
+                else if (char.IsControl(c)) sb.AppendFormat("\\u{0:x4}", (int)c);
+                else sb.Append(c);
+            }
+            return sb.ToString();
         }
         private static Dictionary<string, object> JsonProtocolParse(string json)
         {
@@ -485,7 +518,25 @@ namespace DeukPack.Protocol
             var sb = new StringBuilder();
             while (i < s.Length && s[i] != '"')
             {
-                if (s[i] == '\\') { i++; if (i < s.Length) sb.Append(s[i++]); }
+                if (s[i] == '\\') { 
+                    i++; 
+                    if (i < s.Length) {
+                        var ch = s[i++];
+                        if (ch == 'n') sb.Append('\n');
+                        else if (ch == 'r') sb.Append('\r');
+                        else if (ch == 't') sb.Append('\t');
+                        else if (ch == 'b') sb.Append('\b');
+                        else if (ch == 'f') sb.Append('\f');
+                        else if (ch == '"') sb.Append('"');
+                        else if (ch == '\\') sb.Append('\\');
+                        else if (ch == 'u' && i + 3 < s.Length) {
+                            var hex = s.Substring(i, 4);
+                            if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var code))
+                                sb.Append((char)code);
+                            i += 4;
+                        } else sb.Append(ch);
+                    }
+                }
                 else sb.Append(s[i++]);
             }
             if (i < s.Length) i++;
