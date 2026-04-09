@@ -1,5 +1,15 @@
 # DeukPack: AI-Native 유니버설 스키마 멀티 허브 (Protobuf, Thrift, OpenAPI 통합)
 
+> ⚠️ [공지] 대규모 내부 리팩토링 진행 중
+>
+> 현재 여러 언어 환경에 대한 통합 테스트 과정에서 다수의 결함을 발견하여 
+> 대규모 내부 리팩토링을 진행하고 있습니다. 
+> 이번 리팩토링은 기존에 추구했던 '극한의 성능 최적화에서 한 걸음 물러나 
+> 시스템의 안정성과 유연성을 확보하는 데 초점'을 맞추고 있습니다. 
+> 각 언어와 프로토콜별 고유한 특성을 면밀히 재검토하여 
+> 1차 구현에서 누락되거나 불안정했던 부분들을 개선하는 것을 목표로 하고 있으니, 
+> 사용 중 이슈가 발생할 수 있는 점을 염두에 두고 사용해 주시기 바랍니다.
+
 > **Protobuf, Thrift, OpenAPI를 하나로 묶는 유니버설 스키마 멀티 허브(Multi-hub).**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)

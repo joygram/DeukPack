@@ -1,5 +1,16 @@
 # DeukPack: AI-Native Universal Schema Multi-hub
 
+> ⚠️ [NOTICE] Large-Scale Internal Refactoring in Progress
+>
+> During recent integration testing across various languages, 
+> several defects were identified, prompting a large-scale internal refactoring. 
+> I am intentionally pivoting my focus 'from extreme performance optimizations 
+> to ensuring architectural stability and flexibility'. 
+> My primary goal is to carefully review the specific characteristics of 
+> each language and protocol to improve and fix omissions from the initial implementation. 
+> Please keep in mind that there may be unexpected issues during use 
+> until this work is complete.
+
 > **Universal Schema Multi-hub for Protobuf, Thrift, OpenAPI, and .deuk. (High-Performance)**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -158,8 +169,8 @@ void OnNetworkMessage(byte[] inputData) {
 | :--- | :--- | :--- |
 | **v1.4.0** | MCP Protobuf expansion, C#/C++/JS core runtime stabilization | **DONE** |
 | **v1.5.0** | **Java & Core Parity**: Inheritance, Compact/TJSON protocols, MCP Core Decoupling | **DONE** |
-| **v1.5.1** | **C++ Zero-Alloc Optimization**: Arena allocator, C++ DDL Generator | **DONE** |
-| **v1.6.0** | **V8 JIT Codegen & Zero-Alloc Architecture**: JS/C# memory optimizations | **DONE** |
+| **v1.5.1** | **C++ In-place Reuse Optimization**: Arena allocator, C++ DDL Generator | **DONE** |
+| **v1.6.0** | **V8 JIT Codegen & In-place Reuse Architecture**: JS/C# memory optimizations | **DONE** |
 | **v1.7.0** | **Elixir Engine Support**: Native BEAM pattern matching & Universal Protocol Security Shield | **DONE** |
 | **v1.8.0** | **Unified 2-Method API**: `Pack`/`Unpack` standard across all 6 languages | **DONE** |
 | **v1.8.1** | **Dialyzer & CI Security**: Strict Elixir typing and GitHub Actions `sample.deuk` pure migration | **DONE** |
